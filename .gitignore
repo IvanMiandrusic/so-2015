@@ -35,5 +35,5 @@
 .project
 .cproject
 .directory
-.log
-/Debug/
+*.log
+*/Debug/
