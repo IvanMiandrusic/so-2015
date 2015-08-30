@@ -21,5 +21,6 @@ void finalizarPID(int32_t);
 void comandoPS();
 void usoDeLasCpus();
 void mostrarEstadoProceso(PCB*);
+void mostrarComandos();
 
 #endif /* CONSOLA_H_ */

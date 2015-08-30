@@ -13,17 +13,6 @@
 /*Include para las librerias */
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/wait.h>
-#include <commons/config.h>
-#include <commons/string.h>
-#include <commons/log.h>
-#include <semaphore.h>
-#include <commons/collections/list.h>
-#include "libsocket.h"
 #include "Colores.h"
 #include "Admin-Swap.h"
 
@@ -91,7 +80,7 @@ void creoEstructuraSwap(){
 	nodo->comienzo=0;
 	nodo->paginas=arch->cantidad_paginas;
 	sem_wait(&sem_mutex_libre);
-	list_add(espacioLibre, nodo);		//todo validacion
+	list_add(espacioLibre, nodo);
 	sem_post(&sem_mutex_libre);
 	totalPaginas=arch->cantidad_paginas;
 

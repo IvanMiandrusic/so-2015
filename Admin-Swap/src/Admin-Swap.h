@@ -8,6 +8,20 @@
 #ifndef ADMIN_SWAP_H_
 #define ADMIN_SWAP_H_
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <commons/config.h>
+#include <commons/string.h>
+#include <commons/log.h>
+#include <semaphore.h>
+#include <commons/collections/list.h>
+#include "libsocket.h"
+
 typedef struct estructura_configuracion			//estructura que contiene los datos del archivo de configuracion
 {
   int32_t puerto_escucha;
