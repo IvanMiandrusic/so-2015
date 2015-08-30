@@ -98,6 +98,14 @@ void creoEstructuraSwap(){
 
 void compactar(){
 
+	if (list_is_empty(espacioOcupado)){
+		log_error(loggerError, "No se puede compactar una memoria vacía");
+		return;
+	}
+	if(list_is_empty(espacioLibre)){
+		log_error(loggerError, "No se puede compactar una memoria completamente llena");
+		return;
+	}
 	NodoOcupado* primerNodo=list_get(espacioOcupado, 0);
 	if(primerNodo->comienzo!=0){
 		primerNodo->comienzo=0;
