@@ -35,4 +35,5 @@
 .project
 .cproject
 .directory
+.log
 /Debug/
