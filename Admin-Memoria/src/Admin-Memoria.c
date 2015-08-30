@@ -22,7 +22,7 @@
 #include <commons/string.h>
 #include <semaphore.h>
 #include <commons/collections/list.h>
-//#include "Socket.h"
+#include "libsocket.h"
 #include "Colores.h"
 #include "Admin-Memoria.h"
 
@@ -100,7 +100,7 @@ void llenoTPag(){
 }
 
 void creoEstructurasDeManejo(){
-	if(string_equals_ignore_case(arch->tlb_habilitada), "si")
+	if(string_equals_ignore_case((arch->tlb_habilitada), "si"))
 	{
 		tabla_TLB=list_create();
 		llenoTLB();
