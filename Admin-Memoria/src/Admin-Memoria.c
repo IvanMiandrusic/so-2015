@@ -70,7 +70,7 @@ void inicializoSemaforos(){
 /*Se crea un archivo de log donde se registra to-do */
 
 void crearArchivoDeLog() {
-	char* pathLog = "LogAdministradorDeMemoria";
+	char* pathLog = "AdministradorMemoria.log";
 	char* archLog = "MEM_Admin";
 	loggerInfo = log_create(pathLog, archLog, 1, LOG_LEVEL_INFO);
 	loggerError = log_create(pathLog, archLog, 1, LOG_LEVEL_ERROR);
