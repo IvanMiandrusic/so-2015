@@ -37,6 +37,7 @@ void inicializoSemaforos();
 void crearArchivoDeLog();
 void creoEstructuraSwap();
 void compactar();
+int32_t calcularEspacioLibre();
 
 
 

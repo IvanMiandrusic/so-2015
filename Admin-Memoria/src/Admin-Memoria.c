@@ -19,6 +19,7 @@
 #include <sys/wait.h>
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/string.h>
 #include <semaphore.h>
 #include <commons/collections/list.h>
 //#include "Socket.h"
@@ -30,6 +31,9 @@ ProcesoMemoria* arch;
 t_log* loggerInfo;
 t_log* loggerError;
 t_log* loggerDebug;
+t_list* tabla_TLB;
+char* memPPAL;
+t_list* tabla_Paginas;
 
 
 ProcesoMemoria* crear_estructura_config(char* path)
@@ -73,6 +77,45 @@ void crearArchivoDeLog() {
 	loggerDebug = log_create(pathLog, archLog, 1, LOG_LEVEL_DEBUG);
 }
 
+void llenoTLB(){			//tambien sirve para limpiar la TLB
+	int i;
+	for(i=0; i<arch->entradas_tlb;i++){
+	TLB* nuevaEntrada= malloc(sizeof(TLB));
+	nuevaEntrada->marco=0;
+	nuevaEntrada->modificada=0;
+	nuevaEntrada->valida=0;					//todo ver campos bien
+	list_add(tabla_TLB, nuevaEntrada);		//todo ver sincro
+	}
+}
+
+
+void llenoTPag(){
+	int i;
+	for(i=0; i<arch->cantidad_marcos;i++){
+		TPagina* nuevaEntrada= malloc(sizeof(TLB));
+		nuevaEntrada->marco=0;
+		nuevaEntrada->pagina=0;				//todo ver campos bien
+		list_add(tabla_Paginas, nuevaEntrada);		//todo ver sincro
+		}
+}
+
+void creoEstructurasDeManejo(){
+	if(string_equals_ignore_case(arch->tlb_habilitada), "si")
+	{
+		tabla_TLB=list_create();
+		llenoTLB();
+	}
+	memPPAL=malloc((arch->cantidad_marcos)*(arch->tamanio_marco));
+	llenoTPag();
+}
+
+void ifSigurs1(){
+
+}
+
+void ifSigurs2(){
+
+}
 
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
 int main(void) {
@@ -81,6 +124,11 @@ int main(void) {
 
 	/*Tratamiento del ctrl+c en el proceso */
 	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError,"Error con la señal SIGINT");
+
+	if(signal(SIGINT, ifSigurs1) == SIG_ERR ) log_error(loggerError,"Error con la señal SIGURS1");
+
+	if(signal(SIGINT, ifSigurs2) == SIG_ERR ) log_error(loggerError,"Error con la señal SIGURS2");
+
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
@@ -94,6 +142,7 @@ int main(void) {
 	/*Se inicializan todos los semaforos necesarios */
 	inicializoSemaforos();
 
+	creoEstructurasDeManejo();
 
 //	sock_t* socketServidor=create_server_socket(arch->puerto_escucha);
 //	int32_t resultado=listen_connections(socketServidor);

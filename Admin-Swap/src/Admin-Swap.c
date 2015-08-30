@@ -35,7 +35,7 @@ t_list* espacioLibre;
 t_list* espacioOcupado;
 sem_t sem_mutex_libre;
 sem_t sem_mutex_ocupado;
-int32_t paginasLibres;
+int32_t totalPaginas;
 
 ProcesoSwap* crear_estructura_config(char* path)
 {
@@ -92,7 +92,7 @@ void creoEstructuraSwap(){
 	sem_wait(&sem_mutex_libre);
 	list_add(espacioLibre, nodo);		//todo validacion
 	sem_post(&sem_mutex_libre);
-	paginasLibres=arch->cantidad_paginas;
+	totalPaginas=arch->cantidad_paginas;
 
 }
 
@@ -124,14 +124,28 @@ void compactar(){
 		}
 		//fin for
 	}
-	NodoLibre* nodoLibre=malloc(sizeof(NodoLibre));
 	NodoOcupado* nodo=list_get(espacioOcupado, i-1);
-	mostrar(nodo);
 	int nuevoComienzo=(nodo->comienzo+nodo->paginas);
+	if(nuevoComienzo==totalPaginas){
+		list_clean_and_destroy_elements(espacioLibre, free);
+	}else{
+	NodoLibre* nodoLibre=malloc(sizeof(NodoLibre));
 	nodoLibre->comienzo = nuevoComienzo;
-	nodoLibre->paginas = paginasLibres - nuevoComienzo;
+	nodoLibre->paginas = totalPaginas - nuevoComienzo;
 	list_clean_and_destroy_elements(espacioLibre, free);
 	list_add(espacioLibre, nodoLibre);
+	sleep(arch->retardo);
+}
+}
+
+int32_t calcularEspacioLibre(){
+	int32_t espacio;
+	int i;
+	for(i=0; i<list_size(espacioLibre); i++){
+		NodoLibre* nodo= list_get(espacioLibre, i);
+		espacio+=nodo->paginas;
+	}
+	return espacio;
 }
 
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */

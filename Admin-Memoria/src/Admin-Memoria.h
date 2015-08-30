@@ -22,13 +22,29 @@ typedef struct estructura_configuracion			//estructura que contiene los datos de
   int32_t retardo;
 }ProcesoMemoria;
 
+typedef struct estructura_TLB			//estructura que contiene los datos de la tlb
+{
+  int32_t marco;
+  int32_t modificada; 		//1 si, 0 no
+  int32_t valida;			//1 si, 0 no
+}TLB;
+
+typedef struct estructura_tabla_paginas			//estructura que contiene los datos de la tabla de paginas
+{
+  int32_t marco;
+  int32_t pagina;
+}TPagina;
+
+
 ProcesoMemoria* crear_estructura_config(char*);
 void ifProcessDie();
 void inicializoSemaforos();
 void crearArchivoDeLog();
-
-
-
+void creoEstructurasDeManejo();
+void llenoTLB();
+void llenoTPag();
+void ifSigurs1();
+void ifSigurs2();
 
 
 #endif /* ADMIN_MEMORIA_H_ */
