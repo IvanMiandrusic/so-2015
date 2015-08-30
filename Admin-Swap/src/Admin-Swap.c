@@ -19,6 +19,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <commons/config.h>
+#include <commons/string.h>
 #include <commons/log.h>
 #include <semaphore.h>
 #include <commons/collections/list.h>
@@ -111,8 +112,8 @@ void compactar(){
 		primerNodo->comienzo=0;
 		list_replace(espacioOcupado, 0, primerNodo);
 	}
-	int valor= list_size(espacioOcupado);
-	int i;
+
+	int32_t i;
 
 	for(i=1; i<list_size(espacioOcupado); i++){
 		NodoOcupado* nodo= list_get(espacioOcupado, i);
@@ -125,7 +126,7 @@ void compactar(){
 		//fin for
 	}
 	NodoOcupado* nodo=list_get(espacioOcupado, i-1);
-	int nuevoComienzo=(nodo->comienzo+nodo->paginas);
+	int32_t nuevoComienzo=(nodo->comienzo+nodo->paginas);
 	if(nuevoComienzo==totalPaginas){
 		list_clean_and_destroy_elements(espacioLibre, free);
 	}else{
@@ -171,8 +172,8 @@ int main(void) {
 	/*Se inicializan todos los semaforos necesarios */
 	creoEstructuraSwap();
 
-//		sock_t* socketServidor=create_server_socket(arch->puerto_escucha);
-//		int32_t resultado=listen_connections(socketServidor);
+	sock_t* socketServidor=create_server_socket(arch->puerto_escucha);
+	int32_t resultado=listen_connections(socketServidor);
 
 	/*Sintaxis para la creacion de Hilos
 

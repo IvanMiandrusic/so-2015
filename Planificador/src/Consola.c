@@ -18,7 +18,8 @@ typedef enum comandos {
 	FINALIZAR_PID=2,
 	PS=3,
 	CPU=4,
-	CERRAR_CONSOLA=5
+	CERRAR_CONSOLA=5,
+	HELP=6
 }t_command;
 
 void admin_consola(){
@@ -36,7 +37,7 @@ void admin_consola(){
 
 		if(operacionAsociada<1 || operacionAsociada>5) {
 			printf(ANSI_COLOR_RED "EL COMANDO INGRESADO ES INCORRECTO \n");
-			printf(ANSI_COLOR_BOLDCYAN "INGRESE --help PARA VER COMANDOS DISPONIBLES." ANSI_COLOR_RESET ENTER);
+			printf(ANSI_COLOR_BOLDCYAN "INGRESE help PARA VER COMANDOS DISPONIBLES." ANSI_COLOR_RESET ENTER);
 			// Todo return;
 		}
 
@@ -75,9 +76,13 @@ void admin_consola(){
 			finalizar=true;
 			break;
 		}
+		case HELP: {
+			mostrarComandos();
+			break;
+		}
 		default: {
 			printf(ANSI_COLOR_RED "EL COMANDO INGRESADO NO CORRESPONDE CON NINGUNA DE LAS OPERACIONES \n");
-			printf(ANSI_COLOR_BOLDCYAN "INGRESE --help PARA VER COMANDOS DISPONIBLES." ANSI_COLOR_RESET ENTER);
+			printf(ANSI_COLOR_BOLDCYAN "INGRESE help PARA VER COMANDOS DISPONIBLES." ANSI_COLOR_RESET ENTER);
 			break;
 		}
 		}
@@ -138,5 +143,13 @@ void mostrarEstadoCpus() {
 void usoDeLasCpus() {
 	printf("El porcentaje de uso de las cpus en el último minuto es:\n");
 	mostrarEstadoCpus();
+}
+
+void mostrarComandos() {
+
+	printf(ANSI_COLOR_BOLDCYAN "Los comandos disponibles son: \n");
+	printf("correr PATH \t\t PATH es la ruta relativa al programa mCod \n");
+	printf("finalizar PID \t\t PID es el numero de proceso mProc \n");
+	printf("ps");
 }
 
