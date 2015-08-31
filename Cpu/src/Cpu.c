@@ -100,7 +100,8 @@ int main(void) {
 	int32_t i;
 	int32_t cantidad_hilos=arch->cantidad_hilos;
     pthread_t CPUthreads[cantidad_hilos];
-    for(i=0;i<=cantidad_hilos;i++){
+
+    for(i=0;i<cantidad_hilos;i++){
 
     	int resultado = pthread_create(&CPUthreads[i], NULL, thread_Cpu, (void*) i );
     	if (resultado != 0) {
@@ -109,11 +110,12 @@ int main(void) {
     	}else{log_info(loggerInfo, "Se creo exitosamente el hilo de ejecucion CPU número: %d", i);}
 
     }
-	for(i=0;i<cantidad_hilos;i++){
+	for(i=0;i<cantidad_hilos;i++){ // espera a que terminen los hilos para terminar el proceso
 		pthread_join(CPUthreads[i],NULL);
 	}
 
 	return EXIT_SUCCESS;
+
 }
 
 /*	Algo de commons y manejo de arrays:
