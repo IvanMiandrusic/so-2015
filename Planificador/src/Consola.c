@@ -102,8 +102,9 @@ int32_t analizar_operacion_asociada(char* comandoSeleccionado) {
 	if(string_starts_with(comandoSeleccionado, "finalizar")) return 2;
 	if(string_starts_with(comandoSeleccionado, "ps")) return 3;
 	if(string_starts_with(comandoSeleccionado, "cpu")) return 4;
-	if(string_starts_with(comandoSeleccionado, "help")) return 5;
-	return 6;
+	if(string_starts_with(comandoSeleccionado, "cerrar")) return 5;
+	if(string_starts_with(comandoSeleccionado, "help")) return 6;
+	return 7;
 }
 
 void correrPath() {

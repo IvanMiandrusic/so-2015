@@ -56,9 +56,9 @@ void inicializoSemaforos(){
 void crearArchivoDeLog() {
 	char* pathLog = "Planificador.log";
 	char* archLog = "Planificador";
-	loggerInfo = log_create(pathLog, archLog, 1, LOG_LEVEL_INFO);
-	loggerError = log_create(pathLog, archLog, 1, LOG_LEVEL_ERROR);
-	loggerDebug = log_create(pathLog, archLog, 1, LOG_LEVEL_DEBUG);
+	loggerInfo = log_create(pathLog, archLog, 0, LOG_LEVEL_INFO);
+	loggerError = log_create(pathLog, archLog, 0, LOG_LEVEL_ERROR);
+	loggerDebug = log_create(pathLog, archLog, 0, LOG_LEVEL_DEBUG);
 }
 
 PCB* generarPCB(int32_t PID, char* rutaArchivo){
