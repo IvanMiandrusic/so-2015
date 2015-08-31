@@ -27,6 +27,8 @@ typedef struct estructura_TLB			//estructura que contiene los datos de la tlb
   int32_t marco;
   int32_t modificada; 		//1 si, 0 no
   int32_t valida;			//1 si, 0 no
+  int32_t pagina;
+  int32_t PID;
 }TLB;
 
 typedef struct estructura_tabla_paginas			//estructura que contiene los datos de la tabla de paginas

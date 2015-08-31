@@ -34,7 +34,7 @@ t_log* loggerDebug;
 t_list* tabla_TLB;
 char* memPPAL;
 t_list* tabla_Paginas;
-
+sem_t sem_mutex_tlb;
 
 ProcesoMemoria* crear_estructura_config(char* path)
 {
@@ -62,9 +62,8 @@ void ifProcessDie(){
 
 void inicializoSemaforos(){
 
-	/* Abajo, una inicialización ejemplo, sem_init(&semaforo, flags, valor) con su validacion
-	int32_t semMutex = sem_init(&sem_mutex,0,1);
-	if(semMutex==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex"); */
+	int32_t semMutex = sem_init(&sem_mutex_tlb,0,1);
+	if(semMutex==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex");
 }
 
 /*Se crea un archivo de log donde se registra to-do */
@@ -84,7 +83,11 @@ void llenoTLB(){			//tambien sirve para limpiar la TLB
 	nuevaEntrada->marco=0;
 	nuevaEntrada->modificada=0;
 	nuevaEntrada->valida=0;					//todo ver campos bien
+	nuevaEntrada->pagina=0;
+	nuevaEntrada->PID=0;
+	sem_wait(&sem_mutex_tlb);
 	list_add(tabla_TLB, nuevaEntrada);		//todo ver sincro
+	sem_post(&sem_mutex_tlb);
 	}
 }
 
