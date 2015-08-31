@@ -9,6 +9,8 @@
 #ifndef CPU_H_
 #define CPU_H_
 
+#include "libsocket.h"
+
 typedef struct estructura_configuracion			//estructura que contiene los datos del archivo de configuracion
 {
   char* ip_planificador;

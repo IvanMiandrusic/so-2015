@@ -53,27 +53,6 @@ structEscribir buscarAmbosParametros(char*linea){
 
 }
 
-//funciones mAnsisOp
-void mAnsisOp_iniciar(int cantDePaginas){
-	printf("iniciar %d;\n",cantDePaginas);
-}
-
-void mAnsisOp_leer(int numDePagina){
-	printf("leer %d;\n",numDePagina);
-}
-
-void mAnsisOp_escribir(int numDePagina, char* texto){
-	printf("escribir %d %s;\n",numDePagina,texto);
-}
-
-void mAnsisOp_IO(int tiempo){
-	printf("IO %d;\n",tiempo);
-}
-
-void mAnsisOp_finalizar(){
-	printf("finalizar;\n");
-}
-
 //Analizador de linea
 void analizadorLinea(char* const instruccion){
 

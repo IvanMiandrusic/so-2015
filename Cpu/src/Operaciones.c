@@ -23,7 +23,7 @@ void* thread_Cpu(void* id){
 	int32_t resultado=connect_to_server(socket_Planificador);
 	//enviarle al planificador NUEVA_CPU y su id;
 	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
-	int32_t resultado=connect_to_server(socket_Memoria);
+	resultado=connect_to_server(socket_Memoria);
     //por el momento no se le envia nada
 	//while finalizar==false recv operacion del planificador
 	//uso la funcion sacar digito para ver lo que me mando el planificador,

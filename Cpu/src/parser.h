@@ -8,6 +8,8 @@
 #ifndef SRC_PARSER_H_
 #define SRC_PARSER_H_
 
+#include "Operaciones.h"
+
 typedef  struct {
 	int pagina;
 	int tamanio_texto;
@@ -29,11 +31,6 @@ int esPuntoyComa(char );
 int buscarPrimerParametro(char*);
 char* buscarSegundoParametro(char*);
 structEscribir buscarAmbosParametros(char*);
-void mAnsisOp_iniciar(int );
-void mAnsisOp_leer(int );
-void mAnsisOp_escribir(int , char* );
-void mAnsisOp_IO(int );
-void mAnsisOp_finalizar();
 void analizadorLinea(char* const );
 
 
