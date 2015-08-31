@@ -14,6 +14,17 @@
 #include <commons/string.h>
 #include "Planificador.h"
 
+#define COMANDO_SIZE 50
+
+typedef enum comandos {
+	CORRER_PATH=1,
+	FINALIZAR_PID=2,
+	PS=3,
+	CPU=4,
+	CERRAR_CONSOLA=5,
+	HELP=6
+}t_command;
+
 void admin_consola();
 void limpiarBuffer();
 int32_t analizar_operacion_asociada(char*);

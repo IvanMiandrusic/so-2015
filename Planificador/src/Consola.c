@@ -11,17 +11,6 @@
 #include "Colores.h"
 #include "Planificador.h"
 
-#define COMANDO_SIZE 50
-
-typedef enum comandos {
-	CORRER_PATH=1,
-	FINALIZAR_PID=2,
-	PS=3,
-	CPU=4,
-	CERRAR_CONSOLA=5,
-	HELP=6
-}t_command;
-
 void admin_consola(){
 
 		char comandoSeleccionado[COMANDO_SIZE];
