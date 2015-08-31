@@ -29,23 +29,17 @@ void admin_consola(){
 		int32_t operacionAsociada;
 
 		while(finalizar==false){
-
 		printf(ANSI_COLOR_BOLDCYAN "INGRESE EL COMANDO QUE DESE EJECUTAR: " ANSI_COLOR_RESET);
 		scanf("%[^\n]s", comandoSeleccionado);
 
 		operacionAsociada = analizar_operacion_asociada(comandoSeleccionado);
-
-		if(operacionAsociada<1 || operacionAsociada>5) {
-			printf(ANSI_COLOR_RED "EL COMANDO INGRESADO ES INCORRECTO \n");
-			printf(ANSI_COLOR_BOLDCYAN "INGRESE help PARA VER COMANDOS DISPONIBLES." ANSI_COLOR_RESET ENTER);
-			// Todo return;
-		}
 
 		switch (operacionAsociada) {
 
 		case CORRER_PATH: {
 			printf("Ha elegido la opcion: Correr PATH\n");
 			correrPath();
+			limpiarBuffer();
 			break;  //fin correr path
 		}
 		case FINALIZAR_PID: {
@@ -60,16 +54,19 @@ void admin_consola(){
 			}
 
 			finalizarPID(proc_id);
+			limpiarBuffer();
 			break;  //fin finalizar PID
 		}
 		case PS: {
 			printf("Ha elegido la opcion: Comando ps\n");
 			comandoPS();
+			limpiarBuffer();
 			break; //fin comando ps
 		}
 		case CPU: {
 			printf("Ha elegido la opcion: Chequear uso de las Cpu\n" );
 			usoDeLasCpus();
+			limpiarBuffer();
 			break; //fin uso de las Cpus
 		}
 		case CERRAR_CONSOLA:{
@@ -78,11 +75,13 @@ void admin_consola(){
 		}
 		case HELP: {
 			mostrarComandos();
+			limpiarBuffer();
 			break;
 		}
 		default: {
 			printf(ANSI_COLOR_RED "EL COMANDO INGRESADO NO CORRESPONDE CON NINGUNA DE LAS OPERACIONES \n");
 			printf(ANSI_COLOR_BOLDCYAN "INGRESE help PARA VER COMANDOS DISPONIBLES." ANSI_COLOR_RESET ENTER);
+			limpiarBuffer();
 			break;
 		}
 		}
@@ -93,13 +92,18 @@ void admin_consola(){
 
 }
 
+void limpiarBuffer() {
+	getchar();
+}
+
 int32_t analizar_operacion_asociada(char* comandoSeleccionado) {
 
 	if(string_starts_with(comandoSeleccionado, "correr")) return 1;
 	if(string_starts_with(comandoSeleccionado, "finalizar")) return 2;
 	if(string_starts_with(comandoSeleccionado, "ps")) return 3;
 	if(string_starts_with(comandoSeleccionado, "cpu")) return 4;
-	return 5;
+	if(string_starts_with(comandoSeleccionado, "help")) return 5;
+	return 6;
 }
 
 void correrPath() {

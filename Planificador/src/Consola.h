@@ -15,6 +15,7 @@
 #include "Planificador.h"
 
 void admin_consola();
+void limpiarBuffer();
 int32_t analizar_operacion_asociada(char*);
 void correrPath();
 void finalizarPID(int32_t);
