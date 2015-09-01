@@ -11,6 +11,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+typedef struct pedido_cpu {
+	int32_t pid;
+	int32_t cantidad_paginas;
+}t_pedido_cpu;
+
 /** Codigos de operacion en los envios hacia el swap **/
 #define LEER_PAGINA 1
 #define ESCRIBIR_PAGINA 2

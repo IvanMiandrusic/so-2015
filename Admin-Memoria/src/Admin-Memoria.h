@@ -54,7 +54,7 @@ void inicializoSemaforos();
 void crearArchivoDeLog();
 void creoEstructurasDeManejo();
 void llenoTLB();
-void creoTablaPagPID();
+void crear_tabla_pagina_PID(int32_t , int32_t);
 void ifSigurs1();
 void ifSigurs2();
 void procesar_pedido(sock_t* socketCpu, header_t* header);

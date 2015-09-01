@@ -36,6 +36,8 @@ char* mem_principal;
 t_list* tabla_Paginas;
 sem_t sem_mutex_tlb;
 sem_t sem_mutex_tabla_paginas;
+sock_t* socketServidorCpus;
+sock_t* socketSwap;
 
 ProcesoMemoria* crear_estructura_config(char* path) {
 	t_config* archConfig = config_create(path);
@@ -57,7 +59,6 @@ ProcesoMemoria* crear_estructura_config(char* path) {
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie() {
-	//Queda a cargo del programador la implementación de la función
 	exit(1);
 }
 
@@ -113,7 +114,7 @@ void TLB_flush() {
 	sem_post(&sem_mutex_tlb);
 }
 
-void creoTablaPagPID(int32_t processID, int32_t cantidad_paginas) {
+void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 
 	t_paginas_proceso* nueva_entrada_proceso = malloc(sizeof(t_paginas_proceso));
 	nueva_entrada_proceso->PID = processID;
@@ -180,15 +181,15 @@ int main(void) {
 
 	creoEstructurasDeManejo();
 
-	sock_t* socketCliente = create_client_socket(arch->ip_swap,
+	socketSwap = create_client_socket(arch->ip_swap,
 			arch->puerto_swap);
-	int32_t resultado = connect_to_server(socketCliente);
+	int32_t resultado = connect_to_server(socketSwap);
 	//Todo validacion
 
-	sock_t* socketServidor = create_server_socket(arch->puerto_escucha);
-	resultado = listen_connections(socketServidor);
+	socketServidorCpus = create_server_socket(arch->puerto_escucha);
+	resultado = listen_connections(socketServidorCpus);
 	//Todo validacion
-	connection_pool_server_listener(socketServidor, procesar_pedido);
+	connection_pool_server_listener(socketServidorCpus, procesar_pedido);
 
 	/*Sintaxis para la creacion de Hilos
 
@@ -216,10 +217,35 @@ int main(void) {
 
 void procesar_pedido(sock_t* socketCpu, header_t* header) {
 
+	int32_t recibido;
+	int32_t enviado;
+	//char* pedido_serializado = malloc(get_message_size(header));
+	t_pedido_cpu* pedido_cpu = malloc(sizeof(t_pedido_cpu));
 	//Todo casos de envios
 	switch (get_operation_code(header)) {
 
 	case INICIAR: {
+		recibido = _receive_bytes(socketCpu, &(pedido_cpu->pid), sizeof(int32_t));
+		if(recibido == ERROR_OPERATION) return;
+
+		recibido = _receive_bytes(socketCpu, &(pedido_cpu->cantidad_paginas), sizeof(int32_t));
+		if(recibido == ERROR_OPERATION) return;
+
+		//Envio al swap para que reserve espacio
+		header_t* headerSwap = _create_header(RESERVAR_ESPACIO, 2*sizeof(int32_t));
+		enviado = _send_header(socketSwap, headerSwap);
+		if(enviado == ERROR_OPERATION) return;
+
+		enviado = _send_bytes(socketSwap, &(pedido_cpu->pid), sizeof(int32_t));
+		if(enviado == ERROR_OPERATION) return;
+
+		enviado = _send_bytes(socketSwap, &(pedido_cpu->cantidad_paginas), sizeof(int32_t));
+		if(enviado == ERROR_OPERATION) return;
+
+		//Creo la tabla de paginas del PID dado
+		crear_tabla_pagina_PID(pedido_cpu->pid, pedido_cpu->cantidad_paginas);
+
+		//Todo ver si falta algo mas
 
 		break;
 	}
