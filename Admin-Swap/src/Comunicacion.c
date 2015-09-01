@@ -9,4 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//Aca irian todas las funciones de serializar/deserializar los envios
+t_pagina* deserializar_pedido(char* pedido_serializado){
+	//Todo hacer
+	return NULL;
+}

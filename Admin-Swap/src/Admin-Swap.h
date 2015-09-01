@@ -21,6 +21,8 @@
 #include <semaphore.h>
 #include <commons/collections/list.h>
 #include "libsocket.h"
+#include "Comunicacion.h"
+
 
 typedef struct estructura_configuracion			//estructura que contiene los datos del archivo de configuracion
 {

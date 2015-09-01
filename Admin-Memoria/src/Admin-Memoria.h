@@ -9,6 +9,8 @@
 #ifndef ADMIN_MEMORIA_H_
 #define ADMIN_MEMORIA_H_
 
+#include "Comunicacion.h"
+
 typedef struct estructura_configuracion			//estructura que contiene los datos del archivo de configuracion
 {
   int32_t puerto_escucha;
@@ -26,7 +28,7 @@ typedef struct estructura_TLB			//estructura que contiene los datos de la tlb
 {
   int32_t marco;
   int32_t modificada; 		//1 si, 0 no
-  int32_t valida;			//1 si, 0 no
+  int32_t presente;			//Presente en MP (1 si, 0 no)
   int32_t pagina;
   int32_t PID;
 }TLB;
@@ -35,7 +37,15 @@ typedef struct estructura_tabla_paginas			//estructura que contiene los datos de
 {
   int32_t marco;
   int32_t pagina;
+  int32_t modificada; 		//1 si, 0 no
+  int32_t presente;			//Presente en MP (1 si, 0 no)
 }TPagina;
+
+//Lista doblemente enlazada de procesos
+typedef struct estructura_proceso_paginas {
+	int32_t PID;
+	t_list* paginas;
+}t_paginas_proceso;
 
 
 ProcesoMemoria* crear_estructura_config(char*);
@@ -44,9 +54,10 @@ void inicializoSemaforos();
 void crearArchivoDeLog();
 void creoEstructurasDeManejo();
 void llenoTLB();
-void llenoTPag();
+void creoTablaPagPID();
 void ifSigurs1();
 void ifSigurs2();
+void procesar_pedido(sock_t* socketCpu, header_t* header);
 
 
 #endif /* ADMIN_MEMORIA_H_ */

@@ -16,7 +16,7 @@
 #include "Colores.h"
 #include "Admin-Swap.h"
 
-/* VARIABLES GLOBALES (Definir acá o en el Header)*/
+/* VARIABLES GLOBALES */
 ProcesoSwap* arch;
 t_log* loggerInfo;
 t_log* loggerError;
@@ -26,6 +26,7 @@ t_list* espacioOcupado;
 sem_t sem_mutex_libre;
 sem_t sem_mutex_ocupado;
 int32_t totalPaginas;
+sock_t* socketServidor;
 
 ProcesoSwap* crear_estructura_config(char* path)
 {
@@ -49,7 +50,6 @@ void ifProcessDie(){
 
 void inicializoSemaforos(){
 
-	//Abajo, una inicialización ejemplo, sem_init(&semaforo, flags, valor) con su validacion
 	int32_t semMutexLibre = sem_init(&sem_mutex_libre,0,1);
 	if(semMutexLibre==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex");
 
@@ -70,18 +70,24 @@ void crearArchivoDeLog() {
 
 /*Se crean las estructuras necesarias para manejar el Swap*/
 void creoEstructuraSwap(){
+
 	espacioLibre=list_create();
 	espacioOcupado=list_create();
+
 	char* comando=string_new();
 	string_append_with_format(&comando, "dd if=/dev/zero of=%s bs=%d count=%d", arch->nombre_swap, arch->tamanio_pagina, arch->cantidad_paginas);
+
 	system(comando);
 	free(comando);
+
 	NodoLibre* nodo= malloc(sizeof(NodoLibre));
 	nodo->comienzo=0;
 	nodo->paginas=arch->cantidad_paginas;
+
 	sem_wait(&sem_mutex_libre);
 	list_add(espacioLibre, nodo);
 	sem_post(&sem_mutex_libre);
+
 	totalPaginas=arch->cantidad_paginas;
 
 }
@@ -165,8 +171,6 @@ printf("Swap compactado\n");
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
 int main(void) {
 
-	/*En el header Colores, se adjunta un ejemplo de uso de los colores por consola*/
-
 	/*Tratamiento del ctrl+c en el proceso */
 	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError,"Error con la señal SIGINT");
 
@@ -185,34 +189,80 @@ int main(void) {
 	/*Se inicializan todos los semaforos necesarios */
 	creoEstructuraSwap();
 
-	sock_t* socketServidor=create_server_socket(arch->puerto_escucha);
-	int32_t resultado=listen_connections(socketServidor);
+	socketServidor = create_server_socket(arch->puerto_escucha);
 
-	/*Sintaxis para la creacion de Hilos
+	int32_t resultado = listen_connections(socketServidor);
 
-	    pthread_create(&NombreThread, NULL, thread_funcion, (void*) parametros);
-	    recordando que: solo se puede pasar UN PARAMETRO:
-	    NULL: no necesita parametros.
-	    unParametro: se le pasa solo uno y luego se castea.
-	   ¿Mas parametros?: un struct.
+	if(resultado == ERROR_OPERATION) {
+		log_error(loggerError, "Error al escuchar nuevas conexiones");
+		exit(EXIT_FAILURE);
+	}
 
-	    pthread_t NombreThread; //declaro el hilo
+	sock_t* socketCliente = accept_connection(socketServidor);
 
+	recibir_operaciones_memoria(socketCliente);
 
-	   int resultado = pthread_create(&NombreThread, NULL, thread_funcion, (void*) parametros);
-	 	   		if (resultado != 0) {
-	 	   			log_error(loggerError,"Error al crear el hilo de );
-	 	   			abort();
-	 	   		}else{
-	 	   			log_info(loggerInfo, "Se creo exitosamente el hilo de ");
-	 	   		}
-
-	pthread_join(NombreThread, NULL); //espero a que el hilo termine su ejecución */
-
+	//Todo ver que sigue
 
 	return EXIT_SUCCESS;
 }
 
+
+void recibir_operaciones_memoria(sock_t* socketMemoria){
+
+	int32_t finalizar = true;
+	int32_t recibido;
+	char* pedido_serializado;
+	header_t* header = _create_empty_header();
+
+	while(finalizar){
+
+		recibido = _receive_header(socketMemoria, header);
+
+		if(recibido == ERROR_OPERATION) return;
+		if(recibido == SOCKET_CLOSED) {
+			sock_t* socketReconectado = accept_connection(socketServidor);
+			return;
+		}
+
+		switch(get_operation_code(header)) {
+
+		case LEER_PAGINA: {
+			pedido_serializado = malloc(get_message_size(header));
+			recibido = _receive_bytes(socketMemoria, pedido_serializado, get_message_size(header));
+			if(recibido == ERROR_OPERATION) return;
+			t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
+			leer_pagina(pagina_pedida);
+			break;
+		}
+
+		case ESCRIBIR_PAGINA: {
+
+			break;
+		}
+
+		case RESERVAR_ESPACIO: {
+
+			break;
+		}
+
+		case BORRAR_ESPACIO: {
+
+			break;
+		}
+
+		default: {
+
+		}
+		}
+
+	}
+}
+
+void leer_pagina(t_pagina* pagina_pedida){
+
+	//Todo
+}
 /*	Algo de commons y manejo de arrays:
  * de las commons obtengo la hora actual, y la separo en horas, minutos y segundos:
  *

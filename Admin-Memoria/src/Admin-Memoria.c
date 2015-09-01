@@ -26,44 +26,48 @@
 #include "Colores.h"
 #include "Admin-Memoria.h"
 
-/* VARIABLES GLOBALES (Definir acá o en el Header)*/
+/* VARIABLES GLOBALES */
 ProcesoMemoria* arch;
 t_log* loggerInfo;
 t_log* loggerError;
 t_log* loggerDebug;
 t_list* tabla_TLB;
-char* memPPAL;
+char* mem_principal;
 t_list* tabla_Paginas;
 sem_t sem_mutex_tlb;
+sem_t sem_mutex_tabla_paginas;
 
-ProcesoMemoria* crear_estructura_config(char* path)
-{
-    t_config* archConfig = config_create(path);
-    ProcesoMemoria* config = malloc(sizeof(ProcesoMemoria));
-    config->puerto_escucha = config_get_int_value(archConfig, "PUERTO_ESCUCHA");
-    config->ip_swap = config_get_string_value(archConfig, "IP_SWAP");
-    config->puerto_swap = config_get_int_value(archConfig, "PUERTO_SWAP");
-    config->maximo_marcos = config_get_int_value(archConfig, "MAXIMO_MARCOS_POR_PROCESO");
-    config->cantidad_marcos = config_get_int_value(archConfig, "CANTIDAD_MARCOS");
-    config->tamanio_marco = config_get_int_value(archConfig, "TAMANIO_MARCO");
-    config->entradas_tlb = config_get_int_value(archConfig, "ENTRADAS_TLB");
-    config->tlb_habilitada = config_get_string_value(archConfig, "TLB_HABILITADA");
-    config->retardo= config_get_int_value(archConfig, "RETARDO_MEMORIA");
-    return config;
+ProcesoMemoria* crear_estructura_config(char* path) {
+	t_config* archConfig = config_create(path);
+	ProcesoMemoria* config = malloc(sizeof(ProcesoMemoria));
+	config->puerto_escucha = config_get_int_value(archConfig, "PUERTO_ESCUCHA");
+	config->ip_swap = config_get_string_value(archConfig, "IP_SWAP");
+	config->puerto_swap = config_get_int_value(archConfig, "PUERTO_SWAP");
+	config->maximo_marcos = config_get_int_value(archConfig,
+			"MAXIMO_MARCOS_POR_PROCESO");
+	config->cantidad_marcos = config_get_int_value(archConfig,
+			"CANTIDAD_MARCOS");
+	config->tamanio_marco = config_get_int_value(archConfig, "TAMANIO_MARCO");
+	config->entradas_tlb = config_get_int_value(archConfig, "ENTRADAS_TLB");
+	config->tlb_habilitada = config_get_string_value(archConfig,
+			"TLB_HABILITADA");
+	config->retardo = config_get_int_value(archConfig, "RETARDO_MEMORIA");
+	return config;
 }
 
 /* Función que es llamada cuando ctrl+c */
-void ifProcessDie(){
-		//Queda a cargo del programador la implementación de la función
+void ifProcessDie() {
+	//Queda a cargo del programador la implementación de la función
 	exit(1);
 }
 
 /*Función donde se inicializan los semaforos */
 
-void inicializoSemaforos(){
+void inicializoSemaforos() {
 
-	int32_t semMutex = sem_init(&sem_mutex_tlb,0,1);
-	if(semMutex==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex");
+	int32_t semMutex = sem_init(&sem_mutex_tlb, 0, 1);
+	if (semMutex == -1)
+		log_error(loggerError, "No pudo crearse el semaforo Mutex");
 }
 
 /*Se crea un archivo de log donde se registra to-do */
@@ -76,47 +80,76 @@ void crearArchivoDeLog() {
 	loggerDebug = log_create(pathLog, archLog, 1, LOG_LEVEL_DEBUG);
 }
 
-void llenoTLB(){			//tambien sirve para limpiar la TLB
+void llenoTLB() {			//tambien sirve para limpiar la TLB
+
 	int i;
-	for(i=0; i<arch->entradas_tlb;i++){
-	TLB* nuevaEntrada= malloc(sizeof(TLB));
-	nuevaEntrada->marco=0;
-	nuevaEntrada->modificada=0;
-	nuevaEntrada->valida=0;					//todo ver campos bien
-	nuevaEntrada->pagina=0;
-	nuevaEntrada->PID=0;
-	sem_wait(&sem_mutex_tlb);
-	list_add(tabla_TLB, nuevaEntrada);		//todo ver sincro
-	sem_post(&sem_mutex_tlb);
+	for (i = 0; i < arch->entradas_tlb; i++) {
+
+		TLB* nuevaEntrada = malloc(sizeof(TLB));
+		nuevaEntrada->PID = 0;
+		nuevaEntrada->pagina = 0;
+		nuevaEntrada->modificada = 0;
+		nuevaEntrada->presente = 0;
+		nuevaEntrada->marco = 0;
+
+		sem_wait(&sem_mutex_tlb);
+		list_add(tabla_TLB, nuevaEntrada);
+		sem_post(&sem_mutex_tlb);
 	}
 }
 
+void TLB_flush() {
 
-void llenoTPag(){
-	int i;
-	for(i=0; i<arch->cantidad_marcos;i++){
-		TPagina* nuevaEntrada= malloc(sizeof(TLB));
-		nuevaEntrada->marco=0;
-		nuevaEntrada->pagina=0;				//todo ver campos bien
-		list_add(tabla_Paginas, nuevaEntrada);		//todo ver sincro
-		}
+	void limpiar_entradas(TLB* entrada) {
+		entrada->PID=0;
+		entrada->marco=0;
+		entrada->modificada=0;
+		entrada->pagina=0;
+		entrada->presente=0;
+	}
+
+	sem_wait(&sem_mutex_tlb);
+	list_iterate(tabla_TLB, limpiar_entradas);
+	sem_post(&sem_mutex_tlb);
 }
 
-void creoEstructurasDeManejo(){
-	if(string_equals_ignore_case((arch->tlb_habilitada), "si"))
-	{
-		tabla_TLB=list_create();
+void creoTablaPagPID(int32_t processID, int32_t cantidad_paginas) {
+
+	t_paginas_proceso* nueva_entrada_proceso = malloc(sizeof(t_paginas_proceso));
+	nueva_entrada_proceso->PID = processID;
+	nueva_entrada_proceso->paginas = list_create();
+
+	int i;
+	for (i = 0; i < cantidad_paginas; i++) {
+
+		TPagina* nuevaEntrada = malloc(sizeof(TPagina));
+		nuevaEntrada->marco = 0;
+		nuevaEntrada->pagina = i;
+		nuevaEntrada->modificada = 0;
+		nuevaEntrada->presente = 0;
+
+		list_add(nueva_entrada_proceso->paginas, nuevaEntrada);
+	}
+
+	sem_wait(&sem_mutex_tabla_paginas);
+	list_add(tabla_Paginas, nueva_entrada_proceso);
+	sem_post(&sem_mutex_tabla_paginas);
+
+}
+
+void creoEstructurasDeManejo() {
+	if (string_equals_ignore_case((arch->tlb_habilitada), "si")) {
+		tabla_TLB = list_create();
 		llenoTLB();
 	}
-	memPPAL=malloc((arch->cantidad_marcos)*(arch->tamanio_marco));
-	llenoTPag();
+	mem_principal = malloc((arch->cantidad_marcos) * (arch->tamanio_marco));
 }
 
-void ifSigurs1(){
+void ifSigurs1() {
 
 }
 
-void ifSigurs2(){
+void ifSigurs2() {
 
 }
 
@@ -126,13 +159,14 @@ int main(void) {
 	/*En el header Colores, se adjunta un ejemplo de uso de los colores por consola*/
 
 	/*Tratamiento del ctrl+c en el proceso */
-	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError,"Error con la señal SIGINT");
+	if (signal(SIGINT, ifProcessDie) == SIG_ERR)
+		log_error(loggerError, "Error con la señal SIGINT");
 
-	if(signal(SIGINT, ifSigurs1) == SIG_ERR ) log_error(loggerError,"Error con la señal SIGURS1");
+	if (signal(SIGINT, ifSigurs1) == SIG_ERR)
+		log_error(loggerError, "Error con la señal SIGURS1");
 
-	if(signal(SIGINT, ifSigurs2) == SIG_ERR ) log_error(loggerError,"Error con la señal SIGURS2");
-
-
+	if (signal(SIGINT, ifSigurs2) == SIG_ERR)
+		log_error(loggerError, "Error con la señal SIGURS2");
 
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "Admin-Memoria.config";
@@ -141,60 +175,91 @@ int main(void) {
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
 	crearArchivoDeLog();
 
-
 	/*Se inicializan todos los semaforos necesarios */
 	inicializoSemaforos();
 
 	creoEstructurasDeManejo();
 
-//	sock_t* socketServidor=create_server_socket(arch->puerto_escucha);
-//	int32_t resultado=listen_connections(socketServidor);
-//	sock_t* socketCliente=create_client_socket(arch->ip_swap,arch->puerto_swap);
-//	int32_t resultado=connect_to_server(socketCliente);
+	sock_t* socketCliente = create_client_socket(arch->ip_swap,
+			arch->puerto_swap);
+	int32_t resultado = connect_to_server(socketCliente);
+	//Todo validacion
+
+	sock_t* socketServidor = create_server_socket(arch->puerto_escucha);
+	resultado = listen_connections(socketServidor);
+	//Todo validacion
+	connection_pool_server_listener(socketServidor, procesar_pedido);
 
 	/*Sintaxis para la creacion de Hilos
 
-	    pthread_create(&NombreThread, NULL, thread_funcion, (void*) parametros);
-	    recordando que: solo se puede pasar UN PARAMETRO:
-	    NULL: no necesita parametros.
-	    unParametro: se le pasa solo uno y luego se castea.
-	   ¿Mas parametros?: un struct.
+	 pthread_create(&NombreThread, NULL, thread_funcion, (void*) parametros);
+	 recordando que: solo se puede pasar UN PARAMETRO:
+	 NULL: no necesita parametros.
+	 unParametro: se le pasa solo uno y luego se castea.
+	 ¿Mas parametros?: un struct.
 
-	    pthread_t NombreThread; //declaro el hilo
+	 pthread_t NombreThread; //declaro el hilo
 
 
-	   int resultado = pthread_create(&NombreThread, NULL, thread_funcion, (void*) parametros);
-	 	   		if (resultado != 0) {
-	 	   			log_error(loggerError,"Error al crear el hilo de );
-	 	   			abort();
-	 	   		}else{
-	 	   			log_info(loggerInfo, "Se creo exitosamente el hilo de ");
-	 	   		}
+	 int resultado = pthread_create(&NombreThread, NULL, thread_funcion, (void*) parametros);
+	 if (resultado != 0) {
+	 log_error(loggerError,"Error al crear el hilo de );
+	 abort();
+	 }else{
+	 log_info(loggerInfo, "Se creo exitosamente el hilo de ");
+	 }
 
-	pthread_join(NombreThread, NULL); //espero a que el hilo termine su ejecución */
-
+	 pthread_join(NombreThread, NULL); //espero a que el hilo termine su ejecución */
 
 	return EXIT_SUCCESS;
+}
+
+void procesar_pedido(sock_t* socketCpu, header_t* header) {
+
+	//Todo casos de envios
+	switch (get_operation_code(header)) {
+
+	case INICIAR: {
+
+		break;
+	}
+	case LEER: {
+
+		break;
+	}
+	case ESCRIBIR: {
+
+		break;
+	}
+	case FINALIZAR: {
+
+		break;
+	}
+	default: {
+
+		break;
+	}
+	}
 }
 
 /*	Algo de commons y manejo de arrays:
  * de las commons obtengo la hora actual, y la separo en horas, minutos y segundos:
  *
  * 	char* tiempo= temporal_get_string_time();
-	char* hora=malloc(2);
-	hora[0]=tiempo[0];
-	hora[1]=tiempo[1];
-	char* minutos=malloc(2);
-	minutos[0]=tiempo[3];
-	minutos[1]=tiempo[4];
-	minutos[2]='\0';
-	char* segundos=malloc(2);
-	segundos[0]=tiempo[6];
-	segundos[1]=tiempo[7];
-	segundos[2]='\0';
-	log_info(loggerInfo, ANSI_COLOR_BLUE "Time: %s" ANSI_COLOR_RESET, tiempo);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "hora: %s" ANSI_COLOR_RESET, hora);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "minutos: %s" ANSI_COLOR_RESET, minutos);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "segundos: %s" ANSI_COLOR_RESET, segundos);
+ char* hora=malloc(2);
+ hora[0]=tiempo[0];
+ hora[1]=tiempo[1];
+ char* minutos=malloc(2);
+ minutos[0]=tiempo[3];
+ minutos[1]=tiempo[4];
+ minutos[2]='\0';
+ char* segundos=malloc(2);
+ segundos[0]=tiempo[6];
+ segundos[1]=tiempo[7];
+ segundos[2]='\0';
+ log_info(loggerInfo, ANSI_COLOR_BLUE "Time: %s" ANSI_COLOR_RESET, tiempo);
+ log_info(loggerInfo, ANSI_COLOR_BLUE "hora: %s" ANSI_COLOR_RESET, hora);
+ log_info(loggerInfo, ANSI_COLOR_BLUE "minutos: %s" ANSI_COLOR_RESET, minutos);
+ log_info(loggerInfo, ANSI_COLOR_BLUE "segundos: %s" ANSI_COLOR_RESET, segundos);
  *
  */

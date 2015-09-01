@@ -10,7 +10,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "Admin-Memoria.h"
 
 /** Codigos de operacion en los envios hacia el swap **/
 #define LEER_PAGINA 1
@@ -34,5 +33,12 @@
 #define ESCRIBIR 3
 #define FINALIZAR 4
 
+typedef struct pagina {
+	int32_t nro_pagina;
+	int32_t PID;
+	char* contenido;
+}t_pagina;
+
+char* serializar_pedido(t_pagina*);
 
 #endif /* COMUNICACION_H_ */

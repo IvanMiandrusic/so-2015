@@ -10,7 +10,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "Admin-Swap.h"
 
 /** Codigos de operacion en los envios hacia la memoria **/
 #define CONTENIDO_PAGINA 1
@@ -22,5 +21,13 @@
 #define ESCRIBIR_PAGINA 2
 #define RESERVAR_ESPACIO 3
 #define BORRAR_ESPACIO 4
+
+typedef struct pagina {
+	int32_t nro_pagina;
+	int32_t PID;
+	char* contenido;
+}t_pagina;
+
+t_pagina* deserializar_pedido(char*);
 
 #endif /* COMUNICACION_H_ */
