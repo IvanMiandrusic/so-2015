@@ -61,6 +61,13 @@ ProcesoMemoria* crear_estructura_config(char* path) {
 void ifProcessDie() {
 	exit(1);
 }
+void ifSigurs1() {
+
+}
+
+void ifSigurs2() {
+
+}
 
 /*Función donde se inicializan los semaforos */
 
@@ -146,14 +153,6 @@ void creoEstructurasDeManejo() {
 	mem_principal = malloc((arch->cantidad_marcos) * (arch->tamanio_marco));
 }
 
-void ifSigurs1() {
-
-}
-
-void ifSigurs2() {
-
-}
-
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
 int main(void) {
 
@@ -163,10 +162,10 @@ int main(void) {
 	if (signal(SIGINT, ifProcessDie) == SIG_ERR)
 		log_error(loggerError, "Error con la señal SIGINT");
 
-	if (signal(SIGINT, ifSigurs1) == SIG_ERR)
+	if (signal(SIGUSR1, ifSigurs1) == SIG_ERR)
 		log_error(loggerError, "Error con la señal SIGURS1");
 
-	if (signal(SIGINT, ifSigurs2) == SIG_ERR)
+	if (signal(SIGUSR2, ifSigurs2) == SIG_ERR)
 		log_error(loggerError, "Error con la señal SIGURS2");
 
 	/*Se genera el struct con los datos del archivo de config.- */
@@ -242,11 +241,21 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 		enviado = _send_bytes(socketSwap, &(pedido_cpu->cantidad_paginas), sizeof(int32_t));
 		if(enviado == ERROR_OPERATION) return;
 
+		/*todo : recv de la respuesta del swap, porque si no se pudo
+		 * el error hay que mandarselo a la cpu y no ejecutar el crear
+		 * paginas
+		*/
+
 		//Creo la tabla de paginas del PID dado
 		crear_tabla_pagina_PID(pedido_cpu->pid, pedido_cpu->cantidad_paginas);
 
-		//Todo ver si falta algo mas
+		/*Todo ver si falta algo mas
+		 * chequear que funcion puede ser encapsulada, porque sino
+		 * el switch queda hecho un choclo espantoso
+		 *  */
 
+		/* todo, ver posible socketswap global, porque es siempre el mismo y
+		 * se usa en varios lados*/
 		break;
 	}
 	case LEER: {
