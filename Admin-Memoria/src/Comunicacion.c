@@ -13,3 +13,8 @@ char* serializar_pedido(t_pagina* pedido){
 	//Todo hacer
 	return NULL;
 }
+
+t_pagina* deserializar_pedido(char* pedido_serializado){
+	//Todo hacer
+	return NULL;
+}

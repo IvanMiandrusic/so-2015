@@ -227,6 +227,13 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 		break;
 	}
 	case LEER: {
+		char* pedido_serializado = malloc(get_message_size(header));
+		int32_t recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
+		if(recibido == ERROR_OPERATION) return;
+		t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
+		//Todo, buscar en TLB, buscar en TPags y sino ->Swap
+		//char* serializado= serializarTexto(leer_pagina(pagina_pedida));
+		//enviar serializado
 
 		break;
 	}
@@ -235,7 +242,34 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 		break;
 	}
 	case FINALIZAR: {
+		int32_t PID;
+		int32_t recibido = _receive_bytes(socketCpu, &(PID), sizeof(int32_t));
+		if (recibido == ERROR_OPERATION)return;
+		header_t* headerSwap = _create_header(BORRAR_ESPACIO, 1 * sizeof(int32_t));
+		int32_t enviado = _send_header(socketSwap, headerSwap);
+		if (enviado == ERROR_OPERATION)return;
+		free(headerSwap);
+		enviado = _send_bytes(socketSwap, &(pedido_cpu->pid), sizeof(int32_t));
+		if (enviado == ERROR_OPERATION)	return;
 
+		int32_t resultado_operacion;
+		recibido = _receive_bytes(socketSwap, &(resultado_operacion),sizeof(int32_t));
+		if (recibido == ERROR_OPERATION)return;
+		//Todo si no se puede borrar en el swap que pasa?
+		int32_t operacionValida= borrarEspacio(PID);
+
+		if (operacionValida == RESULTADO_ERROR) {
+			header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
+			int32_t enviado = _send_header(socketCpu, headerMemoria);
+			if(enviado == ERROR_OPERATION) return;
+			free(headerMemoria);
+			return;
+		} else if (operacionValida == RESULTADO_OK) {
+			header_t* headerMemoria = _create_header(RESULTADO_OK, 0);
+			int32_t enviado = _send_header(socketCpu, headerMemoria);
+			if(enviado == ERROR_OPERATION) return;
+			free(headerMemoria);
+		}
 		break;
 	}
 	default: {
@@ -298,3 +332,9 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 
 	free(pedido_cpu);
 }
+
+int32_t borrarEspacio(int32_t PID){
+	//todo
+	return RESULTADO_OK;
+}
+

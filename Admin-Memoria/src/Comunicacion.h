@@ -45,5 +45,6 @@ typedef struct pagina {
 }t_pagina;
 
 char* serializar_pedido(t_pagina*);
+t_pagina* deserializar_pedido(char* );
 
 #endif /* COMUNICACION_H_ */

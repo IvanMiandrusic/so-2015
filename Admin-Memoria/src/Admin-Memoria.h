@@ -59,6 +59,6 @@ void ifSigurs1();
 void ifSigurs2();
 void procesar_pedido(sock_t* socketCpu, header_t* header);
 void iniciar_proceso(sock_t*, t_pedido_cpu*);
-
+int32_t borrarEspacio(int32_t);
 
 #endif /* ADMIN_MEMORIA_H_ */
