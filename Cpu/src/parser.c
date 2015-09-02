@@ -54,32 +54,32 @@ structEscribir buscarAmbosParametros(char*linea){
 }
 
 //Analizador de linea
-void analizadorLinea(char* const instruccion){
+void analizadorLinea(int32_t id, char* const instruccion){
 
 	char* linea= strdup(instruccion);
 	switch (analizar_operacion_asociada(linea)){
 	case INICIAR:{
 		int cantDePaginas=buscarPrimerParametro(strstr(instruccion," ")+1);
-		mAnsisOp_iniciar(cantDePaginas);
+		mAnsisOp_iniciar(id, cantDePaginas);
 		break;
 		}
 	case FINALIZAR:{
-		mAnsisOp_finalizar();
+		mAnsisOp_finalizar(id);
 		break;
 		}
 	case ENTRADASALIDA:{
 		int tiempo=buscarPrimerParametro(strstr(instruccion," ")+1);
-		mAnsisOp_IO(tiempo);
+		mAnsisOp_IO(id,tiempo);
 		break;
 		}
 	case LEER:{
 		int numDePagina=buscarPrimerParametro(strstr(instruccion," ")+1);
-		mAnsisOp_leer(numDePagina);
+		mAnsisOp_leer(id,numDePagina);
 		break;
 		}
 	case ESCRIBIR:{
 		structEscribir parametros=buscarAmbosParametros(strstr(instruccion," ")+1);
-		mAnsisOp_escribir(parametros.pagina, parametros.texto);
+		mAnsisOp_escribir(id, parametros.pagina, parametros.texto);
 		break;
 		}
 	default:

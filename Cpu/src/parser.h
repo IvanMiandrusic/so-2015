@@ -16,14 +16,12 @@ typedef  struct {
 	char* texto;
 }structEscribir;
 
-typedef enum comandos {
-	INICIAR=1,
-	FINALIZAR=2,
-	ENTRADASALIDA=3,
-	LEER=4,
-	ESCRIBIR=5,
-	ERROR=6
-}t_command;
+#define INICIAR 1
+#define FINALIZAR 2
+#define ENTRADASALIDA 3
+#define LEER 4
+#define ESCRIBIR 5
+#define ERROR 6
 
 int32_t analizar_operacion_asociada(char* );
 int esEspacio(char );
@@ -31,7 +29,7 @@ int esPuntoyComa(char );
 int buscarPrimerParametro(char*);
 char* buscarSegundoParametro(char*);
 structEscribir buscarAmbosParametros(char*);
-void analizadorLinea(char* const );
+void analizadorLinea(int32_t,char* const );
 
 
 

@@ -32,6 +32,8 @@ ProcesoCPU* arch;
 t_log* loggerInfo;
 t_log* loggerError;
 t_log* loggerDebug;
+sock_t* socketMemoria;
+sock_t* socketPlanificador;
 
 
 ProcesoCPU* crear_estructura_config(char* path)
@@ -85,6 +87,8 @@ int main(void) {
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "Cpu.config";
 	arch = crear_estructura_config(path);
+	socketMemoria=malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
+	socketPlanificador=malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
 
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
 	crearArchivoDeLog();
