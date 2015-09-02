@@ -157,8 +157,11 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 }
 
 void asignarPCBaCPU(){
-	/*PCB pcbAEnviar = list_get(colaListos, 0);
-	list_remove(colaListos, 0);*/
+	PCB* pcbAEnviar = malloc(sizeof(PCB));
+	pcbAEnviar = list_get(colaListos, 0);
+	serializarPCB(pcbAEnviar);
+	list_remove(colaListos, 0);
+	free(pcbAEnviar); //esta bien este free??
 
 	//todo: tomar el primer pcb de la lista, serializarlo y enviarlo a la cpu
 
