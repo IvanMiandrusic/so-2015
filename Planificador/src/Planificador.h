@@ -70,6 +70,7 @@ void creoEstructurasDeManejo();
 void clean();
 void admin_consola();
 void administrarPath(char* filePath);
+void servidor_conexiones();
 void procesarPedido(sock_t* socketCpu, header_t* header);
 CPU_t* generarCPU(int32_t ID, sock_t* socketCPU);
 

@@ -11,6 +11,12 @@
 #include "Colores.h"
 #include "Planificador.h"
 
+void consola_planificador() {
+
+	admin_consola();
+}
+
+
 void admin_consola(){
 
 		char comandoSeleccionado[COMANDO_SIZE];

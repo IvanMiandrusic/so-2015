@@ -25,6 +25,7 @@ typedef enum comandos {
 	HELP=6
 }t_command;
 
+void consola_planificador();
 void admin_consola();
 void limpiarBuffer();
 int32_t analizar_operacion_asociada(char*);

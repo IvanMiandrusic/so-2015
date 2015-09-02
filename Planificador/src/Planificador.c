@@ -18,18 +18,23 @@
 #include "Comunicacion.h"
 #include <pthread.h>
 
-
-/* DEFINICION DE VARIABLES GLOBALES */
+/** TAD para PLANIFICADOR **/
 ProcesoPlanificador* arch;
+/** Loggers **/
 t_log* loggerInfo;
 t_log* loggerError;
 t_log* loggerDebug;
+/** TADs **/
 t_list* colaListos;
 t_list* colaBlock;
 t_list* colaExec;
 t_list* colaFinalizados;
 t_list* colaCPUs;
+/** ID para los PCB **/
 int32_t idParaPCB = 0;
+/** SOCKET SERVIDOR **/
+sock_t* socketServidor;
+
 
 ProcesoPlanificador* crear_estructura_config(char* path)
 {
@@ -112,9 +117,14 @@ void administrarPath(char* filePath){
 	printf("este es el pcb %s y su id = %d \n", unPCB->ruta_archivo,unPCB->PID);
 }
 
+//Funcion del hilo servidor de conexiones
+void servidor_conexiones() {
+
+	connection_pool_server_listener(socketServidor, procesarPedido);
+}
+
 void procesarPedido(sock_t* socketCPU, header_t* header){
 
-	char* pedido_serializado;
 	int32_t recibido;
 	int32_t cpu_id;
 
@@ -127,10 +137,8 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 			recibido = _receive_bytes(socketCPU, &(cpu_id), get_message_size(header));
 			if(recibido == ERROR_OPERATION) return;
-			CPU_t nuevaCPU = generarCPU(cpu_id ,socketCPU);
+			CPU_t* nuevaCPU = generarCPU(cpu_id ,socketCPU);
 			list_add(colaCPUs, nuevaCPU);
-
-
 			break;
 	}
 
@@ -182,7 +190,8 @@ int main(void) {
 	creoEstructurasDeManejo();
 
 
-	sock_t* socketServidor = create_server_socket(arch->puerto_escucha);
+	/** Creacion del socket servidor **/
+	socketServidor = create_server_socket(arch->puerto_escucha);
 
 	int32_t result = listen_connections(socketServidor);
 
@@ -191,55 +200,33 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 
-	sock_t* socketCliente = accept_connection(socketServidor);
 
-	connection_pool_server_listener(socketServidor, procesarPedido);
+	/** Creo hilos CONSOLA y SERVIDOR DE CONEXIONES **/
 
+	pthread_t server_thread;
+	int32_t resultado = pthread_create(&server_thread, NULL, servidor_conexiones, NULL);
+	if (resultado != 0) {
+		log_error(loggerError,"Error al crear el hilo del servidor de conexiones");
+		abort();
+	}else{
+		log_info(loggerInfo, "Se creo exitosamente el hilo de servidor de conexiones");
+	}
 
+	pthread_t consola_thread;
+	resultado = pthread_create(&server_thread, NULL, consola_planificador, NULL);
+	if (resultado != 0) {
+		log_error(loggerError,"Error al crear el hilo de la consola");
+		exit(EXIT_FAILURE);
+	}else{
+		log_info(loggerInfo, "Se creo exitosamente el hilo de la consola");
+	}
 
-	/*Sintaxis para la creacion de Hilos
+	pthread_join(server_thread, NULL); //espero a que el hilo termine su ejecución */
+	pthread_join(consola_thread, NULL);
 
-	    pthread_create(&NombreThread, NULL, thread_funcion, (void*) parametros);
-	    recordando que: solo se puede pasar UN PARAMETRO:
-	    NULL: no necesita parametros.
-	    unParametro: se le pasa solo uno y luego se castea.
-	   ¿Mas parametros?: un struct.
-
-	    pthread_t NombreThread; //declaro el hilo
-
-
-	   int resultado = pthread_create(&NombreThread, NULL, thread_funcion, (void*) parametros);
-	 	   		if (resultado != 0) {
-	 	   			log_error(loggerError,"Error al crear el hilo de );
-	 	   			abort();
-	 	   		}else{
-	 	   			log_info(loggerInfo, "Se creo exitosamente el hilo de ");
-	 	   		}
-
-	pthread_join(NombreThread, NULL); //espero a que el hilo termine su ejecución */
-	admin_consola();
 	clean();
+
 	return EXIT_SUCCESS;
 }
 
-/*	Algo de commons y manejo de arrays:
- * de las commons obtengo la hora actual, y la separo en horas, minutos y segundos:
- *
- * 	char* tiempo= temporal_get_string_time();
-	char* hora=malloc(2);
-	hora[0]=tiempo[0];
-	hora[1]=tiempo[1];
-	char* minutos=malloc(2);
-	minutos[0]=tiempo[3];
-	minutos[1]=tiempo[4];
-	minutos[2]='\0';
-	char* segundos=malloc(2);
-	segundos[0]=tiempo[6];
-	segundos[1]=tiempo[7];
-	segundos[2]='\0';
-	log_info(loggerInfo, ANSI_COLOR_BLUE "Time: %s" ANSI_COLOR_RESET, tiempo);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "hora: %s" ANSI_COLOR_RESET, hora);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "minutos: %s" ANSI_COLOR_RESET, minutos);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "segundos: %s" ANSI_COLOR_RESET, segundos);
- *
- */
+
