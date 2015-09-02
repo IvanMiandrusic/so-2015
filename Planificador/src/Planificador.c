@@ -67,6 +67,7 @@ PCB* generarPCB(int32_t PID, char* rutaArchivo){
 	unPCB->PID=PID;
 	unPCB->ruta_archivo=rutaArchivo;
 	return unPCB;
+
 }
 
 void creoEstructurasDeManejo(){
