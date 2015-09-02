@@ -42,7 +42,7 @@ ProcesoSwap* crear_estructura_config(char* path)
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie(){
-		//Queda a cargo del programador la implementación de la función
+		log_error(loggerError, "Se da por finalizado el proceso Swap");
 	exit(1);
 }
 
@@ -51,10 +51,10 @@ void ifProcessDie(){
 void inicializoSemaforos(){
 
 	int32_t semMutexLibre = sem_init(&sem_mutex_libre,0,1);
-	if(semMutexLibre==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex");
+	if(semMutexLibre==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex del espacio Libre");
 
 	int32_t semMutexOcupado = sem_init(&sem_mutex_ocupado,0,1);
-	if(semMutexOcupado==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex");
+	if(semMutexOcupado==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex del espacio Ocupado");
 
 }
 
@@ -145,20 +145,19 @@ int32_t calcularEspacioLibre(){
 }
 
 void graficoCompactar(){
-	int retardo=30;
 	printf("Procesando, por favor espere......\n");
-	sleep(retardo/3);
+	sleep(arch->retardo/3);
 	printf("░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n"
 		   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░\n"
 		   "░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░\n"
 		   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n");
 	printf("\n... Creando estructuras necesarias para la compactación.....\n");
-	sleep(retardo/3);
+	sleep(arch->retardo/3);
 printf("▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n"
 	   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n"
 	   "░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░\n"
 	   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n");
-sleep(retardo/3);
+sleep(arch->retardo/3);
 printf("\n... Guardando estructuras necesarias para la compactación\n");
 
 printf("▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n"
@@ -168,7 +167,7 @@ printf("▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 
 printf("Swap compactado\n");
 }
-/*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
+
 int main(void) {
 
 	/*Tratamiento del ctrl+c en el proceso */
@@ -221,7 +220,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 
 		if(recibido == ERROR_OPERATION) return;
 		if(recibido == SOCKET_CLOSED) {
-			sock_t* socketReconectado = accept_connection(socketServidor);
+			socketMemoria = accept_connection(socketServidor);
 			return;
 		}
 
@@ -232,56 +231,110 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			recibido = _receive_bytes(socketMemoria, pedido_serializado, get_message_size(header));
 			if(recibido == ERROR_OPERATION) return;
 			t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
-			leer_pagina(pagina_pedida);
+			char* serializado= serializarTexto(leer_pagina(pagina_pedida));
+			//enviar serializado
 			break;
 		}
 
 		case ESCRIBIR_PAGINA: {
+			pedido_serializado = malloc(get_message_size(header));
+			recibido = _receive_bytes(socketMemoria, pedido_serializado, get_message_size(header));
+			if(recibido == ERROR_OPERATION) return;
+			t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
+			int32_t resultado= escribir_pagina(pagina_pedida);
 
+			if (resultado == RESULTADO_ERROR) {
+				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
+				int32_t enviado = _send_header(socketMemoria, headerMemoria);
+				if(enviado == ERROR_OPERATION) return;
+				free(headerMemoria);
+				return;
+			} else if (resultado == RESULTADO_OK) {
+				header_t* headerMemoria = _create_header(RESULTADO_OK, 0);
+				int32_t enviado = _send_header(socketMemoria, headerMemoria);
+				if(enviado == ERROR_OPERATION) return;
+				free(headerMemoria);
+				}
 			break;
 		}
 
 		case RESERVAR_ESPACIO: {
+			t_pedido_memoria* pedido_memoria = malloc(sizeof(t_pedido_memoria));
+			recibido = _receive_bytes(socketMemoria, &(pedido_memoria->pid), sizeof(int32_t));
+			if (recibido == ERROR_OPERATION)return;
 
+			recibido = _receive_bytes(socketMemoria, &(pedido_memoria->cantidad_paginas),
+					sizeof(int32_t));
+			if (recibido == ERROR_OPERATION)return;
+			int32_t operacionValida= reservarEspacio(pedido_memoria);
+
+			if (operacionValida == RESULTADO_ERROR) {
+				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
+				int32_t enviado = _send_header(socketMemoria, headerMemoria);
+				if(enviado == ERROR_OPERATION) return;
+				free(headerMemoria);
+				return;
+			} else if (operacionValida == RESULTADO_OK) {
+				header_t* headerMemoria = _create_header(RESULTADO_OK, 0);
+				int32_t enviado = _send_header(socketMemoria, headerMemoria);
+				if(enviado == ERROR_OPERATION) return;
+				free(headerMemoria);
+			}
 			break;
 		}
 
 		case BORRAR_ESPACIO: {
+			int32_t PID;
+			recibido = _receive_bytes(socketMemoria, &(PID), sizeof(int32_t));
+			if (recibido == ERROR_OPERATION)return;
+			int32_t operacionValida= borrarEspacio(PID);
 
+			if (operacionValida == RESULTADO_ERROR) {
+				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
+				int32_t enviado = _send_header(socketMemoria, headerMemoria);
+				if(enviado == ERROR_OPERATION) return;
+				free(headerMemoria);
+				return;
+			} else if (operacionValida == RESULTADO_OK) {
+				header_t* headerMemoria = _create_header(RESULTADO_OK, 0);
+				int32_t enviado = _send_header(socketMemoria, headerMemoria);
+				if(enviado == ERROR_OPERATION) return;
+				free(headerMemoria);
+			}
 			break;
 		}
 
 		default: {
 
 		}
+
 		}
 
 	}
 }
 
-void leer_pagina(t_pagina* pagina_pedida){
+int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
+	//todo
+	return RESULTADO_OK;
+}
 
+int32_t borrarEspacio(int32_t PID){
+	//todo
+	return RESULTADO_OK;
+}
+
+
+char* leer_pagina(t_pagina* pagina_pedida){
+
+	char* texto;
+
+	return texto;
 	//Todo
 }
-/*	Algo de commons y manejo de arrays:
- * de las commons obtengo la hora actual, y la separo en horas, minutos y segundos:
- *
- * 	char* tiempo= temporal_get_string_time();
-	char* hora=malloc(2);
-	hora[0]=tiempo[0];
-	hora[1]=tiempo[1];
-	char* minutos=malloc(2);
-	minutos[0]=tiempo[3];
-	minutos[1]=tiempo[4];
-	minutos[2]='\0';
-	char* segundos=malloc(2);
-	segundos[0]=tiempo[6];
-	segundos[1]=tiempo[7];
-	segundos[2]='\0';
-	log_info(loggerInfo, ANSI_COLOR_BLUE "Time: %s" ANSI_COLOR_RESET, tiempo);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "hora: %s" ANSI_COLOR_RESET, hora);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "minutos: %s" ANSI_COLOR_RESET, minutos);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "segundos: %s" ANSI_COLOR_RESET, segundos);
- *
- */
+
+int32_t escribir_pagina(t_pagina* pagina_pedida){
+	//TODO
+	return 0;
+}
+
 

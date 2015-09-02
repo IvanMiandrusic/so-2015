@@ -46,6 +46,10 @@ typedef struct estructura_nodo_ocupado			//estructura que contiene los datos de 
   int32_t paginas;
 }NodoOcupado;
 
+typedef struct pedido_memoria {
+	int32_t pid;
+	int32_t cantidad_paginas;
+}t_pedido_memoria;
 
 ProcesoSwap* crear_estructura_config(char*);
 void ifProcessDie();
@@ -55,7 +59,9 @@ void creoEstructuraSwap();
 void compactar();
 int32_t calcularEspacioLibre();
 void graficoCompactar();
-
-
+char* leer_pagina(t_pagina*);
+int32_t reservarEspacio(t_pedido_memoria* );
+int32_t borrarEspacio(int32_t );
+int32_t escribir_pagina(t_pagina* );
 
 #endif /* ADMIN_SWAP_H_ */

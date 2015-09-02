@@ -13,3 +13,22 @@ t_pagina* deserializar_pedido(char* pedido_serializado){
 	//Todo hacer
 	return NULL;
 }
+
+char* serializarTexto (char* texto) {
+
+	int32_t tamanio=strlen(texto);
+	char* serializado=malloc(sizeof(int32_t)+tamanio);
+	u_int32_t offset = 0;
+	u_int32_t size_to_send;
+
+	size_to_send =  sizeof(u_int32_t);
+	memcpy(serializado + offset, &(tamanio), size_to_send);
+	offset += size_to_send;
+
+	size_to_send =  tamanio;
+	memcpy(serializado + offset,texto, size_to_send);
+	offset += size_to_send;
+
+	return serializado;
+
+}
