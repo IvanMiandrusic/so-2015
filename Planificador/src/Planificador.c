@@ -25,6 +25,7 @@ t_list* colaListos;
 t_list* colaBlock;
 t_list* colaExec;
 t_list* colaFinalizados;
+int32_t idParaPCB = 0;
 
 ProcesoPlanificador* crear_estructura_config(char* path)
 {
@@ -85,6 +86,18 @@ void clean(){
 	log_destroy(loggerError);
 	log_destroy(loggerDebug);
 }
+
+/*Este metodo podria ser generico para ambos algoritmos, lo que varia seria el manejo de la "cola de listos"*/
+void administrarPath(char* filePath){
+
+	idParaPCB++;
+	PCB* unPCB = generarPCB(idParaPCB, filePath);
+	unPCB->estado="Ready";
+	list_add(colaListos, unPCB);
+	printf("este es el pcb %s y su id = %d \n", unPCB->ruta_archivo,unPCB->PID);
+
+}
+
 
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
 int main(void) {

@@ -56,6 +56,7 @@ PCB* generarPCB(int32_t, char*);
 void creoEstructurasDeManejo();
 void clean();
 void admin_consola();
+void administrarPath(char* filePath);
 
 
 

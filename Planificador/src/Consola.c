@@ -105,8 +105,10 @@ void correrPath() {
 
 	if (string_equals_ignore_case(arch->algoritmo, "FIFO")) {
 		//se hace esto si es fifo
+		administrarPath(filePath);
 	} else if (string_equals_ignore_case(arch->algoritmo, "RR")) {
 		//Se hace esto si es RR
+		administrarPath(filePath);
 	}
 }
 
@@ -124,6 +126,15 @@ void mostrarEstadoProceso(PCB* unPcb) {
 
 void comandoPS() {
 //para todas las listas, iterate mostrarEstadoProceso
+
+/*	list_iterate(colaListos, mostrarEstadoProceso());
+	list_iterate(colaBlock, mostrarEstadoProceso());
+	list_iterate(colaExec, mostrarEstadoProceso());
+	list_iterate(colaFinalizados, mostrarEstadoProceso());
+//Falta pasarle como parametro el PID
+
+ */
+
 }
 
 void mostrarEstadoCpus() {
