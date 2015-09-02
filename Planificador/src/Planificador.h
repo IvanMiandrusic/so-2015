@@ -22,6 +22,13 @@
 #include <commons/collections/list.h>
 #include "libsocket.h"
 
+typedef enum estados_pcb {
+       LISTO=1,
+       BLOQUEADO=2,
+       EJECUCION=3,
+       FINALIZADO=4
+}estados_pcb_t;
+
 typedef struct estructura_configuracion			//estructura que contiene los datos del archivo de configuracion
 {
   int32_t puerto_escucha;
@@ -34,7 +41,7 @@ typedef struct estructura_PCB			//estructura que contiene los datos del pcb
 {
   int32_t PID;
   char* ruta_archivo;
-  char* estado;
+  int32_t estado;
   int32_t siguienteInstruccion;
 }PCB;
 

@@ -93,7 +93,7 @@ void administrarPath(char* filePath){
 
 	idParaPCB++;
 	PCB* unPCB = generarPCB(idParaPCB, filePath);
-	unPCB->estado="Ready";
+	unPCB->estado=LISTO;
 	list_add(colaListos, unPCB);
 	printf("este es el pcb %s y su id = %d \n", unPCB->ruta_archivo,unPCB->PID);
 
