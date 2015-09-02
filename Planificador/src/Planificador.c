@@ -15,6 +15,8 @@
 #include "Colores.h"
 #include "Planificador.h"
 #include "Consola.h"
+#include "Comunicacion.h"
+
 
 /* DEFINICION DE VARIABLES GLOBALES */
 ProcesoPlanificador* arch;
@@ -25,6 +27,7 @@ t_list* colaListos;
 t_list* colaBlock;
 t_list* colaExec;
 t_list* colaFinalizados;
+t_list* colaCPUs;
 int32_t idParaPCB = 0;
 
 ProcesoPlanificador* crear_estructura_config(char* path)
@@ -65,7 +68,9 @@ void crearArchivoDeLog() {
 PCB* generarPCB(int32_t PID, char* rutaArchivo){
 	PCB* unPCB= malloc(sizeof(PCB));
 	unPCB->PID=PID;
-	unPCB->ruta_archivo=rutaArchivo;
+	unPCB->estado=LISTO;
+	unPCB->ruta_archivo = malloc(string_length(rutaArchivo));
+	strcpy(unPCB->ruta_archivo, rutaArchivo);
 	return unPCB;
 
 }
@@ -75,6 +80,7 @@ void creoEstructurasDeManejo(){
 	colaBlock=list_create();
 	colaExec=list_create();
 	colaFinalizados=list_create();
+	colaCPUs=list_create();
 
 }
 
@@ -93,11 +99,42 @@ void administrarPath(char* filePath){
 
 	idParaPCB++;
 	PCB* unPCB = generarPCB(idParaPCB, filePath);
-	unPCB->estado=LISTO;
 	list_add(colaListos, unPCB);
 	printf("este es el pcb %s y su id = %d \n", unPCB->ruta_archivo,unPCB->PID);
+}
+
+void procesarPedido(sock_t* socketCpu, header_t* header){
+
+	char* pedido_serializado;
+	int32_t recibido;
+
+	//todo: tratar los errores
+
+	pedido_serializado = malloc(get_message_size(header));
+	switch(get_operation_code(header)){
+
+	case NUEVA_CPU: {
+
+			recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
+			if(recibido == ERROR_OPERATION) return;
+			list_add(colaCPUs, recibido);
+
+
+			break;
+	}
+
+	case TERMINO_RAFAGA: {
+
+			break;
+	}
+
+
+	default: { break;}
+	}
 
 }
+
+
 
 
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
@@ -123,7 +160,17 @@ int main(void) {
 
 
 	sock_t* socketServidor = create_server_socket(arch->puerto_escucha);
-	listen_connections(socketServidor);
+
+	int32_t result = listen_connections(socketServidor);
+
+	if(result == ERROR_OPERATION){
+		log_error(loggerError, "Error al escuchar conexiones");
+		exit(EXIT_FAILURE);
+	}
+
+	sock_t* socketCliente = accept_connection(socketServidor);
+
+	connection_pool_server_listener(socketServidor, procesarPedido);
 
 
 

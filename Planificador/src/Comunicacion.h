@@ -25,5 +25,6 @@
 #define RESULTADO_ERROR 5
 #define RESPUESTA_UTILIZACION_CPU 6
 
+void deserializar_pedido(char* pedidoserializado);
 
 #endif /* COMUNICACION_H_ */

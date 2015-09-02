@@ -10,3 +10,8 @@
 #include "Comunicacion.h"
 
 //Aca irian todas las funciones de serializar/deserializar los envios
+
+void deserializar_pedido(char* pedidoserializado){
+	//todo: hacer la deserializacion y fijar bien el TIPO que deserializa
+}
+

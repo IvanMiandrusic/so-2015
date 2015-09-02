@@ -125,15 +125,13 @@ void mostrarEstadoProceso(PCB* unPcb) {
 }
 
 void comandoPS() {
-//para todas las listas, iterate mostrarEstadoProceso
 
-/*	list_iterate(colaListos, mostrarEstadoProceso());
-	list_iterate(colaBlock, mostrarEstadoProceso());
-	list_iterate(colaExec, mostrarEstadoProceso());
-	list_iterate(colaFinalizados, mostrarEstadoProceso());
-//Falta pasarle como parametro el PID
+//todo: probar!
 
- */
+	list_iterate(colaListos, mostrarEstadoProceso);
+	list_iterate(colaBlock, mostrarEstadoProceso);
+	list_iterate(colaExec, mostrarEstadoProceso);
+	list_iterate(colaFinalizados, mostrarEstadoProceso);
 
 }
 

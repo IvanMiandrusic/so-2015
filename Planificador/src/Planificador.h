@@ -64,6 +64,7 @@ void creoEstructurasDeManejo();
 void clean();
 void admin_consola();
 void administrarPath(char* filePath);
+void procesarPedido(sock_t* socketCpu, header_t* header);
 
 
 
