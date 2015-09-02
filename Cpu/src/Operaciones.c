@@ -116,6 +116,7 @@ void mAnsisOp_iniciar(int32_t cantDePaginas){
 	evaluar_Mensaje_Enviado(enviado_CantPaginas,"Memoria");
 
 
+
 }
 
 void mAnsisOp_leer(int numDePagina){
