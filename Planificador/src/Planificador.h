@@ -68,7 +68,7 @@ void crearArchivoDeLog();
 PCB* generarPCB(int32_t, char*);
 void creoEstructurasDeManejo();
 void clean();
-void admin_consola();
+void consola_planificador();
 void administrarPath(char* filePath);
 void servidor_conexiones();
 void procesarPedido(sock_t* socketCpu, header_t* header);
