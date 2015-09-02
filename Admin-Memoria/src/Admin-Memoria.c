@@ -59,16 +59,24 @@ ProcesoMemoria* crear_estructura_config(char* path) {
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie() {
+
 	exit(1);
 }
-void ifSigurs1() {
 
+void ifSigusr1() {
+	sem_wait(&sem_mutex_tlb);
+	TLB_flush();
+	sem_post(&sem_mutex_tlb);
 }
 
-void ifSigurs2() {
 
+void ifSigusr2() {
+	//todo actualizar bit presencia en tabla de paginas
 }
 
+void ifSigpoll() {
+//todo dump
+}
 /*Función donde se inicializan los semaforos */
 
 void inicializoSemaforos() {
@@ -109,6 +117,8 @@ void llenoTLB() {			//tambien sirve para limpiar la TLB
 void TLB_flush() {
 
 	void limpiar_entradas(TLB* entrada) {
+		//todo si modificada es 1, le mandas al swap escribir(PID, pagina, texto)
+		//o hacerlo con la tabla de paginas
 		entrada->PID = 0;
 		entrada->marco = 0;
 		entrada->modificada = 0;
@@ -163,11 +173,14 @@ int main(void) {
 	if (signal(SIGINT, ifProcessDie) == SIG_ERR)
 		log_error(loggerError, "Error con la señal SIGINT");
 
-	if (signal(SIGUSR1, ifSigurs1) == SIG_ERR)
-		log_error(loggerError, "Error con la señal SIGURS1");
+	if (signal(SIGUSR1, ifSigusr1) == SIG_ERR)
+		log_error(loggerError, "Error con la señal SIGUSR1");
 
-	if (signal(SIGUSR2, ifSigurs2) == SIG_ERR)
-		log_error(loggerError, "Error con la señal SIGURS2");
+	if (signal(SIGUSR2, ifSigusr2) == SIG_ERR)
+		log_error(loggerError, "Error con la señal SIGUSR2");
+
+	if (signal(SIGPOLL, ifSigpoll) == SIG_ERR)
+			log_error(loggerError, "Error con la señal SIGPOLL");
 
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "Admin-Memoria.config";
