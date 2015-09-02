@@ -24,7 +24,7 @@
 #define ENVIO_QUANTUM 1
 #define ENVIO_PCB 2
 #define FINALIZAR_PROCESO 3
-#define PEDIDO_UTILIZACION_CPU 4
+
 
 /**Codigos de operacion en los envios hacia la memoria **/
 #define INICIAR 1

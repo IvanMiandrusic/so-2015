@@ -21,6 +21,14 @@ typedef struct estructura_configuracion			//estructura que contiene los datos de
   int32_t retardo;
 }ProcesoCPU;
 
+typedef struct estructura_PCB			//estructura que contiene los datos del pcb
+{
+  int32_t PID;
+  char* ruta_archivo;
+  int32_t estado;
+  int32_t siguienteInstruccion;
+}PCB;
+
 ProcesoCPU* crear_estructura_config(char*);
 void ifProcessDie();
 void inicializoSemaforos();

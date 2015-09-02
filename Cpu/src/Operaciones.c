@@ -15,20 +15,25 @@ extern t_log* loggerInfo;
 extern t_log* loggerError;
 extern t_log* loggerDebug;
 
+int32_t quantum;
 
 void* thread_Cpu(void* id){
-	int32_t thread_id= (void*) id;
+	int32_t thread_id = (void*) id;
 
 	sock_t* socket_Planificador=create_client_socket(arch->ip_planificador,arch->puerto_planificador);
-	int32_t resultado=connect_to_server(socket_Planificador);
+	int32_t resultado = connect_to_server(socket_Planificador);
 
 	//enviarle al planificador NUEVA_CPU y su id;
 
-	header_t* header = create_header(1, sizeof(int32_t));
-	_send_header (socket_Planificador, header,sizeof(header_t));
-	_send_bytes(socket_Planificador, thread_id,sizeof(int32_t));
+	header_t* header = create_header(NUEVA_CPU, sizeof(int32_t));
+	int32_t resul_header =_send_header (socket_Planificador, header);
+	int32_t resul_id = _send_bytes(socket_Planificador, &thread_id,sizeof(int32_t));
 
-
+	if (resul_id == 0)
+				{
+					log_info(loggerError,"Se perdio la conexion con el Planificador");
+					return NULL;
+				}
 
 
 	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
@@ -40,16 +45,25 @@ void* thread_Cpu(void* id){
 	int32_t finalizar = 1;
 	int32_t resul_Mensaje_Recibido;
 	int32_t cod_Operacion;
+	header_t* header_t = _create_empty_header() ;
 
 	while (finalizar == 1)
 	{
-		resul_Mensaje_Recibido = receive_msg(socket_Planificador, header_t);
+		resul_Mensaje_Recibido = _receive_header(socket_Planificador, header_t);
 
 		cod_Operacion = get_operation_code(header_t);
 
-		evaluar_Mensaje_Recibido(resul_Mensaje_Recibido,"Planificador");
+		if (resul_Mensaje_Recibido == 0)
+						{
+							log_info(loggerError,"Se perdio la conexion con el Planificador");
 
-		tipo_Cod_Operacion (cod_Operacion);
+							finalizar = 0;
+
+							break;
+
+						}
+
+		tipo_Cod_Operacion (cod_Operacion,socket_Planificador);
 
 	}
 
@@ -61,78 +75,117 @@ void* thread_Cpu(void* id){
 
 }
 
-void tipo_Cod_Operacion (cod_Operacion){ //Switch
+void tipo_Cod_Operacion (cod_Operacion,socket_Planificador){ //Switch
 	switch (cod_Operacion)
 				{
-				case 1:{
-						log_info(loggerInfo,"CPU recibio de Planificador codOperacion %d QUANTUM",cod_Operacion);
-					break;
-					}
+				case ENVIO_QUANTUM:{
+						int32_t recibido = _receive_bytes(socket_Planificador, &quantum, sizeof(int32_t));
+						log_info(loggerInfo,"CPU recibio de Planificador codOperacion %d QUANTUM: %d",cod_Operacion, quantum);
+						if (recibido == ERROR_OPERATION)return;
+						break;
+									}
 
-				case 2:{
+				case ENVIO_PCB:{
 					log_info(loggerInfo,"CPU recibio de Planificador codOperacion %d PCB",cod_Operacion);
-					break;
-					}
+					//TODO ver de donde sale el header
+					char* pedido_serializado = malloc(get_message_size(header));
+					int32_t recibido = _receive_bytes(socket_Planificador, pedido_serializado, get_message_size(header));
+					if(recibido == ERROR_OPERATION) return;
 
-				case 3:{
+					PCB* pcb = deserializo_PCB (pedido_serializado);
+
+					ejecutar_Instruccion (pcb);
+
+					break;
+								}
+
+				case FINALIZAR_PROCESO:{
 					log_info(loggerInfo,"CPU recibio de Planificador codOperacion %d Finalizar Proceso",cod_Operacion);
 					break;
 					}
 
-				case 4:{
-					log_info(loggerInfo,"CPU recibio de Planificador codOperacion %d Pedido de Utilizacion CPU",cod_Operacion);
-					break;
-					}
 				}
 }
 
-void evaluar_Mensaje_Recibido(resul_Mensaje_Recibido,de_Quien_Recibi){ //hace falta agregar el finalizar?
-	if (resul_Mensaje_Recibido == -1)
-			{
-				log_error(loggerError,"Error al recibir mensaje del %s",de_Quien_Recibi);
-				return ;
-			}
-}
 
-void evaluar_Mensaje_Enviado(resul_Mensaje_Recibido,a_Quien_Envie){
-	if (resul_Mensaje_Recibido == -1)
-			{
-				log_error(loggerError,"Error al enviar mensaje a %s",a_Quien_Envie);
-				return ;
-			}
-}
+void ejecutar_Instrucciones (PCB* pcb){
+	if (quantum == 0) ejecutar_FIFO(pcb);
+	if (quantum > 0) ejecutar_RR(pcb);
+										}
+
+//TODO hacer funciones FIFO y RR
+
 
 void mAnsisOp_iniciar(int32_t cantDePaginas){
     //mandar al admin de memoria que se inició un proceso de N paginas
 
-	//falta enviarle el id del proceso
+	//TODO agregar id como parametro en el parser
 
+	header_t* header_A_Memoria = _create_header(INICIAR, 2 * sizeof(int32_t));
 
-	header_t* header_A_Memoria = _create_header(INICIAR, 1 * sizeof(int32_t));
-	int32_t enviado_Header = _send_header(socket_Memoria, header_A_Memoria, sizeof(header_t)); // de donde saco el socket_Memoria ??
-	int32_t enviado_CantPaginas = send_bytes(socket_Memoria,cantDePaginas, sizeof (int32_t));
+	int32_t enviado_Header = _send_header(socket_Memoria, header_A_Memoria, sizeof(header_t));
 
-	evaluar_Mensaje_Enviado(enviado_Header,"Memoria");
-	evaluar_Mensaje_Enviado(enviado_CantPaginas,"Memoria");
+	int32_t enviado_Id_Proceso = send_bytes(socket_Memoria,&PID, sizeof (int32_t));
+	int32_t enviado_CantPaginas = send_bytes(socket_Memoria,&cantDePaginas, sizeof (int32_t));
 
+	if(enviado_CantPaginas == ERROR_OPERATION) return;
 
+	int32_t resultado;
+
+	int32_t resultado_Mensaje = _receive_bytes(socket_Memoria, &resultado, sizeof(int32_t));
+	if(resultado_Mensaje == ERROR_OPERATION) return;
+
+//TODO enviar resultado al planificador
 
 }
 
 void mAnsisOp_leer(int numDePagina){
 	//se debe leer de la memoria la pagina N
 
+	//falta el PID y el socket_Memoria
+		header_t* header_A_Memoria = _create_header(LEER, 2 * sizeof(int32_t));
 
+		int32_t enviado_Header = _send_header(socket_Memoria, header_A_Memoria, sizeof(header_t));
+
+		int32_t enviado_Id_Proceso = send_bytes(socket_Memoria,&PID, sizeof (int32_t));
+		int32_t enviado_numDePagina = send_bytes(socket_Memoria,&numDePagina, sizeof (int32_t));
+
+
+
+		int32_t longPagina;
+		int32_t recibi_longPagina = _receive_bytes(socket_Memoria, &longPagina, get_message_size(header));
+		if(recibi_longPagina == ERROR_OPERATION) return;
+
+		char* contenido_pagina = malloc(longPagina);
+		int32_t recibido = _receive_bytes(socket_Memoria, contenido_pagina, longPagina);
+		if(recibido == ERROR_OPERATION) return;
+
+
+		log_info(loggerInfo,"mProc %d - Pagina %d leida: %s ",PID, numDePagina, contenido_pagina);
 }
 
 void mAnsisOp_escribir(int32_t numDePagina, char* texto){
 	//se debe escribir en memoria el texto en la pagina N
 
+	int32_t tamanio = strlen (texto);
+	header_t* header_A_Memoria = _create_header(ESCRIBIR, 3 * sizeof(int32_t)+tamanio);
+
+	int32_t enviado_Header = _send_header(socket_Memoria, header_A_Memoria, sizeof(header_t));
+
+
+	int32_t enviado_Id_Proceso = send_bytes(socket_Memoria,&PID, sizeof (int32_t));
+	int32_t enviado_numDePagina = send_bytes(socket_Memoria,&numDePagina, sizeof (int32_t));
+	int32_t enviado_tamanio_texto = send_bytes(socket_Memoria,&tamanio, sizeof (int32_t));
+	int32_t enviado_texto = send_bytes(socket_Memoria,texto, tamanio);
+
+
+
+
 }
 
 void mAnsisOp_IO(int32_t tiempo){
 	//decirle al planificador que se haga una i/o de cierto tiempo
-
+	//solo ver si se envio al planificador
 
 
 }
