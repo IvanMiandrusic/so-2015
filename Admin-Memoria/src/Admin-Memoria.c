@@ -109,11 +109,11 @@ void llenoTLB() {			//tambien sirve para limpiar la TLB
 void TLB_flush() {
 
 	void limpiar_entradas(TLB* entrada) {
-		entrada->PID=0;
-		entrada->marco=0;
-		entrada->modificada=0;
-		entrada->pagina=0;
-		entrada->presente=0;
+		entrada->PID = 0;
+		entrada->marco = 0;
+		entrada->modificada = 0;
+		entrada->pagina = 0;
+		entrada->presente = 0;
 	}
 
 	sem_wait(&sem_mutex_tlb);
@@ -123,7 +123,8 @@ void TLB_flush() {
 
 void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 
-	t_paginas_proceso* nueva_entrada_proceso = malloc(sizeof(t_paginas_proceso));
+	t_paginas_proceso* nueva_entrada_proceso = malloc(
+			sizeof(t_paginas_proceso));
 	nueva_entrada_proceso->PID = processID;
 	nueva_entrada_proceso->paginas = list_create();
 
@@ -180,8 +181,7 @@ int main(void) {
 
 	creoEstructurasDeManejo();
 
-	socketSwap = create_client_socket(arch->ip_swap,
-			arch->puerto_swap);
+	socketSwap = create_client_socket(arch->ip_swap, arch->puerto_swap);
 	int32_t resultado = connect_to_server(socketSwap);
 	//Todo validacion
 
@@ -216,46 +216,14 @@ int main(void) {
 
 void procesar_pedido(sock_t* socketCpu, header_t* header) {
 
-	int32_t recibido;
-	int32_t enviado;
 	//char* pedido_serializado = malloc(get_message_size(header));
 	t_pedido_cpu* pedido_cpu = malloc(sizeof(t_pedido_cpu));
 	//Todo casos de envios
 	switch (get_operation_code(header)) {
 
 	case INICIAR: {
-		recibido = _receive_bytes(socketCpu, &(pedido_cpu->pid), sizeof(int32_t));
-		if(recibido == ERROR_OPERATION) return;
 
-		recibido = _receive_bytes(socketCpu, &(pedido_cpu->cantidad_paginas), sizeof(int32_t));
-		if(recibido == ERROR_OPERATION) return;
-
-		//Envio al swap para que reserve espacio
-		header_t* headerSwap = _create_header(RESERVAR_ESPACIO, 2*sizeof(int32_t));
-		enviado = _send_header(socketSwap, headerSwap);
-		if(enviado == ERROR_OPERATION) return;
-
-		enviado = _send_bytes(socketSwap, &(pedido_cpu->pid), sizeof(int32_t));
-		if(enviado == ERROR_OPERATION) return;
-
-		enviado = _send_bytes(socketSwap, &(pedido_cpu->cantidad_paginas), sizeof(int32_t));
-		if(enviado == ERROR_OPERATION) return;
-
-		/*todo : recv de la respuesta del swap, porque si no se pudo
-		 * el error hay que mandarselo a la cpu y no ejecutar el crear
-		 * paginas
-		*/
-
-		//Creo la tabla de paginas del PID dado
-		crear_tabla_pagina_PID(pedido_cpu->pid, pedido_cpu->cantidad_paginas);
-
-		/*Todo ver si falta algo mas
-		 * chequear que funcion puede ser encapsulada, porque sino
-		 * el switch queda hecho un choclo espantoso
-		 *  */
-
-		/* todo, ver posible socketswap global, porque es siempre el mismo y
-		 * se usa en varios lados*/
+		iniciar_proceso(socketCpu, pedido_cpu);
 		break;
 	}
 	case LEER: {
@@ -277,24 +245,56 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 	}
 }
 
-/*	Algo de commons y manejo de arrays:
- * de las commons obtengo la hora actual, y la separo en horas, minutos y segundos:
- *
- * 	char* tiempo= temporal_get_string_time();
- char* hora=malloc(2);
- hora[0]=tiempo[0];
- hora[1]=tiempo[1];
- char* minutos=malloc(2);
- minutos[0]=tiempo[3];
- minutos[1]=tiempo[4];
- minutos[2]='\0';
- char* segundos=malloc(2);
- segundos[0]=tiempo[6];
- segundos[1]=tiempo[7];
- segundos[2]='\0';
- log_info(loggerInfo, ANSI_COLOR_BLUE "Time: %s" ANSI_COLOR_RESET, tiempo);
- log_info(loggerInfo, ANSI_COLOR_BLUE "hora: %s" ANSI_COLOR_RESET, hora);
- log_info(loggerInfo, ANSI_COLOR_BLUE "minutos: %s" ANSI_COLOR_RESET, minutos);
- log_info(loggerInfo, ANSI_COLOR_BLUE "segundos: %s" ANSI_COLOR_RESET, segundos);
- *
- */
+void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
+
+	int32_t recibido;
+	int32_t enviado;
+	int32_t resultado_operacion;
+
+	recibido = _receive_bytes(socketCpu, &(pedido_cpu->pid), sizeof(int32_t));
+	if (recibido == ERROR_OPERATION)
+		return;
+
+	recibido = _receive_bytes(socketCpu, &(pedido_cpu->cantidad_paginas),
+			sizeof(int32_t));
+	if (recibido == ERROR_OPERATION)
+		return;
+
+	//Envio al swap para que reserve espacio
+	header_t* headerSwap = _create_header(RESERVAR_ESPACIO,
+			2 * sizeof(int32_t));
+	enviado = _send_header(socketSwap, headerSwap);
+	if (enviado == ERROR_OPERATION)
+		return;
+	free(headerSwap);
+
+	enviado = _send_bytes(socketSwap, &(pedido_cpu->pid), sizeof(int32_t));
+	if (enviado == ERROR_OPERATION)
+		return;
+
+	enviado = _send_bytes(socketSwap, &(pedido_cpu->cantidad_paginas),
+			sizeof(int32_t));
+	if (enviado == ERROR_OPERATION)
+		return;
+
+	recibido = _receive_bytes(socketSwap, &(resultado_operacion),
+			sizeof(int32_t));
+	if (recibido == ERROR_OPERATION)
+		return;
+
+	if (resultado_operacion == RESULTADO_ERROR) {
+		header_t* headerCpu = _create_header(ERROR, 0);
+		enviado = _send_header(socketCpu, headerCpu);
+		free(headerCpu);
+		return;
+	} else if (resultado_operacion == RESULTADO_OK) {
+		//Creo la tabla de paginas del PID dado
+		crear_tabla_pagina_PID(pedido_cpu->pid, pedido_cpu->cantidad_paginas);
+		header_t* headerCpu = _create_header(OK, 0);
+		enviado = _send_header(socketCpu, headerCpu);
+		free(headerCpu);
+
+	}
+
+	free(pedido_cpu);
+}

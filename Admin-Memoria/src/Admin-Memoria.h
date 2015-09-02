@@ -58,6 +58,7 @@ void crear_tabla_pagina_PID(int32_t , int32_t);
 void ifSigurs1();
 void ifSigurs2();
 void procesar_pedido(sock_t* socketCpu, header_t* header);
+void iniciar_proceso(sock_t*, t_pedido_cpu*);
 
 
 #endif /* ADMIN_MEMORIA_H_ */
