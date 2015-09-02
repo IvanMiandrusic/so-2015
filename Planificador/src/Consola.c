@@ -106,6 +106,7 @@ void correrPath() {
 	if (string_equals_ignore_case(arch->algoritmo, "FIFO")) {
 		//se hace esto si es fifo
 		administrarPath(filePath);
+		asignarPCBaCPU();
 	} else if (string_equals_ignore_case(arch->algoritmo, "RR")) {
 		//Se hace esto si es RR
 		administrarPath(filePath);

@@ -45,6 +45,12 @@ typedef struct estructura_PCB			//estructura que contiene los datos del pcb
   int32_t siguienteInstruccion;
 }PCB;
 
+typedef struct estructura_CPU      //estructura que contiene los datos que nos envia cada cpu
+{
+	int32_t ID;
+	sock_t* socketCPU;
+}CPU_t;
+
 /* DECLARACION DE VARIABLES GLOBALES */
 extern ProcesoPlanificador* arch;
 extern t_log* loggerInfo;
@@ -65,6 +71,7 @@ void clean();
 void admin_consola();
 void administrarPath(char* filePath);
 void procesarPedido(sock_t* socketCpu, header_t* header);
+CPU_t* generarCPU(int32_t ID, sock_t* socketCPU);
 
 
 

@@ -16,6 +16,7 @@
 #include "Planificador.h"
 #include "Consola.h"
 #include "Comunicacion.h"
+#include <pthread.h>
 
 
 /* DEFINICION DE VARIABLES GLOBALES */
@@ -75,6 +76,14 @@ PCB* generarPCB(int32_t PID, char* rutaArchivo){
 
 }
 
+CPU_t* generarCPU(int32_t ID, sock_t* socketCPU){
+	CPU_t* unaCPU = malloc(sizeof(CPU_t));
+	unaCPU->ID=ID;
+	unaCPU->socketCPU= malloc(sizeof(sock_t));
+	unaCPU->socketCPU= socketCPU;
+	return unaCPU;
+}
+
 void creoEstructurasDeManejo(){
 	colaListos=list_create();
 	colaBlock=list_create();
@@ -103,27 +112,32 @@ void administrarPath(char* filePath){
 	printf("este es el pcb %s y su id = %d \n", unPCB->ruta_archivo,unPCB->PID);
 }
 
-void procesarPedido(sock_t* socketCpu, header_t* header){
+void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	char* pedido_serializado;
 	int32_t recibido;
+	int32_t cpu_id;
 
 	//todo: tratar los errores
 
-	pedido_serializado = malloc(get_message_size(header));
+
 	switch(get_operation_code(header)){
 
 	case NUEVA_CPU: {
 
-			recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
+			recibido = _receive_bytes(socketCPU, &(cpu_id), get_message_size(header));
 			if(recibido == ERROR_OPERATION) return;
-			list_add(colaCPUs, recibido);
+			CPU_t nuevaCPU = generarCPU(cpu_id ,socketCPU);
+			list_add(colaCPUs, nuevaCPU);
 
 
 			break;
 	}
 
 	case TERMINO_RAFAGA: {
+
+
+
 
 			break;
 	}
@@ -134,6 +148,15 @@ void procesarPedido(sock_t* socketCpu, header_t* header){
 
 }
 
+void asignarPCBaCPU(){
+	/*PCB pcbAEnviar = list_get(colaListos, 0);
+	list_remove(colaListos, 0);*/
+
+	//todo: tomar el primer pcb de la lista, serializarlo y enviarlo a la cpu
+
+
+
+}
 
 
 
