@@ -26,8 +26,13 @@ char* serializarPCB(PCB* unPCB){
 		memcpy(serializado + offset, &(unPCB->PID), size_to_send);
 		offset += size_to_send;
 
+		int32_t tamanio=strlen(unPCB->ruta_archivo);
 
-		size_to_send = strlen(unPCB->ruta_archivo);
+		size_to_send =  sizeof(u_int32_t);
+		memcpy(serializado + offset, &(tamanio), size_to_send);
+		offset += size_to_send;
+
+		size_to_send = tamanio;
 		memcpy(serializado + offset, unPCB->ruta_archivo, size_to_send);
 		offset += size_to_send;
 

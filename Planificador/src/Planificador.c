@@ -115,6 +115,7 @@ void administrarPath(char* filePath){
 	PCB* unPCB = generarPCB(idParaPCB, filePath);
 	list_add(colaListos, unPCB);
 	printf("este es el pcb %s y su id = %d \n", unPCB->ruta_archivo,unPCB->PID);
+
 }
 
 //Funcion del hilo servidor de conexiones
@@ -157,18 +158,42 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 }
 
 void asignarPCBaCPU(){
+	if(list_size(colaCPUs) > 0){
 	PCB* pcbAEnviar = malloc(sizeof(PCB));
 	pcbAEnviar = list_get(colaListos, 0);
-	serializarPCB(pcbAEnviar);
+	printf("agarre el primer pcb: id= %d, arch= %s", pcbAEnviar->PID, pcbAEnviar->ruta_archivo);
+	char* paquete = serializarPCB(pcbAEnviar);
+	enviarPCB(paquete);
 	list_remove(colaListos, 0);
+	printf("el size de PCBs es: %d", list_size(colaListos));
 	free(pcbAEnviar); //esta bien este free??
 
+
 	//todo: tomar el primer pcb de la lista, serializarlo y enviarlo a la cpu
+	}else{
+		log_error(loggerError, "No hay una CPU disponible");
+	exit(EXIT_FAILURE);
+	}
+
+}
+
+void enviarPCB(char* unPaquete){
+
+	sock_t* socketCPU = list_get(colaCPUs, 0);
+	header_t* headerPCB = _create_header(ENVIO_PCB, sizeof(int32_t));
+	int32_t enviado = _send_header(socketCPU, headerPCB);
+	if(enviado == ERROR_OPERATION){
+		return;
+		free(headerPCB);
+	}
+
+	//todo:enviar el PCB serializado
+	list_remove(colaCPUs, 0);
+	free(headerPCB);
 
 
 
 }
-
 
 
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
