@@ -114,7 +114,7 @@ void administrarPath(char* filePath){
 	idParaPCB++;
 	PCB* unPCB = generarPCB(idParaPCB, filePath);
 	list_add(colaListos, unPCB);
-	printf("este es el pcb %s y su id = %d \n", unPCB->ruta_archivo,unPCB->PID);
+	printf("este es el pcb %s y su id = %d \n", unPCB->ruta_archivo,unPCB->PID); //Cambiar a logger
 	return;
 
 }
@@ -177,24 +177,28 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 }
 
+//Funcion que saca el tamaño de un PCB para enviar
+int32_t obtener_tamaño_pcb(PCB* pcb) {
+	return 4*sizeof(int32_t) + pcb->tamaño_ruta_archivo;
+}
+
+
 void asignarPCBaCPU(){         //todo: (Ceckear) toma el primer pcb de la lista, serializarlo y enviarlo a la cpu
 
 	if(list_size(colaCPUs) > 0){
-	PCB* pcbAEnviar = malloc(sizeof(PCB));
-	pcbAEnviar = list_get(colaListos, 0);
-	printf("agarre el primer pcb: id= %d, arch= %s", pcbAEnviar->PID, pcbAEnviar->ruta_archivo);
-	char* paquete = serializarPCB(pcbAEnviar);
-	enviarPCB(paquete);
+	PCB* pcbAEnviar = list_get(colaListos, 0);
+	printf("agarre el primer pcb: id= %d, arch= %s", pcbAEnviar->PID, pcbAEnviar->ruta_archivo); 
+	char* paquete = serializarPCB(pcbAEnviar); 
+	int32_t tamaño_pcb = obtener_tamaño_pcb(pcbAEnviar);
+	enviarPCB(paquete, tamaño_pcb);
 	list_remove(colaListos, 0);
 	printf("el size de PCBs es: %d", list_size(colaListos));
-	free(pcbAEnviar);
 	log_info(loggerInfo, "El PCB se envio satisfactoriamente");
-	return;
 
 	}else{
 		printf("No hay CPUs Disponibles que asignar \n");
 		log_error(loggerError, "No hay una CPU disponible");
-	return;
+
 	//todo: tratar el caso en que no hay CPUs disponibles pero si hay PCBs, corta la ejecucion? para mi deberia
 	//retornar a la consola.
 	}
@@ -202,24 +206,32 @@ void asignarPCBaCPU(){         //todo: (Ceckear) toma el primer pcb de la lista,
 }
 
 
-void enviarPCB(char* unPaquete){    // todo: cual es el tema del "warning"?? sera porq falta algun malloc?? probe pero no
+void enviarPCB(char* paquete_serializado, int32_t tamaño_pcb){    // todo: cual es el tema del "warning"?? sera porq falta algun malloc?? probe pero no
 									// lo descubri
 
-	sock_t* socketCPU = list_get(colaCPUs, 0);
+	sock_t* socketCPU = list_get(colaCPUs, 0); //?????????? FIX
 	header_t* headerPCB = _create_header(ENVIO_PCB, sizeof(int32_t));
 	int32_t enviado = _send_header(socketCPU, headerPCB);
 	if(enviado == ERROR_OPERATION){
 		return;
-		free(headerPCB);
+		free(headerPCB); //Esto abajo de un return nunca va a ejecutar
 	}
 	//todo: (Checkear) enviar el PCB serializado
-	enviado = _send_bytes(socketCPU,unPaquete, sizeof(PCB));
+	enviado = _send_bytes(socketCPU,paquete_serializado, sizeof(PCB));
 	if(enviado == ERROR_OPERATION){
 		log_error(loggerError, "Fallo en el envio de PCB");
 		free(headerPCB);
 		return;
 
 	}
+	
+	//Una opcion mas facil SOLO cuando tenemos mensajes serializados (OJO: prestar atencion como calcular tamaño envio)
+	enviado = send_msg(socketCPU, ENVIO_PCB, paquete_serializado, tamaño_pcb); //Te crea el header internamente
+	if(enviado == ERROR_OPERATION){
+		log_error(loggerError, "Fallo en el envio de PCB");
+		return;
+	}
+	
 	list_remove(colaCPUs, 0);
 	free(headerPCB);
 
