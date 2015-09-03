@@ -40,6 +40,7 @@ typedef struct estructura_configuracion			//estructura que contiene los datos de
 typedef struct estructura_PCB			//estructura que contiene los datos del pcb
 {
   int32_t PID;
+  int32_t tamaño_ruta_archivo;
   char* ruta_archivo;
   int32_t estado;
   int32_t siguienteInstruccion;
@@ -74,7 +75,8 @@ void servidor_conexiones();
 void procesarPedido(sock_t* socketCpu, header_t* header);
 CPU_t* generarCPU(int32_t ID, sock_t* socketCPU);
 void asignarPCBaCPU();
-void enviarPCB(char* unPaquete);
+int32_t obtener_tamaño_pcb(PCB* pcb);
+void enviarPCB(char* unPaquete, int32_t tamaño_pcb);
 
 
 
