@@ -76,7 +76,7 @@ void* thread_Cpu(void* id){
 
 }
 
-void tipo_Cod_Operacion (id,cod_Operacion){ //Switch
+void tipo_Cod_Operacion (id,cod_Operacion){
 	switch (cod_Operacion)
 				{
 				case ENVIO_QUANTUM:{
@@ -93,7 +93,7 @@ void tipo_Cod_Operacion (id,cod_Operacion){ //Switch
 					int32_t recibido = _receive_bytes(socketPlanificador[id], pedido_serializado, get_message_size(header));
 					if(recibido == ERROR_OPERATION) return;
 
-					PCB* pcb = deserializo_PCB (pedido_serializado);
+					PCB* pcb = deserializarPCB (pedido_serializado);
 
 					ejecutar_Instrucciones (id, pcb);
 
@@ -115,19 +115,47 @@ void ejecutar_Instrucciones (int32_t id, PCB* pcb){
 
 										}
 
+
 //TODO hacer funciones FIFO y RR y //actualizar program counter donde corresponda
 
+PCB* deserializarPCB(serializado)
+{
+	PCB* pcb = malloc(sizeof(PCB));
+	int offset = 0;
+	int size_entero = sizeof(u_int32_t);
+
+	memcpy(&(pcb->PID), serializado + offset, size_entero);
+
+	offset += size_entero;
+	int32_t tamanio;
+	memcpy(&tamanio, serializado + offset, size_entero);
+
+	offset += size_entero;
+
+	memcpy(pcb->ruta_archivo, serializado + offset, tamanio);
+
+	offset += tamanio;
+
+	memcpy(&(pcb->estado), serializado + offset, size_entero);
+
+	offset += size_entero;
+
+	memcpy(&(pcb->siguienteInstruccion), serializado + offset, size_entero);
+
+	offset += size_entero;
+	return pcb;
+
+}
 
 void mAnsisOp_iniciar(int32_t id, int32_t cantDePaginas){
     //mandar al admin de memoria que se inició un proceso de N paginas
 
-	//TODO agregar id como parametro en el parser
 
 	header_t* header_A_Memoria = _create_header(INICIAR, 2 * sizeof(int32_t));
 
 	int32_t enviado_Header = _send_header(socketMemoria[id], header_A_Memoria, sizeof(header_t));
 
-	int32_t enviado_Id_Proceso = send_bytes(socketMemoria[id],&PID, sizeof (int32_t));
+	int32_t enviado_Id_Proceso = send_bytes(socketMemoria[id],&id, sizeof (int32_t));
 	int32_t enviado_CantPaginas = send_bytes(socketMemoria[id],&cantDePaginas, sizeof (int32_t));
 
 	if(enviado_CantPaginas == ERROR_OPERATION) return;
@@ -135,21 +163,24 @@ void mAnsisOp_iniciar(int32_t id, int32_t cantDePaginas){
 	int32_t resultado;
 
 	int32_t resultado_Mensaje = _receive_bytes(socketMemoria[id], &resultado, sizeof(int32_t));
-	if(resultado_Mensaje == ERROR_OPERATION) return;
+		if(resultado_Mensaje == ERROR_OPERATION)
+			log_error(loggerError,"mProc %d -Fallo",id);
+		return;
 
-//TODO enviar resultado al planificador
+	log_info(loggerInfo,"mProc %d -Iniciado",id);
+	int32_t enviar_Resultado = _send_bytes(socketMemoria[id],&resultado_Mensaje,sizeof (int32_t)); //Esta bien?
+
 
 }
 
 void mAnsisOp_leer(int32_t id,int32_t numDePagina){
 	//se debe leer de la memoria la pagina N
 
-	//falta el PID y el socket_Memoria
 		header_t* header_A_Memoria = _create_header(LEER, 2 * sizeof(int32_t));
 
 		int32_t enviado_Header = _send_header(socketMemoria[id], header_A_Memoria, sizeof(header_t));
 
-		int32_t enviado_Id_Proceso = send_bytes(socketMemoria[id],&PID, sizeof (int32_t));
+		int32_t enviado_Id_Proceso = send_bytes(socketMemoria[id],&id, sizeof (int32_t));
 		int32_t enviado_numDePagina = send_bytes(socketMemoria[id],&numDePagina, sizeof (int32_t));
 
 
@@ -162,8 +193,9 @@ void mAnsisOp_leer(int32_t id,int32_t numDePagina){
 		int32_t recibido = _receive_bytes(socketMemoria[id], contenido_pagina, longPagina);
 		if(recibido == ERROR_OPERATION) return;
 
+		int32_t enviar_Resultado = _send_bytes(socketMemoria[id],&recibido,sizeof (int32_t)); //Esta bien?
 
-		log_info(loggerInfo,"mProc %d - Pagina %d leida: %s ",PID, numDePagina, contenido_pagina);
+		log_info(loggerInfo,"mProc %d - Pagina %d leida: %s ",id, numDePagina, contenido_pagina);
 }
 
 void mAnsisOp_escribir(int32_t id, int32_t numDePagina, char* texto){
@@ -174,12 +206,18 @@ void mAnsisOp_escribir(int32_t id, int32_t numDePagina, char* texto){
 
 	int32_t enviado_Header = _send_header(socketMemoria[id], header_A_Memoria, sizeof(header_t));
 
-
-	int32_t enviado_Id_Proceso = send_bytes(socketMemoria[id],&PID, sizeof (int32_t));
+	int32_t enviado_Id_Proceso = send_bytes(socketMemoria[id],&id, sizeof (int32_t));
 	int32_t enviado_numDePagina = send_bytes(socketMemoria[id],&numDePagina, sizeof (int32_t));
 	int32_t enviado_tamanio_texto = send_bytes(socketMemoria[id],&tamanio, sizeof (int32_t));
 	int32_t enviado_texto = send_bytes(socketMemoria[id],texto, tamanio);
 
+	int32_t longTexto;
+	int32_t recibi_longTexto = _receive_bytes(socketMemoria[id],&longTexto, get_message_size(header));
+		if(recibi_longTexto == ERROR_OPERATION) return;
+
+	log_info(loggerInfo, "mProc %d - Pagina %d escrita: %s", id,numDePagina, texto);
+
+	int32_t enviar_Resultado = _send_bytes(socketMemoria[id],&recibi_longTexto,sizeof (int32_t)); //Esta bien?
 
 
 
@@ -189,11 +227,42 @@ void mAnsisOp_IO(int32_t id, int32_t tiempo){
 	//decirle al planificador que se haga una i/o de cierto tiempo
 	//solo ver si se envio al planificador
 
+	//TODO aca envio la NUEVA_IO pero no esta en comunicacion....
+	//TODO como se libera la CPU?
+	header_t* header_A_Planificador = _create_header(NUEVA_IO,2*sizeof(int32_t));
+
+	int32_t enviado_Header = _send_header(socketPlanificador[id],header_A_Planificador,sizeof(header_t));
+
+	int32_t enviado_Id_Proceso = _send_bytes(socketPlanificador[id],&id,sizeof(int32_t));
+	int32_t enviado_Tiempo = _send_bytes(socketPlanificador[id],&tiempo,sizeof(int32_t));
+
+	int32_t resultado;
+	int32_t recibi_Resultado = _receive_bytes(socketPlanificador[id],&resultado,sizeof (int32_t));
+			if(recibi_Resultado == ERROR_OPERATION) return;
+
+		log_info(loggerInfo, "mProc %d en entrada-salida de tiempo %d", id,tiempo);
+
+		int32_t enviar_Resultado = _send_bytes(socketMemoria[id],&recibi_Resultado,sizeof (int32_t)); //Esta bien?
+
+
 
 }
 
 void mAnsisOp_finalizar(int32_t id){
 //decirle a la memoria que se elimine la tabla asociada
+
+	header_t* header_A_Memoria = _create_header(FINALIZAR, sizeof(int32_t));
+
+	int32_t enviado_Header = _send_header(socketMemoria[id],header_A_Memoria, sizeof (header_t));
+	int32_t enviado_Id_Proceso = _send_bytes(socketMemoria[id],&id, sizeof (int32_t));
+
+	int32_t resultado;
+	int32_t resultado_Mensaje = _receive_bytes(socketMemoria[id],&resultado, sizeof (int32_t)); //aca recibo un que?
+	if(resultado_Mensaje == ERROR_OPERATION) return;
+
+	log_info(loggerInfo, "mProc %d finalizado", id);
+
+	int32_t enviar_Resultado = _send_bytes(socketMemoria[id],&resultado_Mensaje,sizeof(int32_t));
 
 
 }

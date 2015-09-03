@@ -22,5 +22,8 @@ void mAnsisOp_leer(int32_t,int32_t);
 void mAnsisOp_escribir(int32_t,int32_t,char*);
 void mAnsisOp_IO(int32_t,int32_t);
 void mAnsisOp_finalizar(int32_t);
+PCB* deserializarPCB(char* serializado);
+
+
 
 #endif /* OPERACIONES_H_ */
