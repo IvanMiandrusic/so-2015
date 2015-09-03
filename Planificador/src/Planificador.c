@@ -115,6 +115,7 @@ void administrarPath(char* filePath){
 	PCB* unPCB = generarPCB(idParaPCB, filePath);
 	list_add(colaListos, unPCB);
 	printf("este es el pcb %s y su id = %d \n", unPCB->ruta_archivo,unPCB->PID);
+	return;
 
 }
 
@@ -145,19 +146,39 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	case TERMINO_RAFAGA: {
 
-
-
-
 			break;
 	}
 
+	case INSTRUCCION_IO: {
+
+
+
+
+		break;
+	}
+
+	case RESULTADO_ERROR :{
+
+		break;
+	}
+
+	case RESULTADO_OK: {
+
+		break;
+	}
+
+	case RESPUESTA_UTILIZACION_CPU: {
+
+		break;
+	}
 
 	default: { break;}
 	}
 
 }
 
-void asignarPCBaCPU(){
+void asignarPCBaCPU(){         //todo: (Ceckear) toma el primer pcb de la lista, serializarlo y enviarlo a la cpu
+
 	if(list_size(colaCPUs) > 0){
 	PCB* pcbAEnviar = malloc(sizeof(PCB));
 	pcbAEnviar = list_get(colaListos, 0);
@@ -166,18 +187,23 @@ void asignarPCBaCPU(){
 	enviarPCB(paquete);
 	list_remove(colaListos, 0);
 	printf("el size de PCBs es: %d", list_size(colaListos));
-	free(pcbAEnviar); //esta bien este free??
+	free(pcbAEnviar);
+	log_info(loggerInfo, "El PCB se envio satisfactoriamente");
+	return;
 
-
-	//todo: tomar el primer pcb de la lista, serializarlo y enviarlo a la cpu
 	}else{
+		printf("No hay CPUs Disponibles que asignar \n");
 		log_error(loggerError, "No hay una CPU disponible");
-	exit(EXIT_FAILURE);
+	return;
+	//todo: tratar el caso en que no hay CPUs disponibles pero si hay PCBs, corta la ejecucion? para mi deberia
+	//retornar a la consola.
 	}
 
 }
 
-void enviarPCB(char* unPaquete){
+
+void enviarPCB(char* unPaquete){    // todo: cual es el tema del "warning"?? sera porq falta algun malloc?? probe pero no
+									// lo descubri
 
 	sock_t* socketCPU = list_get(colaCPUs, 0);
 	header_t* headerPCB = _create_header(ENVIO_PCB, sizeof(int32_t));
@@ -186,14 +212,22 @@ void enviarPCB(char* unPaquete){
 		return;
 		free(headerPCB);
 	}
+	//todo: (Checkear) enviar el PCB serializado
+	enviado = _send_bytes(socketCPU,unPaquete, sizeof(PCB));
+	if(enviado == ERROR_OPERATION){
+		log_error(loggerError, "Fallo en el envio de PCB");
+		free(headerPCB);
+		return;
 
-	//todo:enviar el PCB serializado
+	}
 	list_remove(colaCPUs, 0);
 	free(headerPCB);
 
-
-
 }
+
+
+
+//----------------------------------// MAIN //------------------------------------------//
 
 
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
