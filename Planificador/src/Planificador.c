@@ -178,8 +178,8 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 }
 
 //Funcion que saca el tamaño de un PCB para enviar
-int32_t obtener_tamaño_pcb(PCB* pcb) {
-	return 4*sizeof(int32_t) + pcb->tamaño_ruta_archivo;
+int32_t obtener_tamanio_pcb(PCB* pcb) {
+	return 4*sizeof(int32_t) + pcb->tamanio_ruta_archivo;
 }
 
 
@@ -189,8 +189,8 @@ void asignarPCBaCPU(){         //todo: (Ceckear) toma el primer pcb de la lista,
 	PCB* pcbAEnviar = list_get(colaListos, 0);
 	printf("agarre el primer pcb: id= %d, arch= %s", pcbAEnviar->PID, pcbAEnviar->ruta_archivo); 
 	char* paquete = serializarPCB(pcbAEnviar); 
-	int32_t tamaño_pcb = obtener_tamaño_pcb(pcbAEnviar);
-	enviarPCB(paquete, tamaño_pcb);
+	int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
+	enviarPCB(paquete, tamanio_pcb);
 	list_remove(colaListos, 0);
 	printf("el size de PCBs es: %d", list_size(colaListos));
 	log_info(loggerInfo, "El PCB se envio satisfactoriamente");
@@ -206,7 +206,7 @@ void asignarPCBaCPU(){         //todo: (Ceckear) toma el primer pcb de la lista,
 }
 
 
-void enviarPCB(char* paquete_serializado, int32_t tamaño_pcb){    // todo: cual es el tema del "warning"?? sera porq falta algun malloc?? probe pero no
+void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb){    // todo: cual es el tema del "warning"?? sera porq falta algun malloc?? probe pero no
 									// lo descubri
 
 	sock_t* socketCPU = list_get(colaCPUs, 0); //?????????? FIX
@@ -226,7 +226,7 @@ void enviarPCB(char* paquete_serializado, int32_t tamaño_pcb){    // todo: cual
 	}
 	
 	//Una opcion mas facil SOLO cuando tenemos mensajes serializados (OJO: prestar atencion como calcular tamaño envio)
-	enviado = send_msg(socketCPU, ENVIO_PCB, paquete_serializado, tamaño_pcb); //Te crea el header internamente
+	enviado = send_msg(socketCPU, ENVIO_PCB, paquete_serializado, tamanio_pcb); //Te crea el header internamente
 	if(enviado == ERROR_OPERATION){
 		log_error(loggerError, "Fallo en el envio de PCB");
 		return;
