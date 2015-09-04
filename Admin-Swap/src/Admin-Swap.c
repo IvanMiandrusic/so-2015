@@ -92,7 +92,28 @@ void creoEstructuraSwap(){
 
 }
 
+void leeryEscribir(NodoOcupado* nodoViejo,int32_t comienzo){
+
+	int i =nodoViejo->comienzo;
+	for(i;i<nodoViejo->paginas+nodoViejo->comienzo;i++){
+
+		t_pagina* pagina=malloc(sizeof(t_pagina));
+		pagina->PID=nodoViejo->PID;
+		pagina->nro_pagina=i;
+		pagina->contenido=NULL;
+
+		pagina->contenido=leer_pagina(pagina);
+		pagina->nro_pagina=comienzo;
+		escribir_pagina(pagina);
+		comienzo++;
+
+	}
+
+}
+
 int32_t compactar(){
+
+	sem_wait(&sem_mutex_ocupado);
 
 	if (list_is_empty(espacioOcupado)){
 		log_error(loggerError, "No se puede compactar una memoria vacía");
@@ -102,11 +123,14 @@ int32_t compactar(){
 		log_error(loggerError, "No se puede compactar una memoria completamente llena");
 		return -1;
 	}
+
+	log_info(loggerInfo,"Compactacion iniciada por fragmentacion externa");
+
 	NodoOcupado* primerNodo=list_get(espacioOcupado, 0);
 	if(primerNodo->comienzo!=0){
+		leeryEscribir(primerNodo,0);
 		primerNodo->comienzo=0;
 		list_replace_and_destroy_element(espacioOcupado, 0, primerNodo, free);
-		//cambiar en el archivo con leer y escribir TODO
 	}
 
 	int32_t i;
@@ -116,9 +140,9 @@ int32_t compactar(){
 		NodoOcupado* anterior= list_get(espacioOcupado, i-1);
 		bool chequeo=(nodo->comienzo==anterior->comienzo+anterior->paginas);
 		if(!chequeo){
+			leeryEscribir(nodo,anterior->comienzo+anterior->paginas);
 			nodo->comienzo=anterior->comienzo+anterior->paginas;
 			list_replace_and_destroy_element(espacioOcupado, i, nodo, free);
-			//TODO cambiar en el archivo swap con leer y escribir
 		}
 		//fin for
 	}
@@ -130,10 +154,14 @@ int32_t compactar(){
 	NodoLibre* nodoLibre=malloc(sizeof(NodoLibre));
 	nodoLibre->comienzo = nuevoComienzo;
 	nodoLibre->paginas = totalPaginas - nuevoComienzo;
+	sem_wait(&sem_mutex_libre);
 	list_clean_and_destroy_elements(espacioLibre, free);
 	list_add(espacioLibre, nodoLibre);
+	sem_post(&sem_mutex_libre);
+
 }
 	graficoCompactar();
+	sem_post(&sem_mutex_ocupado);
 	return 1;
 }
 
@@ -168,7 +196,7 @@ printf("▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 	   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n"
 	   "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n");
 
-printf("Swap compactado\n");
+	log_info(loggerInfo,"Compactacion finalizada por fragmentacion externa");
 }
 
 int main(void) {
@@ -208,7 +236,6 @@ int main(void) {
 
 	return EXIT_SUCCESS;
 }
-
 
 void recibir_operaciones_memoria(sock_t* socketMemoria){
 
@@ -354,42 +381,39 @@ int32_t borrarEspacio(int32_t PID){
 	if(nodoAnterior!=NULL && nodoPosterior!=NULL){
 		nuevoNodo->comienzo=nodoAnterior->comienzo;
 		nuevoNodo->paginas=nodoAnterior->paginas+procesoRemovido->paginas+nodoPosterior->paginas;
-		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionInitial);
-		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionFinal);
+		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionInitial,free);
+		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionFinal,free);
 	}else if(nodoAnterior!=NULL && nodoPosterior==NULL){
 		nuevoNodo->comienzo=nodoAnterior->comienzo;
 		nuevoNodo->paginas=nodoAnterior->paginas+procesoRemovido->paginas;
-		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionInitial);
+		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionInitial,free);
 	}else if(nodoAnterior==NULL && nodoPosterior!=NULL){
 		nuevoNodo->comienzo=procesoRemovido->comienzo;
 		nuevoNodo->paginas=nodoPosterior->paginas+procesoRemovido->paginas;
-		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionFinal);
+		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionFinal,free);
 	}else {
 		nuevoNodo->comienzo=procesoRemovido->comienzo;
 		nuevoNodo->paginas=procesoRemovido->paginas;
 	}
+	sem_wait(&sem_mutex_libre);
 	list_add(espacioLibre,nuevoNodo);
+	sem_post(&sem_mutex_libre);
+	log_info(loggerInfo,"Proceso mProc liberado: PID: %d byte inicial: %d tamaño: %d",procesoRemovido->PID,
+				(procesoRemovido->comienzo)*(arch->tamanio_pagina),(procesoRemovido->paginas)*(arch->tamanio_pagina));
 	free(procesoRemovido);
 	return RESULTADO_OK;
 }
 
+FILE* abrirArchivoConTPagina(t_pagina* pagina_pedida){
 
-char* leer_pagina(t_pagina* pagina_pedida){
-
-	char* texto;
-
-	return texto;
-	//Todo
-}
-
-int32_t escribir_pagina(t_pagina* pagina_pedida){
 	bool find_by_PID(NodoOcupado* nodo)
-	{
-		return nodo->PID==pagina_pedida->PID;
-	}
+		{
+			return nodo->PID==pagina_pedida->PID;
+		}
 	NodoOcupado* nodoProceso=list_find(espacioOcupado, find_by_PID);
-	//ver la necesidad de completarlo con ceros TODO
-	FILE* espacioDeDatos = fopen(arch->nombre_swap,"wr+");
+
+
+	FILE* espacioDeDatos = fopen(arch->nombre_swap,"r+");
 	if (espacioDeDatos==NULL) {
 		log_error(loggerError, "No se puede abrir el archivo de Swap para escribir");
 		return ERROR_OPERATION;
@@ -399,12 +423,51 @@ int32_t escribir_pagina(t_pagina* pagina_pedida){
 		log_error(loggerError, "No se puede ubicar la pagina a escribir");
 		return ERROR_OPERATION;
 	}
-	//todo ver fwrite y que devuelve
-	int32_t resultado=fwrite(pagina_pedida->contenido, strlen(pagina_pedida->contenido), 1, espacioDeDatos);
-	if (resultado<0) return ERROR_OPERATION;
-	if (resultado==0) return SUCCESS_OPERATION;
 
-	return 0;
 }
+
+char* leer_pagina(t_pagina* pagina_pedida){
+
+	char* texto=malloc(arch->tamanio_pagina);
+	FILE* espacioDeDatos=abrirArchivoConTPagina(pagina_pedida);
+	int32_t posicion=ftell(espacioDeDatos);
+
+	int32_t resultado=fread(texto, sizeof(char),arch->tamanio_pagina, espacioDeDatos);
+
+	fclose(espacioDeDatos);
+
+	if (resultado==arch->tamanio_pagina){
+		log_info(loggerInfo,"Lectura: PID: %d byte inicial: %d tamaño: %d contenido: %s",pagina_pedida->PID,
+				posicion, strlen(texto),texto);
+		return texto;
+	}
+	return NULL;
+
+}
+
+int32_t escribir_pagina(t_pagina* pagina_pedida){
+
+	FILE* espacioDeDatos=abrirArchivoConTPagina(pagina_pedida);
+	int32_t posicion = ftell(espacioDeDatos);
+
+	//todo ver fwrite y que devuelve
+	int32_t resultado=fwrite(pagina_pedida->contenido, sizeof(char),strlen(pagina_pedida->contenido), espacioDeDatos);
+	//si el fwrite deja el cursor al final de donde escribio
+	int32_t resultado2=fwrite('\0', sizeof(char),arch->tamanio_pagina-strlen(pagina_pedida->contenido), espacioDeDatos);
+
+	fclose(espacioDeDatos);
+
+	if (resultado+resultado2==arch->tamanio_pagina){
+		log_info(loggerInfo,"Escritura: PID: %d byte inicial: %d tamaño: %d contenido: %s",pagina_pedida->PID,
+				posicion, strlen(pagina_pedida->contenido),pagina_pedida->contenido);
+		return SUCCESS_OPERATION;
+	}
+
+	return ERROR_OPERATION;
+}
+
+
+
+
 
 

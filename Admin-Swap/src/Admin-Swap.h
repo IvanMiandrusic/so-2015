@@ -64,5 +64,6 @@ int32_t reservarEspacio(t_pedido_memoria* );
 int32_t borrarEspacio(int32_t );
 int32_t escribir_pagina(t_pagina* );
 void recibir_operaciones_memoria(sock_t*);
+FILE* abrirArchivoConTPagina(t_pagina*);
 
 #endif /* ADMIN_SWAP_H_ */
