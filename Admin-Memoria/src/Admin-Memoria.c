@@ -96,7 +96,7 @@ void crearArchivoDeLog() {
 	loggerDebug = log_create(pathLog, archLog, 1, LOG_LEVEL_DEBUG);
 }
 
-void llenoTLB() {			//tambien sirve para limpiar la TLB
+void TLB_init() {
 
 	int i;
 	for (i = 0; i < arch->entradas_tlb; i++) {
@@ -159,7 +159,7 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 void creoEstructurasDeManejo() {
 	if (string_equals_ignore_case((arch->tlb_habilitada), "si")) {
 		tabla_TLB = list_create();
-		llenoTLB();
+		TLB_init();
 	}
 	mem_principal = malloc((arch->cantidad_marcos) * (arch->tamanio_marco));
 }
@@ -196,40 +196,25 @@ int main(void) {
 
 	socketSwap = create_client_socket(arch->ip_swap, arch->puerto_swap);
 	int32_t resultado = connect_to_server(socketSwap);
-	//Todo validacion
+	if(resultado == ERROR_OPERATION) {
+		log_error(loggerError, "Error al conectar al swap");
+		return EXIT_FAILURE;
+	}
 
 	socketServidorCpus = create_server_socket(arch->puerto_escucha);
 	resultado = listen_connections(socketServidorCpus);
-	//Todo validacion
+	if(resultado == ERROR_OPERATION) {
+		log_error(loggerError, "Error al escuchar conexiones de las cpus");
+		return EXIT_FAILURE;
+	}
+
 	connection_pool_server_listener(socketServidorCpus, procesar_pedido);
-
-	/*Sintaxis para la creacion de Hilos
-
-	 pthread_create(&NombreThread, NULL, thread_funcion, (void*) parametros);
-	 recordando que: solo se puede pasar UN PARAMETRO:
-	 NULL: no necesita parametros.
-	 unParametro: se le pasa solo uno y luego se castea.
-	 ¿Mas parametros?: un struct.
-
-	 pthread_t NombreThread; //declaro el hilo
-
-
-	 int resultado = pthread_create(&NombreThread, NULL, thread_funcion, (void*) parametros);
-	 if (resultado != 0) {
-	 log_error(loggerError,"Error al crear el hilo de );
-	 abort();
-	 }else{
-	 log_info(loggerInfo, "Se creo exitosamente el hilo de ");
-	 }
-
-	 pthread_join(NombreThread, NULL); //espero a que el hilo termine su ejecución */
 
 	return EXIT_SUCCESS;
 }
 
 void procesar_pedido(sock_t* socketCpu, header_t* header) {
 
-	//char* pedido_serializado = malloc(get_message_size(header));
 	t_pedido_cpu* pedido_cpu = malloc(sizeof(t_pedido_cpu));
 	//Todo casos de envios
 	switch (get_operation_code(header)) {
@@ -244,6 +229,7 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 		int32_t recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
 		if(recibido == ERROR_OPERATION) return;
 		t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
+		char* contenido_pagina = buscar_pagina(pagina_pedida);
 		//Todo, buscar en TLB, buscar en TPags y sino ->Swap
 		//char* serializado= serializarTexto(leer_pagina(pagina_pedida));
 		//enviar serializado
@@ -344,6 +330,26 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 	}
 
 	free(pedido_cpu);
+}
+
+char* buscar_pagina(t_pagina* pagina_pedida) {
+
+	bool find_by_PID_page(TLB* entrada) {
+
+		return (entrada->PID == pagina_pedida->PID) && (entrada->pagina == pagina_pedida->nro_pagina);
+	}
+
+	sem_wait(&sem_mutex_tlb);
+	TLB* entrada_pagina = list_find(tabla_TLB, find_by_PID_page);
+	sem_post(&sem_mutex_tlb);
+
+	if(entrada_pagina == NULL); //Todo ir a buscar a tabla de paginas
+
+	else{
+		//Traer el contenido de MP
+	}
+
+	return NULL;
 }
 
 int32_t borrarEspacio(int32_t PID){

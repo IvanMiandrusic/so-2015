@@ -9,12 +9,51 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-char* serializar_pedido(t_pagina* pedido){
-	//Todo hacer
-	return NULL;
+int32_t obtener_tamanio_pagina(t_pagina* pagina) {
+	return 3*sizeof(int32_t) + pagina->tamanio_contenido;
+}
+
+char* serializar_pedido(t_pagina* pagina){
+
+	char* pedido_serializado = malloc(obtener_tamanio_pagina(pagina));
+
+	int32_t offset = 0;
+	int32_t size_to_send;
+
+	size_to_send = sizeof(int32_t);
+	memcpy(pedido_serializado + offset, &(pagina->PID), size_to_send);
+	offset += size_to_send;
+
+	size_to_send = sizeof(int32_t);
+	memcpy(pedido_serializado + offset, &(pagina->nro_pagina), size_to_send);
+	offset += size_to_send;
+
+	size_to_send = sizeof(int32_t);
+	memcpy(pedido_serializado + offset, &(pagina->tamanio_contenido), size_to_send);
+	offset += size_to_send;
+
+	size_to_send = pagina->tamanio_contenido;
+	memcpy(pedido_serializado + offset, pagina->contenido, size_to_send);
+
+	return pedido_serializado;
 }
 
 t_pagina* deserializar_pedido(char* pedido_serializado){
-	//Todo hacer
-	return NULL;
+
+	t_pagina* pagina_solicitada = malloc(sizeof(t_pagina));
+
+	int32_t offset = 0;
+
+	memcpy(&(pagina_solicitada->PID), pedido_serializado+offset, sizeof(int32_t));
+
+	offset += sizeof(int32_t);
+	memcpy(&(pagina_solicitada->nro_pagina), pedido_serializado+offset, sizeof(int32_t));
+
+	offset += sizeof(int32_t);
+	memcpy(&(pagina_solicitada->tamanio_contenido), pedido_serializado+offset, sizeof(int32_t));
+
+	offset += sizeof(int32_t);
+	memcpy(pagina_solicitada->contenido, pedido_serializado+offset, pagina_solicitada->tamanio_contenido);
+
+	return pagina_solicitada;
 }

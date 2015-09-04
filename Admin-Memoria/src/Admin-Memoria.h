@@ -53,13 +53,14 @@ void ifProcessDie();
 void inicializoSemaforos();
 void crearArchivoDeLog();
 void creoEstructurasDeManejo();
-void llenoTLB();
+void TLB_init();
 void TLB_flush();
 void crear_tabla_pagina_PID(int32_t , int32_t);
 void ifSigurs1();
 void ifSigurs2();
 void procesar_pedido(sock_t* socketCpu, header_t* header);
 void iniciar_proceso(sock_t*, t_pedido_cpu*);
+char* buscar_pagina(t_pagina*);
 int32_t borrarEspacio(int32_t);
 
 #endif /* ADMIN_MEMORIA_H_ */
