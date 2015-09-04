@@ -334,7 +334,7 @@ int32_t borrarEspacio(int32_t PID){
 				return nodo->PID==PID;
 			}
 
-	NodoOcupado* procesoRemovido = list_remove_by_condition(espacioLibre, find_by_PID);
+	NodoOcupado* procesoRemovido = list_remove_by_condition(espacioOcupado, find_by_PID);
 
 	bool find_by_ConditionInitial(NodoLibre* espacioAnterior)
 				{
@@ -345,7 +345,7 @@ int32_t borrarEspacio(int32_t PID){
 
 	bool find_by_ConditionFinal(NodoLibre* espacioPosterior)
 					{
-						return espacioPosterior->comienzo==procesoRemovido->comienzo+procesoRemovido->comienzo;
+						return espacioPosterior->comienzo==procesoRemovido->comienzo+procesoRemovido->paginas;
 					}
 
 	NodoLibre* nodoPosterior=list_find(espacioLibre, find_by_ConditionFinal);
@@ -354,16 +354,21 @@ int32_t borrarEspacio(int32_t PID){
 	if(nodoAnterior!=NULL && nodoPosterior!=NULL){
 		nuevoNodo->comienzo=nodoAnterior->comienzo;
 		nuevoNodo->paginas=nodoAnterior->paginas+procesoRemovido->paginas+nodoPosterior->paginas;
+		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionInitial);
+		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionFinal);
 	}else if(nodoAnterior!=NULL && nodoPosterior==NULL){
 		nuevoNodo->comienzo=nodoAnterior->comienzo;
 		nuevoNodo->paginas=nodoAnterior->paginas+procesoRemovido->paginas;
+		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionInitial);
 	}else if(nodoAnterior==NULL && nodoPosterior!=NULL){
 		nuevoNodo->comienzo=procesoRemovido->comienzo;
 		nuevoNodo->paginas=nodoPosterior->paginas+procesoRemovido->paginas;
+		list_remove_and_destroy_by_condition(espacioLibre, find_by_ConditionFinal);
 	}else {
 		nuevoNodo->comienzo=procesoRemovido->comienzo;
 		nuevoNodo->paginas=procesoRemovido->paginas;
 	}
+	list_add(espacioLibre,nuevoNodo);
 	free(procesoRemovido);
 	return RESULTADO_OK;
 }
