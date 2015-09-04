@@ -75,10 +75,30 @@ void ifSigusr2() {
 }
 
 void ifSigpoll() {
+	dump();
 //todo dump
 }
 /*Función donde se inicializan los semaforos */
 
+void dump(){
+	int pid=fork();
+
+	if(pid==-1){
+		log_error(loggerError, "Error al hacer el fork() para dump");
+	}
+
+	if(!pid){
+		int i;
+		int32_t offset;
+		for(i=0;i<arch->cantidad_marcos;i++){
+			char* texto= malloc(arch->tamanio_marco);
+			offset=i*arch->tamanio_marco;
+			memcpy(texto, mem_principal+offset, arch->tamanio_marco);
+			log_info(loggerInfo, "Marco:%d; contenido:%s", i, texto);
+		}
+		abort();
+	}
+}
 void inicializoSemaforos() {
 
 	int32_t semMutex = sem_init(&sem_mutex_tlb, 0, 1);

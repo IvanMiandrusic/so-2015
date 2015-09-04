@@ -58,7 +58,7 @@ void inicializoSemaforos();
 void crearArchivoDeLog();
 void creoEstructurasDeManejo();
 void crear_tabla_pagina_PID(int32_t , int32_t);
-
+void dump();
 /** Funciones de señales **/
 void ifProcessDie();
 void ifSigurs1();
