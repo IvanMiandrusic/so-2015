@@ -31,7 +31,7 @@ ProcesoMemoria* arch;
 t_log* loggerInfo;
 t_log* loggerError;
 t_log* loggerDebug;
-t_list* tabla_TLB;
+t_list* TLB_tabla;
 char* mem_principal;
 t_list* tabla_Paginas;
 sem_t sem_mutex_tlb;
@@ -109,7 +109,7 @@ void TLB_init() {
 		nuevaEntrada->marco = 0;
 
 		sem_wait(&sem_mutex_tlb);
-		list_add(tabla_TLB, nuevaEntrada);
+		list_add(TLB_tabla, nuevaEntrada);
 		sem_post(&sem_mutex_tlb);
 	}
 }
@@ -127,7 +127,7 @@ void TLB_flush() {
 	}
 
 	sem_wait(&sem_mutex_tlb);
-	list_iterate(tabla_TLB, limpiar_entradas);
+	list_iterate(TLB_tabla, limpiar_entradas);
 	sem_post(&sem_mutex_tlb);
 }
 
@@ -158,7 +158,7 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 
 void creoEstructurasDeManejo() {
 	if (string_equals_ignore_case((arch->tlb_habilitada), "si")) {
-		tabla_TLB = list_create();
+		TLB_tabla = list_create();
 		TLB_init();
 	}
 	mem_principal = malloc((arch->cantidad_marcos) * (arch->tamanio_marco));
@@ -332,24 +332,64 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 	free(pedido_cpu);
 }
 
-char* buscar_pagina(t_pagina* pagina_pedida) {
+char* buscar_pagina(t_pagina* pagina_solicitada) {
+
+	/** Las paginas tienen el mismo tamaño del marco (como maximo) **/
+	char* contenido_pagina = malloc(arch->tamanio_marco);
+
+	t_resultado_busqueda resultado = NOT_FOUND;
+
+	if(TLB_habilitada())
+		resultado = TLB_buscar_pagina(pagina_solicitada, &contenido_pagina);
+
+	if(resultado == NOT_FOUND) {
+
+		//Todo si no esta en TLB..
+	}
+
+	return contenido_pagina;
+}
+
+bool TLB_habilitada() {
+
+	return string_equals_ignore_case(arch->tlb_habilitada, "SI");
+}
+
+t_resultado_busqueda TLB_buscar_pagina(t_pagina* pagina, char** contenido_pagina) {
 
 	bool find_by_PID_page(TLB* entrada) {
 
-		return (entrada->PID == pagina_pedida->PID) && (entrada->pagina == pagina_pedida->nro_pagina);
+		return (entrada->PID == pagina->PID) && (entrada->pagina == pagina->nro_pagina);
 	}
 
 	sem_wait(&sem_mutex_tlb);
-	TLB* entrada_pagina = list_find(tabla_TLB, find_by_PID_page);
+	TLB* entrada_pagina = list_find(TLB_tabla, find_by_PID_page);
 	sem_post(&sem_mutex_tlb);
 
-	if(entrada_pagina == NULL); //Todo ir a buscar a tabla de paginas
+	if(entrada_pagina == NULL) {
+		//Todo ir a buscar a tabla de paginas
 
-	else{
-		//Traer el contenido de MP
 	}
 
-	return NULL;
+	else{
+		//Todo Traer el contenido de MP
+	}
+
+	return NOT_FOUND; //depende si encuentra
+
+}
+
+t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t PID, t_pagina* pagina, char** contenido) {
+
+	//Todo buscar pagina en la tabla de paginas del PID
+	return NOT_FOUND; //depende si encuentra
+}
+
+t_resultado_busqueda obtener_pagina_MP(t_pagina* pagina, char** contenido) {
+
+	//Todo traer contenido de una pagina de la memoria principal
+	return NOT_FOUND; //depende si encuentra
+
 }
 
 int32_t borrarEspacio(int32_t PID){

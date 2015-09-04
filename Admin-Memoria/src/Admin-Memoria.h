@@ -47,20 +47,39 @@ typedef struct estructura_proceso_paginas {
 	t_list* paginas;
 }t_paginas_proceso;
 
+typedef enum resultado_operacion_busqueda_pagina {
+	FOUND=1,
+	NOT_FOUND=0
+}t_resultado_busqueda;
 
+/** Funciones de configuracion inicial **/
 ProcesoMemoria* crear_estructura_config(char*);
-void ifProcessDie();
 void inicializoSemaforos();
 void crearArchivoDeLog();
 void creoEstructurasDeManejo();
-void TLB_init();
-void TLB_flush();
 void crear_tabla_pagina_PID(int32_t , int32_t);
+
+/** Funciones de señales **/
+void ifProcessDie();
 void ifSigurs1();
 void ifSigurs2();
+
+/** Funciones de operaciones con CPU **/
 void procesar_pedido(sock_t* socketCpu, header_t* header);
 void iniciar_proceso(sock_t*, t_pedido_cpu*);
 char* buscar_pagina(t_pagina*);
 int32_t borrarEspacio(int32_t);
+
+/** TLB functions **/
+void TLB_init();
+void TLB_flush();
+bool TLB_habilitada();
+t_resultado_busqueda TLB_buscar_pagina(t_pagina*, char**); //Recibe la direccion del char* donde se guardara el contenido de esa pagina
+
+
+/** Funciones tabla_paginas y MP **/
+t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t, t_pagina*, char**);
+t_resultado_busqueda obtener_pagina_MP(t_pagina*, char**);
+
 
 #endif /* ADMIN_MEMORIA_H_ */
