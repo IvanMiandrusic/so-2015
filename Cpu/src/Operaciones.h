@@ -15,15 +15,17 @@ void* leer (int32_t);
 void* escribir (int32_t, char* );
 void* entrada_salida (int32_t);
 void* finalizar ();
-void tipo_Cod_Operacion (int32_t,int32_t);
+void tipo_Cod_Operacion(int32_t, header_t*);
 void ejecutar_Instrucciones (int32_t, PCB*);
 void mAnsisOp_iniciar(int32_t,int32_t);
+int32_t enviarResultadoAlPlanificador(int32_t, sock_t*);
 void mAnsisOp_leer(int32_t,int32_t);
 void mAnsisOp_escribir(int32_t,int32_t,char*);
 void mAnsisOp_IO(int32_t,int32_t);
 void mAnsisOp_finalizar(int32_t);
-PCB* deserializarPCB(char* serializado);
 
+void ejecutar_FIFO(int32_t, PCB*);
+void ejecutar_RR(int32_t, PCB*);
 
 
 #endif /* OPERACIONES_H_ */
