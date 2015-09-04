@@ -56,12 +56,13 @@ void ifProcessDie();
 void inicializoSemaforos();
 void crearArchivoDeLog();
 void creoEstructuraSwap();
-void compactar();
+int32_t compactar();
 int32_t calcularEspacioLibre();
 void graficoCompactar();
 char* leer_pagina(t_pagina*);
 int32_t reservarEspacio(t_pedido_memoria* );
 int32_t borrarEspacio(int32_t );
 int32_t escribir_pagina(t_pagina* );
+void recibir_operaciones_memoria(sock_t*);
 
 #endif /* ADMIN_SWAP_H_ */

@@ -92,20 +92,21 @@ void creoEstructuraSwap(){
 
 }
 
-void compactar(){
+int32_t compactar(){
 
 	if (list_is_empty(espacioOcupado)){
 		log_error(loggerError, "No se puede compactar una memoria vacía");
-		return;
+		return -1;
 	}
 	if(list_is_empty(espacioLibre)){
 		log_error(loggerError, "No se puede compactar una memoria completamente llena");
-		return;
+		return -1;
 	}
 	NodoOcupado* primerNodo=list_get(espacioOcupado, 0);
 	if(primerNodo->comienzo!=0){
 		primerNodo->comienzo=0;
-		list_replace(espacioOcupado, 0, primerNodo);
+		list_replace_and_destroy_element(espacioOcupado, 0, primerNodo, free);
+		//cambiar en el archivo con leer y escribir TODO
 	}
 
 	int32_t i;
@@ -116,7 +117,8 @@ void compactar(){
 		bool chequeo=(nodo->comienzo==anterior->comienzo+anterior->paginas);
 		if(!chequeo){
 			nodo->comienzo=anterior->comienzo+anterior->paginas;
-			list_replace(espacioOcupado, i, nodo);
+			list_replace_and_destroy_element(espacioOcupado, i, nodo, free);
+			//TODO cambiar en el archivo swap con leer y escribir
 		}
 		//fin for
 	}
@@ -130,8 +132,9 @@ void compactar(){
 	nodoLibre->paginas = totalPaginas - nuevoComienzo;
 	list_clean_and_destroy_elements(espacioLibre, free);
 	list_add(espacioLibre, nodoLibre);
-	sleep(arch->retardo);
 }
+	graficoCompactar();
+	return 1;
 }
 
 int32_t calcularEspacioLibre(){
@@ -232,8 +235,6 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			if(recibido == ERROR_OPERATION) return;
 			t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
 
-
-
 			char* serializado= serializarTexto(leer_pagina(pagina_pedida));
 			//enviar serializado
 			break;
@@ -308,7 +309,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 		}
 
 		default: {
-
+				log_error(loggerError, "Se recibió un codigo de operación no valido");
 		}
 
 		}
@@ -317,12 +318,53 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 }
 
 int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
-	//todo
+	//todo falta saber si es bestfit-firstfit-worstfit o solo asignación contigua
+	int32_t libre=calcularEspacioLibre();
+	if(libre <= pedido_pid->cantidad_paginas)return RESULTADO_ERROR;
+	//asignarBF
+	//asignarFF
+	//asignarWF
 	return RESULTADO_OK;
 }
 
 int32_t borrarEspacio(int32_t PID){
-	//todo
+
+	bool find_by_PID(NodoOcupado* nodo)
+			{
+				return nodo->PID==PID;
+			}
+
+	NodoOcupado* procesoRemovido = list_remove_by_condition(espacioLibre, find_by_PID);
+
+	bool find_by_ConditionInitial(NodoLibre* espacioAnterior)
+				{
+					return espacioAnterior->comienzo+espacioAnterior->paginas==procesoRemovido->comienzo;
+				}
+
+	NodoLibre* nodoAnterior=list_find(espacioLibre, find_by_ConditionInitial);
+
+	bool find_by_ConditionFinal(NodoLibre* espacioPosterior)
+					{
+						return espacioPosterior->comienzo==procesoRemovido->comienzo+procesoRemovido->comienzo;
+					}
+
+	NodoLibre* nodoPosterior=list_find(espacioLibre, find_by_ConditionFinal);
+	NodoLibre* nuevoNodo=malloc(sizeof(NodoLibre));
+
+	if(nodoAnterior!=NULL && nodoPosterior!=NULL){
+		nuevoNodo->comienzo=nodoAnterior->comienzo;
+		nuevoNodo->paginas=nodoAnterior->paginas+procesoRemovido->paginas+nodoPosterior->paginas;
+	}else if(nodoAnterior!=NULL && nodoPosterior==NULL){
+		nuevoNodo->comienzo=nodoAnterior->comienzo;
+		nuevoNodo->paginas=nodoAnterior->paginas+procesoRemovido->paginas;
+	}else if(nodoAnterior==NULL && nodoPosterior!=NULL){
+		nuevoNodo->comienzo=procesoRemovido->comienzo;
+		nuevoNodo->paginas=nodoPosterior->paginas+procesoRemovido->paginas;
+	}else {
+		nuevoNodo->comienzo=procesoRemovido->comienzo;
+		nuevoNodo->paginas=procesoRemovido->paginas;
+	}
+	free(procesoRemovido);
 	return RESULTADO_OK;
 }
 
@@ -336,7 +378,27 @@ char* leer_pagina(t_pagina* pagina_pedida){
 }
 
 int32_t escribir_pagina(t_pagina* pagina_pedida){
-	//TODO
+	bool find_by_PID(NodoOcupado* nodo)
+	{
+		return nodo->PID==pagina_pedida->PID;
+	}
+	NodoOcupado* nodoProceso=list_find(espacioOcupado, find_by_PID);
+	//ver la necesidad de completarlo con ceros TODO
+	FILE* espacioDeDatos = fopen(arch->nombre_swap,"wr+");
+	if (espacioDeDatos==NULL) {
+		log_error(loggerError, "No se puede abrir el archivo de Swap para escribir");
+		return ERROR_OPERATION;
+	}
+	int32_t bloque= nodoProceso->comienzo+pagina_pedida->nro_pagina;
+	if(fseek(espacioDeDatos, bloque*arch->tamanio_pagina,SEEK_SET)!=0){
+		log_error(loggerError, "No se puede ubicar la pagina a escribir");
+		return ERROR_OPERATION;
+	}
+	//todo ver fwrite y que devuelve
+	int32_t resultado=fwrite(pagina_pedida->contenido, strlen(pagina_pedida->contenido), 1, espacioDeDatos);
+	if (resultado<0) return ERROR_OPERATION;
+	if (resultado==0) return SUCCESS_OPERATION;
+
 	return 0;
 }
 
