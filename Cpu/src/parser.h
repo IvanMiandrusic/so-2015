@@ -29,7 +29,7 @@ int esPuntoyComa(char );
 int buscarPrimerParametro(char*);
 char* buscarSegundoParametro(char*);
 structEscribir buscarAmbosParametros(char*);
-void analizadorLinea(int32_t,char* const );
+t_respuesta* analizadorLinea(int32_t,PCB*,char* const );
 
 
 
