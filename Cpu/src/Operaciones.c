@@ -131,6 +131,52 @@ void ejecutar_Instrucciones (int32_t id, PCB* pcb){
 
 }
 
+void ejecutarFIFO(int32_t id, PCB* pcb){
+	bool finalizar=false;
+	FILE *f = fopen(pcb->ruta_archivo, "r");
+	if (f==NULL)
+	{
+		log_error (loggerError, "Error al abrir fichero.txt");
+		return;
+	}
+	char cadena[100];
+	while(finalizar==false){
+
+		if(fgets(cadena, 100, f) != NULL)
+		{
+
+			analizadorLinea(id, cadena);
+		}
+		/*todo, arreglar para que se devuelva un struct int-char, de modo de appendear la respuesta y el int
+		para saber que ejecuto ultimo de modo de cortar en un finalizar o io.
+		actualizar pcb, con ftells(f);
+		*/
+		}
+}
+
+void ejecutarRR(int32_t id, PCB* pcb){
+	int32_t ultimoQuantum;
+	FILE *f = fopen(pcb->ruta_archivo, "r");
+	if (f==NULL)
+	{
+		log_error (loggerError, "Error al abrir fichero.txt");
+		return;
+	}
+	char cadena[100];
+	while(ultimoQuantum<=quantum){
+		if(fgets(cadena, 100, f) != NULL)
+		{
+
+			analizadorLinea(id, cadena);
+			/*todo, arreglar para que se devuelva un struct int-char, de modo de appendear la respuesta y el int
+					para saber que ejecuto ultimo de modo de cortar en un finalizar o io.
+					actualizar pcb, con ftells(f);
+			 */
+		}
+		ultimoQuantum++;
+	}
+
+}
 
 //TODO hacer funciones FIFO y RR y //actualizar program counter donde corresponda
 

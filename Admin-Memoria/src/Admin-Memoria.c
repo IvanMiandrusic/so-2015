@@ -274,7 +274,6 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 		int32_t resultado_operacion;
 		recibido = _receive_bytes(socketSwap, &(resultado_operacion),sizeof(int32_t));
 		if (recibido == ERROR_OPERATION)return;
-		//Todo si no se puede borrar en el swap que pasa?
 		int32_t operacionValida= borrarEspacio(PID);
 
 		if (operacionValida == RESULTADO_ERROR) {
@@ -414,6 +413,8 @@ t_resultado_busqueda obtener_pagina_MP(t_pagina* pagina, char** contenido) {
 
 int32_t borrarEspacio(int32_t PID){
 	//todo
+	//buscar en TLB y sacarla
+
 	return RESULTADO_OK;
 }
 

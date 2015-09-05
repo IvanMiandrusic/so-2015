@@ -261,9 +261,8 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			recibido = _receive_bytes(socketMemoria, pedido_serializado, get_message_size(header));
 			if(recibido == ERROR_OPERATION) return;
 			t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
-
 			char* serializado= serializarTexto(leer_pagina(pagina_pedida));
-			//enviar serializado
+			//TODO enviar serializado
 			break;
 		}
 

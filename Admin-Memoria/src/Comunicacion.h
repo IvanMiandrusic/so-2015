@@ -48,5 +48,7 @@ typedef struct pagina {
 int32_t obtener_tamanio_pagina(t_pagina*);
 char* serializar_pedido(t_pagina*);
 t_pagina* deserializar_pedido(char* );
+char* serializarTexto (char* );
+
 
 #endif /* COMUNICACION_H_ */

@@ -25,6 +25,7 @@
 typedef struct pagina {
 	int32_t nro_pagina;
 	int32_t PID;
+	int32_t tamanio_contenido;
 	char* contenido;
 }t_pagina;
 

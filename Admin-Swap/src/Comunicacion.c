@@ -10,7 +10,22 @@
 #include <stdio.h>
 
 t_pagina* deserializar_pedido(char* pedido_serializado){
-	//Todo hacer
+		t_pagina* pagina_solicitada = malloc(sizeof(t_pagina));
+
+		int32_t offset = 0;
+
+		memcpy(&(pagina_solicitada->PID), pedido_serializado+offset, sizeof(int32_t));
+
+		offset += sizeof(int32_t);
+		memcpy(&(pagina_solicitada->nro_pagina), pedido_serializado+offset, sizeof(int32_t));
+
+		offset += sizeof(int32_t);
+		memcpy(&(pagina_solicitada->tamanio_contenido), pedido_serializado+offset, sizeof(int32_t));
+
+		offset += sizeof(int32_t);
+		memcpy(pagina_solicitada->contenido, pedido_serializado+offset, pagina_solicitada->tamanio_contenido);
+
+		return pagina_solicitada;
 	return NULL;
 }
 
@@ -32,3 +47,4 @@ char* serializarTexto (char* texto) {
 	return serializado;
 
 }
+

@@ -8,6 +8,7 @@
 #ifndef OPERACIONES_H_
 #define OPERACIONES_H_
 #include "Comunicacion.h"
+#include "parser.h"
 void* thread_Cpu(void*);
 
 void* iniciar (int32_t);
