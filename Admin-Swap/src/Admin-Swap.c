@@ -166,12 +166,13 @@ int32_t compactar(){
 }
 
 int32_t calcularEspacioLibre(){
-	int32_t espacio;
+	int32_t espacio = 0;
 	int i;
 	for(i=0; i<list_size(espacioLibre); i++){
 		NodoLibre* nodo= list_get(espacioLibre, i);
 		espacio+=nodo->paginas;
 	}
+	log_debug(loggerDebug, "El espacio libre es %d", espacio);
 	return espacio;
 }
 
@@ -206,7 +207,7 @@ int main(void) {
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "Admin-Swap.config";
+	char* path = "../Admin-Swap.config";
     arch = crear_estructura_config(path);
 
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
@@ -229,6 +230,8 @@ int main(void) {
 	}
 
 	sock_t* socketCliente = accept_connection(socketServidor);
+
+	log_debug(loggerDebug, "Memoria conectada");
 
 	recibir_operaciones_memoria(socketCliente);
 
@@ -296,6 +299,9 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			recibido = _receive_bytes(socketMemoria, &(pedido_memoria->cantidad_paginas),
 					sizeof(int32_t));
 			if (recibido == ERROR_OPERATION)return;
+
+			log_debug(loggerDebug, "Recibi este pedido: %d y cant paginas %d", pedido_memoria->pid, pedido_memoria->cantidad_paginas);
+
 			int32_t operacionValida= reservarEspacio(pedido_memoria);
 
 			if (operacionValida == RESULTADO_ERROR) {

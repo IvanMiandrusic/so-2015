@@ -45,6 +45,8 @@ ProcesoMemoria* crear_estructura_config(char* path) {
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie() {
 
+	//Todo
+
 	exit(1);
 }
 
@@ -125,7 +127,7 @@ int main(void) {
 			log_error(loggerError, "Error con la señal SIGPOLL");
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "Admin-Memoria.config";
+	char* path = "../Admin-Memoria.config";
 	arch = crear_estructura_config(path);
 
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
@@ -143,6 +145,8 @@ int main(void) {
 		log_error(loggerError, "Error al conectar al swap");
 		return EXIT_FAILURE;
 	}
+
+	log_debug(loggerDebug, "Conectado al swap");
 
 	socketServidorCpus = create_server_socket(arch->puerto_escucha);
 	resultado = listen_connections(socketServidorCpus);
