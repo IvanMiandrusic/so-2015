@@ -85,7 +85,7 @@ int main(void) {
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "Cpu.config";
+	char* path = "../Cpu.config";
 	arch = crear_estructura_config(path);
 	socketMemoria=malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
 	socketPlanificador=malloc(sizeof(sock_t*)*(arch->cantidad_hilos));

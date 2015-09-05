@@ -56,10 +56,10 @@ void* thread_Cpu(void* id){
 	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
 	if(connect_to_server(socket_Memoria)!=SUCCESS_OPERATION){
 		log_error(loggerError, "No se puedo conectar con la memoria, se aborta el proceso");
-		exit(1);
+		//exit(1);
 	}
 
-	socketMemoria[thread_id] = *socket_Memoria;
+	//Todo socketMemoria[thread_id] = *socket_Memoria;
     //por el momento no se le envia nada
 	//while finalizar==false recv operacion del planificador
 

@@ -27,7 +27,7 @@ void consola_planificador(){
 
 		case CORRER_PATH: {
 			printf("Ha elegido la opcion: Correr PATH\n");
-			correrPath();
+			correrPath(comandoSeleccionado);
 			limpiarBuffer();
 			break;  //fin correr path
 		}
@@ -47,7 +47,7 @@ void consola_planificador(){
 			break;  //fin finalizar PID
 		}
 		case PS: {
-			printf("Ha elegido la opcion: Comando ps\n");
+			printf("Ha elegido la opcion: Comando PS\n");
 			comandoPS();
 			limpiarBuffer();
 			break; //fin comando ps
@@ -96,12 +96,9 @@ int32_t analizar_operacion_asociada(char* comandoSeleccionado) {
 	return 7;
 }
 
-void correrPath() {
-	char filePath[100];
+void correrPath(char* comando) {
 
-	printf("Ingrese el path completo del archivo que desea correr\n");
-	getchar();
-	scanf("%[^\n]s", filePath);
+	char* filePath = strstr(comando, " ") + 1;
 
 	if (string_equals_ignore_case(arch->algoritmo, "FIFO")) {
 		//se hace esto si es fifo
@@ -117,17 +114,26 @@ void finalizarPID(int32_t proc_id) {
 
 }
 
-void mostrarEstadoProceso(PCB* unPcb) {
+char* get_estado_proceso(int32_t estado) {
 
-	char* proceso = string_new();
-	string_append_with_format(&proceso, "mProc %d: %s -> %s\n", unPcb->PID,
-			unPcb->ruta_archivo, unPcb->estado);
-	printf("%s", proceso);
+	if(estado == LISTO) return "Listo";
+	if(estado == EJECUCION) return "En ejecucion";
+	if(estado == BLOQUEADO) return "Bloqueado";
+	if(estado == FINALIZADO_OK) return "Finalizado_OK";
+	if(estado == FINALIZADO_ERROR) return "Finalizado_ERROR";
+
+	return NULL;
 }
 
 void comandoPS() {
 
-//todo: probar!
+	void mostrarEstadoProceso(PCB* unPcb) {
+
+		char* proceso = string_new();
+		string_append_with_format(&proceso, "mProc %d: %s -> %s\n", unPcb->PID,
+				unPcb->ruta_archivo, get_estado_proceso(unPcb->estado));
+		printf("%s \n", proceso);
+	}
 
 	list_iterate(colaListos, mostrarEstadoProceso);
 	list_iterate(colaBlock, mostrarEstadoProceso);
@@ -151,11 +157,11 @@ void usoDeLasCpus() {
 
 void mostrarComandos() {
 
-	printf(ANSI_COLOR_BOLDCYAN "Los comandos disponibles son: \n");
+	printf(ENTER ANSI_COLOR_BOLDCYAN "Los comandos disponibles son: \n\n");
 	printf("correr PATH \t\t PATH es la ruta relativa al programa mCod \n");
 	printf("finalizar PID \t\t PID es el numero de proceso mProc \n");
-	printf("ps \t\t Lista los mProc y su estado actual \n");
-	printf("cpu \t\t Listar las cpus con su utilizacion \n");
+	printf("ps \t\t\t Lista los mProc y su estado actual \n");
+	printf("cpu \t\t\t Listar las cpus con su utilizacion \n");
 	printf("cerrar consola \t\t Cerrar la consola" ANSI_COLOR_RESET ENTER);
 }
 

@@ -24,10 +24,17 @@
 
 typedef enum estados_pcb {
        LISTO=1,
-       BLOQUEADO=2,
-       EJECUCION=3,
-       FINALIZADO=4
+       EJECUCION=2,
+       BLOQUEADO=3,
+       FINALIZADO_OK=4,
+       FINALIZADO_ERROR=5
 }estados_pcb_t;
+
+typedef enum estados_cpu {
+
+	LIBRE=1,
+	OCUPADO=2
+}t_estado_cpu;
 
 typedef struct estructura_configuracion			//estructura que contiene los datos del archivo de configuracion
 {
@@ -40,7 +47,6 @@ typedef struct estructura_configuracion			//estructura que contiene los datos de
 typedef struct estructura_PCB			//estructura que contiene los datos del pcb
 {
   int32_t PID;
-  int32_t tamanio_ruta_archivo;
   char* ruta_archivo;
   int32_t estado;
   int32_t siguienteInstruccion;
@@ -50,7 +56,9 @@ typedef struct estructura_CPU      //estructura que contiene los datos que nos e
 {
 	int32_t ID;
 	sock_t* socketCPU;
+	t_estado_cpu estado;
 }CPU_t;
+
 
 /* DECLARACION DE VARIABLES GLOBALES */
 extern ProcesoPlanificador* arch;
@@ -77,6 +85,11 @@ CPU_t* generarCPU(int32_t ID, sock_t* socketCPU);
 void asignarPCBaCPU();
 int32_t obtener_tamanio_pcb(PCB* pcb);
 void enviarPCB(char* unPaquete, int32_t tamanio_pcb);
+CPU_t* obtener_cpu_libre();
+bool hay_cpu_libre();
+
+/** Closures **/
+bool estaLibre(CPU_t* cpu);
 
 
 

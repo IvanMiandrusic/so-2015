@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <commons/collections/list.h>
 #include <commons/string.h>
 #include "Planificador.h"
@@ -28,11 +29,14 @@ typedef enum comandos {
 void consola_planificador();
 void limpiarBuffer();
 int32_t analizar_operacion_asociada(char*);
-void correrPath();
+void correrPath(char*);
 void finalizarPID(int32_t);
 void comandoPS();
 void usoDeLasCpus();
-void mostrarEstadoProceso(PCB*);
 void mostrarComandos();
+char* get_estado_proceso(int32_t);
+
+/** Closures **/
+void mostrarEstadoProceso(PCB*);
 
 #endif /* CONSOLA_H_ */

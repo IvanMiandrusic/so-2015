@@ -17,7 +17,7 @@ void deserializar_pedido(char* pedidoserializado){
 
 char* serializarPCB(PCB* unPCB){
 
-	char* serializado = malloc(3*sizeof(int32_t)+strlen(unPCB->ruta_archivo));
+	char* serializado = malloc(4*sizeof(int32_t)+strlen(unPCB->ruta_archivo));
 
 	int32_t offset = 0;
 	int32_t size_to_send;
