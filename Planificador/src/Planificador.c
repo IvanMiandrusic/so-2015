@@ -17,6 +17,7 @@
 #include "Consola.h"
 #include "Comunicacion.h"
 #include <pthread.h>
+#include <unistd.h>
 
 /** TAD para PLANIFICADOR **/
 ProcesoPlanificador* arch;
@@ -130,6 +131,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	int32_t recibido;
 	int32_t cpu_id;
+	int32_t tiempo;
 
 	//todo: tratar los errores
 
@@ -164,10 +166,19 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	}
 
 	case INSTRUCCION_IO: {
+			/** recibo el evento I/O **/
 
+			//recibo el ID del proceso
+			recibido = _receive_bytes(socketCPU, &(cpu_id), get_message_size(header));
+			if(recibido == ERROR_OPERATION) return;
 
+			//recibe el tiempo de I/O
+			int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo), get_message_size(header));
+			if(recibido_tiempo == ERROR_OPERATION) return;
+			int32_t pcb_id = operarIO(cpu_id, tiempo);
+			finalizarIO(pcb_id);
 
-
+			log_debug(loggerDebug, "Finalizo la I/O");
 		break;
 	}
 
@@ -190,6 +201,37 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	}
 
 }
+
+int32_t operarIO(int32_t id, int32_t tiempo){
+
+	bool coincideId(PCB* unPCB){
+			return unPCB->PID == id;
+	}
+
+	PCB* pcb_encontrado = list_remove_by_condition(colaExec, coincideId);
+	log_debug(loggerDebug, "Encontre un pcb con id %d", pcb_encontrado->PID);
+	pcb_encontrado->estado= BLOQUEADO;
+	list_add(colaBlock, pcb_encontrado);
+	sleep(tiempo); //todo: esto de implementar el sleep, lo dejamos aca??
+	return pcb_encontrado->PID;
+
+}
+
+
+void finalizarIO(int32_t id){  //TODO: NO SE PORQUE ES ESTE ERROR
+
+	bool coincideId(PCB* unPCB){					//SE PODRIA EVITAR REPETIR ESTE CODIGO EN VARIOS METODOS??
+				return unPCB->PID == id;
+		}
+	PCB* pcb_encontrado = list_remove_by_condition(colaBlock, coincideId);
+	pcb_encontrado->estado= LISTO;
+	list_add(colaListos, pcb_encontrado);
+	return;
+
+	//todo: al finalizar una I/O, el planificador deberia poner el pcb al final de la lista de LISTOS
+
+}
+
 
 //Funcion que saca el tamaño de un PCB para enviar
 int32_t obtener_tamanio_pcb(PCB* pcb) {
