@@ -88,3 +88,45 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 	sem_post(&sem_mutex_tabla_paginas);
 
 }
+
+bool TLB_habilitada() {
+
+	return string_equals_ignore_case(arch->tlb_habilitada, "SI");
+}
+
+t_resultado_busqueda TLB_buscar_pagina(t_pagina* pagina, char** contenido_pagina) {
+
+	bool find_by_PID_page(TLB* entrada) {
+
+		return (entrada->PID == pagina->PID) && (entrada->pagina == pagina->nro_pagina);
+	}
+
+	sem_wait(&sem_mutex_tlb);
+	TLB* entrada_pagina = list_find(TLB_tabla, find_by_PID_page);
+	sem_post(&sem_mutex_tlb);
+
+	if(entrada_pagina == NULL) {
+		//Todo ir a buscar a tabla de paginas
+
+	}
+
+	else{
+		//Todo Traer el contenido de MP
+	}
+
+	return NOT_FOUND; //depende si encuentra
+
+}
+
+t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t PID, t_pagina* pagina, char** contenido) {
+
+	//Todo buscar pagina en la tabla de paginas del PID
+	return NOT_FOUND; //depende si encuentra
+}
+
+t_resultado_busqueda obtener_pagina_MP(t_pagina* pagina, char** contenido) {
+
+	//Todo traer contenido de una pagina de la memoria principal
+	return NOT_FOUND; //depende si encuentra
+
+}
