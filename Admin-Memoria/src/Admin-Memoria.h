@@ -9,7 +9,20 @@
 #ifndef ADMIN_MEMORIA_H_
 #define ADMIN_MEMORIA_H_
 
+#include <string.h>
+#include <sys/wait.h>
+#include <commons/config.h>
+#include <commons/log.h>
+#include <commons/string.h>
+#include <semaphore.h>
+#include <commons/collections/list.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <errno.h>
+#include "libsocket.h"
+#include "Colores.h"
 #include "Comunicacion.h"
+#include "Estructuras.h"
 
 typedef struct estructura_configuracion			//estructura que contiene los datos del archivo de configuracion
 {
@@ -24,41 +37,22 @@ typedef struct estructura_configuracion			//estructura que contiene los datos de
   int32_t retardo;
 }ProcesoMemoria;
 
-typedef struct estructura_TLB			//estructura que contiene los datos de la tlb
-{
-  int32_t marco;
-  int32_t modificada; 		//1 si, 0 no
-  int32_t presente;			//Presente en MP (1 si, 0 no)
-  int32_t pagina;
-  int32_t PID;
-}TLB;
-
-typedef struct estructura_tabla_paginas			//estructura que contiene los datos de la tabla de paginas
-{
-  int32_t marco;
-  int32_t pagina;
-  int32_t modificada; 		//1 si, 0 no
-  int32_t presente;			//Presente en MP (1 si, 0 no)
-}TPagina;
-
-//Lista doblemente enlazada de procesos
-typedef struct estructura_proceso_paginas {
-	int32_t PID;
-	t_list* paginas;
-}t_paginas_proceso;
-
-typedef enum resultado_operacion_busqueda_pagina {
-	FOUND=1,
-	NOT_FOUND=0
-}t_resultado_busqueda;
+/* VARIABLES GLOBALES */
+extern ProcesoMemoria* arch;
+extern t_log* loggerInfo;
+extern t_log* loggerError;
+extern t_log* loggerDebug;
+extern sem_t sem_mutex_tlb;
+extern sem_t sem_mutex_tabla_paginas;
+extern sock_t* socketServidorCpus;
+extern sock_t* socketSwap;
 
 /** Funciones de configuracion inicial **/
 ProcesoMemoria* crear_estructura_config(char*);
 void inicializoSemaforos();
 void crearArchivoDeLog();
-void creoEstructurasDeManejo();
-void crear_tabla_pagina_PID(int32_t , int32_t);
 void dump();
+
 /** Funciones de señales **/
 void ifProcessDie();
 void ifSigurs1();
@@ -70,16 +64,6 @@ void iniciar_proceso(sock_t*, t_pedido_cpu*);
 char* buscar_pagina(t_pagina*);
 int32_t borrarEspacio(int32_t);
 
-/** TLB functions **/
-void TLB_init();
-void TLB_flush();
-bool TLB_habilitada();
-t_resultado_busqueda TLB_buscar_pagina(t_pagina*, char**); //Recibe la direccion del char* donde se guardara el contenido de esa pagina
-
-
-/** Funciones tabla_paginas y MP **/
-t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t, t_pagina*, char**);
-t_resultado_busqueda obtener_pagina_MP(t_pagina*, char**);
 
 
 #endif /* ADMIN_MEMORIA_H_ */

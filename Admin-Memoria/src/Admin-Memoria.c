@@ -12,18 +12,6 @@
 /*Include para las librerias */
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/wait.h>
-#include <commons/config.h>
-#include <commons/log.h>
-#include <commons/string.h>
-#include <semaphore.h>
-#include <commons/collections/list.h>
-#include "libsocket.h"
-#include "Colores.h"
 #include "Admin-Memoria.h"
 
 /* VARIABLES GLOBALES */
@@ -31,9 +19,6 @@ ProcesoMemoria* arch;
 t_log* loggerInfo;
 t_log* loggerError;
 t_log* loggerDebug;
-t_list* TLB_tabla;
-char* mem_principal;
-t_list* tabla_Paginas;
 sem_t sem_mutex_tlb;
 sem_t sem_mutex_tabla_paginas;
 sock_t* socketServidorCpus;
@@ -63,6 +48,8 @@ void ifProcessDie() {
 	exit(1);
 }
 
+/** Señales **/
+
 void ifSigusr1() {
 	sem_wait(&sem_mutex_tlb);
 	TLB_flush();
@@ -78,7 +65,6 @@ void ifSigpoll() {
 	dump();
 //todo dump
 }
-/*Función donde se inicializan los semaforos */
 
 void dump(){
 	int pid=fork();
@@ -99,6 +85,9 @@ void dump(){
 		abort();
 	}
 }
+
+/*Función donde se inicializan los semaforos */
+
 void inicializoSemaforos() {
 
 	int32_t semMutex = sem_init(&sem_mutex_tlb, 0, 1);
@@ -116,73 +105,6 @@ void crearArchivoDeLog() {
 	loggerDebug = log_create(pathLog, archLog, 1, LOG_LEVEL_DEBUG);
 }
 
-void TLB_init() {
-
-	int i;
-	for (i = 0; i < arch->entradas_tlb; i++) {
-
-		TLB* nuevaEntrada = malloc(sizeof(TLB));
-		nuevaEntrada->PID = 0;
-		nuevaEntrada->pagina = 0;
-		nuevaEntrada->modificada = 0;
-		nuevaEntrada->presente = 0;
-		nuevaEntrada->marco = 0;
-
-		sem_wait(&sem_mutex_tlb);
-		list_add(TLB_tabla, nuevaEntrada);
-		sem_post(&sem_mutex_tlb);
-	}
-}
-
-void TLB_flush() {
-
-	void limpiar_entradas(TLB* entrada) {
-		//todo si modificada es 1, le mandas al swap escribir(PID, pagina, texto)
-		//o hacerlo con la tabla de paginas
-		entrada->PID = 0;
-		entrada->marco = 0;
-		entrada->modificada = 0;
-		entrada->pagina = 0;
-		entrada->presente = 0;
-	}
-
-	sem_wait(&sem_mutex_tlb);
-	list_iterate(TLB_tabla, limpiar_entradas);
-	sem_post(&sem_mutex_tlb);
-}
-
-void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
-
-	t_paginas_proceso* nueva_entrada_proceso = malloc(
-			sizeof(t_paginas_proceso));
-	nueva_entrada_proceso->PID = processID;
-	nueva_entrada_proceso->paginas = list_create();
-
-	int i;
-	for (i = 0; i < cantidad_paginas; i++) {
-
-		TPagina* nuevaEntrada = malloc(sizeof(TPagina));
-		nuevaEntrada->marco = 0;
-		nuevaEntrada->pagina = i;
-		nuevaEntrada->modificada = 0;
-		nuevaEntrada->presente = 0;
-
-		list_add(nueva_entrada_proceso->paginas, nuevaEntrada);
-	}
-
-	sem_wait(&sem_mutex_tabla_paginas);
-	list_add(tabla_Paginas, nueva_entrada_proceso);
-	sem_post(&sem_mutex_tabla_paginas);
-
-}
-
-void creoEstructurasDeManejo() {
-	if (string_equals_ignore_case((arch->tlb_habilitada), "si")) {
-		TLB_tabla = list_create();
-		TLB_init();
-	}
-	mem_principal = malloc((arch->cantidad_marcos) * (arch->tamanio_marco));
-}
 
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
 int main(void) {
@@ -212,7 +134,8 @@ int main(void) {
 	/*Se inicializan todos los semaforos necesarios */
 	inicializoSemaforos();
 
-	creoEstructurasDeManejo();
+	TLB_crear();
+	MP_crear();
 
 	socketSwap = create_client_socket(arch->ip_swap, arch->puerto_swap);
 	int32_t resultado = connect_to_server(socketSwap);
