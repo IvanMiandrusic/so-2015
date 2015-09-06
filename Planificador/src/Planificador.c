@@ -166,6 +166,14 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	}
 
 	case INSTRUCCION_IO: {
+
+		/*
+		 * Todo me parece que aca faltaria recibir otras cosas, ademas del CPU_ID,
+		 * quizas nos convenga recibir el PCB para modificarle el contexto,
+		 * y tmb deberiamos recibir el RESULTADO de las operaciones que ejecuto antes de IO,
+		 * y bueno el RETARDO que seria el tiempo que esta aca.
+		 */
+
 			/** recibo el evento I/O **/
 
 			//recibo el ID del proceso
@@ -204,26 +212,26 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 int32_t operarIO(int32_t id, int32_t tiempo){
 
-	bool coincideId(PCB* unPCB){
+	bool getPcbByID(PCB* unPCB){
 			return unPCB->PID == id;
 	}
 
-	PCB* pcb_encontrado = list_remove_by_condition(colaExec, coincideId);
+	PCB* pcb_encontrado = list_remove_by_condition(colaExec, getPcbByID);
 	log_debug(loggerDebug, "Encontre un pcb con id %d", pcb_encontrado->PID);
 	pcb_encontrado->estado= BLOQUEADO;
 	list_add(colaBlock, pcb_encontrado);
-	sleep(tiempo); //todo: esto de implementar el sleep, lo dejamos aca??
+	sleep(tiempo); //todo: aca dispararia el hilo de IO, sino se te duerme to-do el proceso-- FIX
 	return pcb_encontrado->PID;
 
 }
 
 
-void finalizarIO(int32_t id){  //TODO: NO SE PORQUE ES ESTE ERROR
+void finalizarIO(int32_t id){
 
-	bool coincideId(PCB* unPCB){					//SE PODRIA EVITAR REPETIR ESTE CODIGO EN VARIOS METODOS??
+	bool getPcbByID(PCB* unPCB){					//SE PODRIA EVITAR REPETIR ESTE CODIGO EN VARIOS METODOS??
 				return unPCB->PID == id;
 		}
-	PCB* pcb_encontrado = list_remove_by_condition(colaBlock, coincideId);
+	PCB* pcb_encontrado = list_remove_by_condition(colaBlock, getPcbByID);
 	pcb_encontrado->estado= LISTO;
 	list_add(colaListos, pcb_encontrado);
 	return;
