@@ -11,13 +11,38 @@
 
 //Aca irian todas las funciones de serializar/deserializar los envios
 
-void deserializar_pedido(char* pedidoserializado){
+PCB* deserializarPCB(char* pedidoserializado){
+
+	PCB* pcb = malloc(sizeof(PCB));
+	int32_t offset = 0;
+	int32_t size = sizeof(int32_t);
+
+	memcpy(&(pcb->PID), pedidoserializado + offset, size);
+
+	offset+= size;
+	int32_t tamanio;
+	memcpy(&tamanio, pedidoserializado + offset, size);
+
+	offset+= size;
+	memcpy(pcb->ruta_archivo, pedidoserializado + offset, tamanio);
+
+	offset += tamanio;
+
+	memcpy(&(pcb->estado), pedidoserializado + offset, size);
+
+	offset += size;
+
+	memcpy(&(pcb->siguienteInstruccion), pedidoserializado + offset, size);
+
+	offset += size;
+	return pcb;
+
 	//todo: hacer la deserializacion y fijar bien el TIPO que deserializa
 }
 
 char* serializarPCB(PCB* unPCB){
 
-	char* serializado = malloc(4*sizeof(int32_t)+strlen(unPCB->ruta_archivo));
+	char* serializado = malloc(3*sizeof(int32_t)+strlen(unPCB->ruta_archivo));
 
 	int32_t offset = 0;
 	int32_t size_to_send;

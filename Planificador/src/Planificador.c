@@ -131,6 +131,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	int32_t recibido;
 	int32_t cpu_id;
+	int32_t pcb_id;
 	int32_t tiempo;
 
 	//todo: tratar los errores
@@ -162,28 +163,50 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	case TERMINO_RAFAGA: {
 
+		/*
+		 * Todo: Recibir :
+		 * 			cpu_id
+		 * 			pcb (la estructura entera)
+		 * 			resultado_operaciones (char* es el tipo) --> es lo que ejecuto el cpu antes de cortar por quantum o IO
+		 */
+
+
 			break;
 	}
 
 	case INSTRUCCION_IO: {
 
 		/*
-		 * Todo me parece que aca faltaria recibir otras cosas, ademas del CPU_ID,
-		 * quizas nos convenga recibir el PCB para modificarle el contexto,
-		 * y tmb deberiamos recibir el RESULTADO de las operaciones que ejecuto antes de IO,
-		 * y bueno el RETARDO que seria el tiempo que esta aca.
+		 * Todo: Recibir :
+		 * 			cpu_id
+		 * 			pcb (la estructura entera) -----> Porque entero? con solo el ID se puede sacar de la "colaExec"
+		 * 			retardo (ya estaria)
+		 * 			resultado_operaciones (char* es el tipo) --> es lo que ejecuto el cpu antes de cortar por quantum o IO
 		 */
 
 			/** recibo el evento I/O **/
 
-			//recibo el ID del proceso
-			recibido = _receive_bytes(socketCPU, &(cpu_id), get_message_size(header));
+			//recibo el ID del  cpu
+			recibido = _receive_bytes(socketCPU, &(cpu_id), sizeof(int32_t)); //Todo el get_message_size(header) es el tamaño entero del mensaje
 			if(recibido == ERROR_OPERATION) return;
 
 			//recibe el tiempo de I/O
-			int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo), get_message_size(header));
+			int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo), sizeof(int32_t));
 			if(recibido_tiempo == ERROR_OPERATION) return;
-			int32_t pcb_id = operarIO(cpu_id, tiempo);
+
+
+			/** recibo el PCB **/
+			char* pcb_serializado = malloc(get_message_size(header));
+			recibido = _receive_bytes(socketCPU, pcb_serializado, get_message_size(header));
+			if(recibido == ERROR_OPERATION) return;
+			PCB* pcb = deserializarPCB(pcb_serializado);
+
+			/** recibo el char* de resultados **/
+			//todo:
+
+
+			/** operar la IO **/
+			int32_t pcb_id = operarIO(cpu_id, tiempo, pcb);
 			finalizarIO(pcb_id);
 
 			log_debug(loggerDebug, "Finalizo la I/O");
@@ -196,6 +219,12 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	}
 
 	case RESULTADO_OK: {
+
+		/*
+		 * Debe reasignar un nuevo PCB a la CPU
+		 *
+		 * */
+
 
 		break;
 	}
@@ -210,33 +239,47 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 }
 
-int32_t operarIO(int32_t id, int32_t tiempo){
+PCB* operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
 
 	bool getPcbByID(PCB* unPCB){
-			return unPCB->PID == id;
+			return unPCB->PID == pcb->PID;
 	}
 
-	PCB* pcb_encontrado = list_remove_by_condition(colaExec, getPcbByID);
-	log_debug(loggerDebug, "Encontre un pcb con id %d", pcb_encontrado->PID);
-	pcb_encontrado->estado= BLOQUEADO;
-	list_add(colaBlock, pcb_encontrado);
+	bool getCpuByID(CPU_t* unaCPU){
+			return unaCPU->ID == cpu_id;
+	}
+
+	list_remove_by_condition(colaExec, getPcbByID);
+	pcb->estado= BLOQUEADO;
+	list_add(colaBlock, pcb);
+	log_debug(loggerDebug, "Cambio de estado (block) y de lista del pcb con id %d", pcb->PID);
+
+	// Cambio estado CPU a LIBRE //
+	CPU_t* cpu_encontrada = list_remove_by_condition(colaCPUs, getCpuByID);
+	cpu_encontrada->estado= LIBRE;
+	log_debug(loggerDebug, "Cambio de estado (LIBRE) de la cpu con id %d", cpu_encontrada->ID);
+	//todo: Deberia asignarle un nuevo PCB a la cpu q se libera??
+	//asignarPCBaCPU();
+
+
+	//todo: pthread_join(consola_thread, NULL); // seria algo asi??
 	sleep(tiempo); //todo: aca dispararia el hilo de IO, sino se te duerme to-do el proceso-- FIX
-	return pcb_encontrado->PID;
+	return pcb;
 
 }
 
 
-void finalizarIO(int32_t id){
+void finalizarIO(PCB* pcb){
 
 	bool getPcbByID(PCB* unPCB){					//SE PODRIA EVITAR REPETIR ESTE CODIGO EN VARIOS METODOS??
-				return unPCB->PID == id;
+				return unPCB->PID == pcb->PID;
 		}
-	PCB* pcb_encontrado = list_remove_by_condition(colaBlock, getPcbByID);
-	pcb_encontrado->estado= LISTO;
-	list_add(colaListos, pcb_encontrado);
+	list_remove_by_condition(colaBlock, getPcbByID);
+	pcb->estado= LISTO;
+	list_add(colaListos, pcb);
 	return;
 
-	//todo: al finalizar una I/O, el planificador deberia poner el pcb al final de la lista de LISTOS
+	// Al finalizar una I/O, el planificador deberia poner el pcb al final de la lista de LISTOS
 
 }
 
@@ -322,7 +365,7 @@ int main(void) {
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "../Planificador.config";
+	char* path = "Planificador.config";
 	arch = crear_estructura_config(path);
 
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
@@ -366,6 +409,17 @@ int main(void) {
 	}else{
 		log_info(loggerInfo, "Se creo exitosamente el hilo de la consola");
 	}
+
+
+	pthread_t IO_thread;
+		resultado = pthread_create(&IO_thread, NULL, consola_planificador, NULL);
+		if (resultado != 0) {
+			log_error(loggerError,"Error al crear el hilo de IO");
+			exit(EXIT_FAILURE);
+		}else{
+			log_info(loggerInfo, "Se creo exitosamente el hilo de IO");
+		}
+
 
 	pthread_join(server_thread, NULL); //espero a que el hilo termine su ejecución */
 	pthread_join(consola_thread, NULL);

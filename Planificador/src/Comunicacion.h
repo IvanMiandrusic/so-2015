@@ -25,7 +25,7 @@
 #define RESULTADO_ERROR 5
 #define RESPUESTA_UTILIZACION_CPU 6
 
-void deserializar_pedido(char* pedidoSerializado); //tipo a definir
+PCB* deserializarPCB(char* pedidoSerializado); //tipo a definir
 char* serializarPCB(PCB* unPCB);
 
 #endif /* COMUNICACION_H_ */

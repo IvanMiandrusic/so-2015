@@ -87,8 +87,8 @@ int32_t obtener_tamanio_pcb(PCB* pcb);
 void enviarPCB(char* unPaquete, int32_t tamanio_pcb);
 CPU_t* obtener_cpu_libre();
 bool hay_cpu_libre();
-int32_t operarIO(int32_t id, int32_t tiempo);
-void finalizarIO(int32_t pcb);
+PCB* operarIO(int32_t id, int32_t tiempo, PCB* pcb);
+void finalizarIO(PCB* pcb);
 
 
 /** Closures **/
