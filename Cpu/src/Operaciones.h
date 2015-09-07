@@ -30,9 +30,10 @@ t_respuesta* mAnsisOp_leer(int32_t, PCB*,int32_t);
 t_respuesta* mAnsisOp_escribir(int32_t,PCB*, int32_t,char*);
 t_respuesta* mAnsisOp_IO(int32_t,PCB*,int32_t);
 t_respuesta* mAnsisOp_finalizar(int32_t, PCB*);
+t_respuesta* analizadorLinea(int32_t,PCB*,char* const );
 
-void ejecutar_FIFO(int32_t, PCB*);
-void ejecutar_RR(int32_t, PCB*);
+void ejecutarFIFO(int32_t, PCB*);
+void ejecutarRR(int32_t, PCB*);
 
 
 #endif /* OPERACIONES_H_ */

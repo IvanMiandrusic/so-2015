@@ -24,7 +24,9 @@ PCB* deserializarPCB(char* pedidoserializado){
 	memcpy(&tamanio, pedidoserializado + offset, size);
 
 	offset+= size;
+	pcb->ruta_archivo = malloc(tamanio);
 	memcpy(pcb->ruta_archivo, pedidoserializado + offset, tamanio);
+	pcb->ruta_archivo[tamanio] = '\0';
 
 	offset += tamanio;
 
@@ -42,7 +44,7 @@ PCB* deserializarPCB(char* pedidoserializado){
 
 char* serializarPCB(PCB* unPCB){
 
-	char* serializado = malloc(3*sizeof(int32_t)+strlen(unPCB->ruta_archivo));
+	char* serializado = malloc(4*sizeof(int32_t)+strlen(unPCB->ruta_archivo));
 
 	int32_t offset = 0;
 	int32_t size_to_send;

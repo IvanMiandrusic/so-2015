@@ -53,48 +53,6 @@ structEscribir buscarAmbosParametros(char*linea){
 
 }
 
-//Analizador de linea
-t_respuesta* analizadorLinea(int32_t id,PCB* pcb, char* const instruccion){
-
-	char* linea= strdup(instruccion);
-	switch (analizar_operacion_asociada(linea)){
-	case INICIAR:{
-		int cantDePaginas=buscarPrimerParametro(strstr(instruccion," ")+1);
-		free(linea);
-		return mAnsisOp_iniciar(id,pcb, cantDePaginas);
-		break;
-		}
-	case FINALIZAR:{
-		free(linea);
-		return mAnsisOp_finalizar(id, pcb);
-		break;
-		}
-	case ENTRADASALIDA:{
-		int tiempo=buscarPrimerParametro(strstr(instruccion," ")+1);
-		free(linea);
-		return mAnsisOp_IO(id,pcb,tiempo);
-		break;
-		}
-	case LEER:{
-		int numDePagina=buscarPrimerParametro(strstr(instruccion," ")+1);
-		free(linea);
-		return mAnsisOp_leer(id,pcb, numDePagina);
-		break;
-		}
-	case ESCRIBIR:{
-		structEscribir parametros=buscarAmbosParametros(strstr(instruccion," ")+1);
-		free(linea);
-		return mAnsisOp_escribir(id,pcb,parametros.pagina, parametros.texto);
-		break;
-		}
-	default:
-		printf("Linea no válida\n");
-		free(linea);
-		return NULL;
-		break;
-	}
-
-}
 
 
 

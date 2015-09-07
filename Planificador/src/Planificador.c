@@ -77,6 +77,7 @@ PCB* generarPCB(int32_t PID, char* rutaArchivo){
 	unPCB->PID=PID;
 	unPCB->estado=LISTO;
 	unPCB->ruta_archivo = malloc(string_length(rutaArchivo));
+	unPCB->siguienteInstruccion = 0;
 	strcpy(unPCB->ruta_archivo, rutaArchivo);
 	return unPCB;
 
@@ -286,7 +287,7 @@ void finalizarIO(PCB* pcb){
 
 //Funcion que saca el tamaño de un PCB para enviar
 int32_t obtener_tamanio_pcb(PCB* pcb) {
-	return 3*sizeof(int32_t) + string_length(pcb->ruta_archivo);
+	return 4*sizeof(int32_t) + string_length(pcb->ruta_archivo);
 }
 
 bool hay_cpu_libre() {
@@ -303,7 +304,7 @@ void asignarPCBaCPU(){
 	if(hay_cpu_libre()) {
 
 		PCB* pcbAEnviar = list_remove(colaListos, 0);
-		log_debug(loggerDebug, "Agarre el primer pcb: id= %d, arch= %s", pcbAEnviar->PID, pcbAEnviar->ruta_archivo);
+		log_debug(loggerDebug, "Agarre el primer pcb: id= %d, arch= %s sigInt= %d", pcbAEnviar->PID, pcbAEnviar->ruta_archivo, pcbAEnviar->siguienteInstruccion);
 		char* paquete = serializarPCB(pcbAEnviar);
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
 		enviarPCB(paquete, tamanio_pcb);
@@ -341,7 +342,7 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb){
 	log_debug(loggerDebug, "Cpu libre: %d socket %d y tamanio pcb %d", CPU->ID, CPU->socketCPU->fd, tamanio_pcb);
 	
 	if(CPU == NULL) log_debug(loggerDebug, "No encontre ninguna CPU");
-
+	log_debug(loggerDebug, "El tamaño del serializado es %d", strlen(paquete_serializado));
 	int32_t enviado = send_msg(CPU->socketCPU, ENVIO_PCB, paquete_serializado, tamanio_pcb);
 	if(enviado == ERROR_OPERATION){
 		log_error(loggerError, "Fallo en el envio de PCB");
@@ -365,7 +366,7 @@ int main(void) {
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "Planificador.config";
+	char* path = "../Planificador.config";
 	arch = crear_estructura_config(path);
 
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */

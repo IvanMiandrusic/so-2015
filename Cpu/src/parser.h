@@ -8,7 +8,6 @@
 #ifndef SRC_PARSER_H_
 #define SRC_PARSER_H_
 
-#include "Operaciones.h"
 
 typedef  struct {
 	int pagina;
@@ -29,7 +28,6 @@ int esPuntoyComa(char );
 int buscarPrimerParametro(char*);
 char* buscarSegundoParametro(char*);
 structEscribir buscarAmbosParametros(char*);
-t_respuesta* analizadorLinea(int32_t,PCB*,char* const );
 
 
 

@@ -239,6 +239,8 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 	if (recibido == ERROR_OPERATION)
 		return;
 
+	log_debug(loggerDebug, "Recibi el pcb %d, con %d paginas",pedido_cpu->pid, pedido_cpu->cantidad_paginas);
+
 	//Envio al swap para que reserve espacio
 	header_t* headerSwap = _create_header(RESERVAR_ESPACIO,
 			2 * sizeof(int32_t));

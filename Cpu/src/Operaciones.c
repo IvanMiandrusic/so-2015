@@ -60,6 +60,8 @@ void* thread_Cpu(void* id){
 		exit(1);
 	}
 
+	log_debug(loggerDebug, "Conectado con la memoria");
+
 	socketMemoria[thread_id] = *socket_Memoria;
 
 	int32_t finalizar = 1;
@@ -102,14 +104,21 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 
 	case ENVIO_PCB:{
 		log_info(loggerInfo,"CPU recibio de Planificador codOperacion %d PCB",get_operation_code(header));
-		//TODO ver de donde sale el header
 		char* pedido_serializado = malloc(get_message_size(header));
+		log_debug(loggerDebug, "El socket planificador a enviar es %d", socketPlanificador[id].fd);
 		int32_t recibido = _receive_bytes(&(socketPlanificador[id]), pedido_serializado, get_message_size(header));
-		if(recibido == ERROR_OPERATION) return;
+		if(recibido == ERROR_OPERATION) {
+			log_debug(loggerDebug, "Error al recibir el PCB del planificador");
+			return;
+		}
 
+		log_info(loggerInfo, "Recibio el PCB correctamente");
+		log_debug(loggerDebug, "El tamanio del serializado es %d", strlen(pedido_serializado));
 		PCB* pcb = deserializarPCB (pedido_serializado);
 
-		ejecutar_Instrucciones (id, pcb);
+		log_debug(loggerDebug, "PCB id %d estado %d ruta %s sig instruccion %d", pcb->PID, pcb->estado, pcb->ruta_archivo, pcb->siguienteInstruccion);
+
+		ejecutar_Instrucciones(id, pcb);
 
 		break;
 	}
@@ -124,12 +133,13 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 
 
 void ejecutar_Instrucciones (int32_t id, PCB* pcb){
-	if (quantum == 0) ejecutar_FIFO(id, pcb);
-	if (quantum > 0) ejecutar_RR(id, pcb);
+	if (quantum == 0) ejecutarFIFO(id, pcb);
+	if (quantum > 0) ejecutarRR(id, pcb);
 
 }
 
 void ejecutarFIFO(int32_t id, PCB* pcb){
+	log_debug(loggerDebug, "Entro a ejecutar FIFO");
 	bool finalizar=false;
 	char cadena[100];
 	char* log_acciones=string_new();
@@ -139,9 +149,10 @@ void ejecutarFIFO(int32_t id, PCB* pcb){
 		log_error (loggerError, "Error al abrir la ruta del programa");
 		return;
 	}
+	log_debug(loggerDebug, "Siguiente Instruccion %d", pcb->siguienteInstruccion);
 	fseek(prog, pcb->siguienteInstruccion, SEEK_SET);
-	while(finalizar==false){
-
+//	while(finalizar==false){
+		log_debug(loggerDebug, "Ejecuto una instruccion");
 		if(fgets(cadena, 100, prog) != NULL)
 		{
 
@@ -160,7 +171,7 @@ void ejecutarFIFO(int32_t id, PCB* pcb){
 				finalizar=true;
 			}
 		}
-		}
+		//}
 }
 
 void ejecutarRR(int32_t id, PCB* pcb){
@@ -209,8 +220,9 @@ PCB* deserializarPCB(char* serializado)
 	memcpy(&tamanio, serializado + offset, size_entero);
 
 	offset += size_entero;
-
+	pcb->ruta_archivo = malloc(tamanio);
 	memcpy(pcb->ruta_archivo, serializado + offset, tamanio);
+	pcb->ruta_archivo[tamanio] = '\0';
 
 	offset += tamanio;
 
@@ -228,8 +240,11 @@ PCB* deserializarPCB(char* serializado)
 t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
     //mandar al admin de memoria que se inició un proceso de N paginas
 
+	log_debug(loggerDebug, "Se procedera a iniciar un proceso en memoria socket %d", socketMemoria[id].fd);
 	/** Envio header a la memoria con INICIAR **/
 	header_t* header_A_Memoria = _create_header(INICIAR, 2 * sizeof(int32_t));
+
+	log_debug(loggerDebug, "Envie el header INICIAR con %d bytes",header_A_Memoria->size_message);
 
 	int32_t enviado = _send_header(&(socketMemoria[id]), header_A_Memoria);
 	if(enviado == ERROR_OPERATION) return NULL;
@@ -239,6 +254,8 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 
 	enviado = _send_bytes(&(socketMemoria[id]),&cantDePaginas, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
+
+	log_debug(loggerDebug, "Envie el pcb %d, con %d paginas",pcb->PID, cantDePaginas);
 
 	free(header_A_Memoria);
 
@@ -345,6 +362,7 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 
 	log_info(loggerInfo, "mProc %d - Pagina %d escrita: %s", pcb->PID,numDePagina, texto);
 
+	return response;
 
 }
 
@@ -395,4 +413,48 @@ t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 
 	return response;
 
+}
+
+//Analizador de linea
+t_respuesta* analizadorLinea(int32_t id,PCB* pcb, char* const instruccion){
+
+	char* linea= strdup(instruccion);
+	switch (analizar_operacion_asociada(linea)){
+	case INICIAR:{
+		int cantDePaginas=buscarPrimerParametro(strstr(instruccion," ")+1);
+		free(linea);
+		return mAnsisOp_iniciar(id,pcb, cantDePaginas);
+		break;
+		}
+	case FINALIZAR:{
+		free(linea);
+		return mAnsisOp_finalizar(id, pcb);
+		break;
+		}
+	case ENTRADASALIDA:{
+		int tiempo=buscarPrimerParametro(strstr(instruccion," ")+1);
+		free(linea);
+		return mAnsisOp_IO(id,pcb,tiempo);
+		break;
+		}
+	case LEER:{
+		int numDePagina=buscarPrimerParametro(strstr(instruccion," ")+1);
+		free(linea);
+		return mAnsisOp_leer(id,pcb, numDePagina);
+		break;
+		}
+	case ESCRIBIR:{
+		structEscribir parametros=buscarAmbosParametros(strstr(instruccion," ")+1);
+		free(linea);
+		return mAnsisOp_escribir(id,pcb,parametros.pagina, parametros.texto);
+		break;
+		}
+	default:
+		printf("Linea no válida\n");
+		free(linea);
+		return NULL;
+		break;
+	}
+
+	return NULL;
 }
