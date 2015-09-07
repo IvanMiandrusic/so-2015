@@ -100,33 +100,69 @@ t_resultado_busqueda TLB_buscar_pagina(t_pagina* pagina, char** contenido_pagina
 
 		return (entrada->PID == pagina->PID) && (entrada->pagina == pagina->nro_pagina);
 	}
-
-	sem_wait(&sem_mutex_tlb);
-	TLB* entrada_pagina = list_find(TLB_tabla, find_by_PID_page);
-	sem_post(&sem_mutex_tlb);
-
-	if(entrada_pagina == NULL) {
-		//Todo ir a buscar a tabla de paginas
-
+	TLB* entrada_pagina=NULL;
+	if(TLB_habilitada()) {
+		sem_wait(&sem_mutex_tlb);
+		entrada_pagina = list_find(TLB_tabla, find_by_PID_page);
+		sem_post(&sem_mutex_tlb);
 	}
-
+	if(entrada_pagina == NULL) {
+		log_debug(loggerDebug, "No se encontro la pagina en la TLB, se busca en la tabla de paginas");
+		return buscar_pagina_tabla_paginas(pagina, contenido_pagina); //todo porque con & ?
+	}
 	else{
+		int32_t offset=entrada_pagina->marco*arch->tamanio_marco;
+		memcpy(contenido_pagina, mem_principal+offset, arch->tamanio_marco);
+		return FOUND;
 		//Todo Traer el contenido de MP
 	}
 
-	return NOT_FOUND; //depende si encuentra
-
 }
 
-t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t PID, t_pagina* pagina, char** contenido) {
+t_resultado_busqueda buscar_pagina_tabla_paginas(t_pagina* pagina, char** contenido) {
+
+	bool obtenerTabPagina(t_paginas_proceso* entrada){
+		return entrada->PID == pagina->PID;
+	}
+
+	t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
+	if(tablaPagina!=NULL){
+		bool obtenerMarco_Pagina(TPagina* entradaBuscada){
+				return entradaBuscada->pagina== pagina->nro_pagina;
+			}
+
+		TPagina* entradaFound = list_find(tablaPagina->paginas, obtenerMarco_Pagina);
+		int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);
+		memcpy(contenido, mem_principal+offset, arch->tamanio_marco); 		//todo va con &?
+		return FOUND;
+	}else {
+		log_debug(loggerDebug, "No se encontro en la tabla de paginas, se pide al swap");
+		return pedidoPagina_Swap(pagina, contenido);
+	}
 
 	//Todo buscar pagina en la tabla de paginas del PID
-	return NOT_FOUND; //depende si encuentra
 }
 
-t_resultado_busqueda obtener_pagina_MP(t_pagina* pagina, char** contenido) {
+t_resultado_busqueda pedidoPagina_Swap(t_pagina* pagina, char** contenido) {
 
-	//Todo traer contenido de una pagina de la memoria principal
-	return NOT_FOUND; //depende si encuentra
+		int32_t enviado;
+		int32_t recibido;
+		//Envio al swap para pedir la pagina
+		header_t* headerSwap = _create_header(LEER_PAGINA,2 * sizeof(int32_t));
+		enviado = _send_header(socketSwap, headerSwap);
+		if (enviado == ERROR_OPERATION) return NOT_FOUND;
+		free(headerSwap);
+
+		enviado = _send_bytes(socketSwap, &(pagina->PID), sizeof(int32_t));
+		if (enviado == ERROR_OPERATION) return NOT_FOUND;
+
+		enviado = _send_bytes(socketSwap, &(pagina->nro_pagina), sizeof(int32_t));
+		if (enviado == ERROR_OPERATION) return NOT_FOUND;
+
+		//todo recibir del swap la pagina y guardarla en contenido
+		//recibido = _receive_bytes(socketSwap, &(resultado_operacion), sizeof(int32_t));
+		//if (recibido == ERROR_OPERATION) return NOT_FOUND;
+		//if (la encontre) return FOUND
+		return NOT_FOUND; //depende si encuentra
 
 }

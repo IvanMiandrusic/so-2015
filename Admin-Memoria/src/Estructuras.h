@@ -54,13 +54,12 @@ void TLB_init();
 void TLB_flush();
 bool TLB_habilitada();
 t_resultado_busqueda TLB_buscar_pagina(t_pagina*, char**); //Recibe la direccion del char* donde se guardara el contenido de esa pagina
-
+t_resultado_busqueda pedidoPagina_Swap(t_pagina* , char** );
 
 /** Funciones tabla_paginas y MP **/
 void MP_crear();
 void crear_tabla_pagina_PID(int32_t , int32_t);
-t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t, t_pagina*, char**);
-t_resultado_busqueda obtener_pagina_MP(t_pagina*, char**);
+t_resultado_busqueda buscar_pagina_tabla_paginas(t_pagina*, char**);
 
 
 #endif /* ESTRUCTURAS_H_ */

@@ -59,11 +59,11 @@ void ifSigurs1();
 void ifSigurs2();
 
 /** Funciones de operaciones con CPU **/
-void procesar_pedido(sock_t* socketCpu, header_t* header);
+void procesar_pedido(sock_t*, header_t* );
 void iniciar_proceso(sock_t*, t_pedido_cpu*);
 char* buscar_pagina(t_pagina*);
-int32_t borrarEspacio(int32_t);
-
-
+void finalizarPid(sock_t* );
+int32_t limpiar_Informacion_PID(int32_t );
+void leer_pagina(sock_t* , header_t* );
 
 #endif /* ADMIN_MEMORIA_H_ */

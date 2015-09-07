@@ -65,7 +65,6 @@ void ifSigusr2() {
 
 void ifSigpoll() {
 	dump();
-//todo dump
 }
 
 void dump(){
@@ -170,59 +169,98 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 
 		iniciar_proceso(socketCpu, pedido_cpu);
 		break;
-	}
+		}
 	case LEER: {
-		char* pedido_serializado = malloc(get_message_size(header));
-		int32_t recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
-		if(recibido == ERROR_OPERATION) return;
-		t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
-		char* contenido_pagina = buscar_pagina(pagina_pedida);
-		//Todo, buscar en TLB, buscar en TPags y sino ->Swap
-		//char* serializado= serializarTexto(leer_pagina(pagina_pedida));
-		//enviar serializado
-
+		leer_pagina(socketCpu, header);
 		break;
-	}
+		}
 	case ESCRIBIR: {
 
 		break;
-	}
-	case FINALIZAR: {
-		int32_t PID;
-		int32_t recibido = _receive_bytes(socketCpu, &(PID), sizeof(int32_t));
-		if (recibido == ERROR_OPERATION)return;
-		header_t* headerSwap = _create_header(BORRAR_ESPACIO, 1 * sizeof(int32_t));
-		int32_t enviado = _send_header(socketSwap, headerSwap);
-		if (enviado == ERROR_OPERATION)return;
-		free(headerSwap);
-		enviado = _send_bytes(socketSwap, &(pedido_cpu->pid), sizeof(int32_t));
-		if (enviado == ERROR_OPERATION)	return;
-
-		int32_t resultado_operacion;
-		recibido = _receive_bytes(socketSwap, &(resultado_operacion),sizeof(int32_t));
-		if (recibido == ERROR_OPERATION)return;
-		int32_t operacionValida= borrarEspacio(PID);
-
-		if (operacionValida == RESULTADO_ERROR) {
-			header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
-			int32_t enviado = _send_header(socketCpu, headerMemoria);
-			if(enviado == ERROR_OPERATION) return;
-			free(headerMemoria);
-			return;
-		} else if (operacionValida == RESULTADO_OK) {
-			header_t* headerMemoria = _create_header(RESULTADO_OK, 0);
-			int32_t enviado = _send_header(socketCpu, headerMemoria);
-			if(enviado == ERROR_OPERATION) return;
-			free(headerMemoria);
 		}
+	case FINALIZAR: {
+		finalizarPid(socketCpu);
 		break;
-	}
+		}
 	default: {
-
+		log_error(loggerError, "Desde la cpu recibo un codigo de operacion erroneo");
 		break;
+			}
 	}
-	}
+	log_info(loggerInfo,"Pedido procesado");
 }
+
+
+/*Funciones referentes a finalizar proceso */
+void finalizarPid(sock_t* socketCpu){
+
+			int32_t PID;
+
+			int32_t recibido = _receive_bytes(socketCpu, &(PID), sizeof(int32_t));
+			if (recibido == ERROR_OPERATION) return;
+
+			header_t* headerSwap = _create_header(BORRAR_ESPACIO, 1 * sizeof(int32_t));
+			int32_t enviado = _send_header(socketSwap, headerSwap);
+			if (enviado == ERROR_OPERATION) return;
+
+			free(headerSwap);
+
+			enviado = _send_bytes(socketSwap, &(PID), sizeof(int32_t));
+			if (enviado == ERROR_OPERATION)	return;
+
+			log_debug(loggerDebug, "Envie al swap para finalizar el proceso:%d", PID);
+
+			int32_t resultado_operacion;
+			recibido = _receive_bytes(socketSwap, &(resultado_operacion),sizeof(int32_t));
+			if (recibido == ERROR_OPERATION) return;
+
+			if (resultado_operacion == RESULTADO_ERROR) {
+				log_debug(loggerDebug, "El swap informa que no pudo eliminar el pid:%d", PID);
+				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
+				int32_t enviado = _send_header(socketCpu, headerMemoria);
+				if(enviado == ERROR_OPERATION) return;
+				free(headerMemoria);
+			} else if (resultado_operacion == RESULTADO_OK) {
+				log_debug(loggerDebug, "El swap informa que no pudo eliminar el pid:%d", PID);
+				limpiar_Informacion_PID(PID);
+				header_t* headerMemoria = _create_header(RESULTADO_OK, 0);
+				int32_t enviado = _send_header(socketCpu, headerMemoria);
+				if(enviado == ERROR_OPERATION) return;
+				free(headerMemoria);
+				log_info(loggerInfo, "Se ha borrado de memoria el proceso: %d", PID);
+			}
+
+}
+
+int32_t limpiar_Informacion_PID(int32_t PID){
+	void limpiar(TLB* entrada){
+		if (entrada->PID==PID){
+			entrada->PID=0;
+			entrada->marco=0;
+			entrada->modificada=0;
+			entrada->pagina=0;
+			entrada->presente=0;
+		}
+	}
+	list_iterate(TLB_tabla, limpiar);
+
+	bool obtenerTabPagina(t_paginas_proceso* entrada){
+		return entrada->PID==PID;
+	}
+
+	t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
+	if(tablaPagina!=NULL){
+		list_destroy_and_destroy_elements(tablaPagina->paginas, free);
+		list_remove_and_destroy_by_condition(tabla_Paginas, obtenerTabPagina, free);
+		return RESULTADO_OK	;
+	}else return RESULTADO_ERROR;
+
+
+}
+
+/*Aca finalizan las funciones referentes a finalizar proceso*/
+
+/*Funciones referentes a iniciar proceso */
 
 void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 
@@ -279,6 +317,20 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 
 	free(pedido_cpu);
 }
+/*Aca finalizan las funciones referentes a iniciar proceso*/
+
+/*Funciones referentes a leer pagina*/
+
+void leer_pagina(sock_t* socketCpu, header_t* header){
+	char* pedido_serializado = malloc(get_message_size(header));
+	int32_t recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
+	if(recibido == ERROR_OPERATION) return;
+	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
+	char* contenido_pagina = buscar_pagina(pagina_pedida);
+	//Todo, si contenido es NULL enviar error, else, enviar contenido
+	//char* serializado= serializarTexto(leer_pagina(pagina_pedida));
+	//enviar serializado
+}
 
 char* buscar_pagina(t_pagina* pagina_solicitada) {
 
@@ -287,21 +339,21 @@ char* buscar_pagina(t_pagina* pagina_solicitada) {
 
 	t_resultado_busqueda resultado = NOT_FOUND;
 
-	if(TLB_habilitada())
-		resultado = TLB_buscar_pagina(pagina_solicitada, &contenido_pagina);
-
-	if(resultado == NOT_FOUND) {
-
-		//Todo si no esta en TLB..
+	resultado = TLB_buscar_pagina(pagina_solicitada, &contenido_pagina);
+	if(resultado==NOT_FOUND){
+		return NULL;
+	}else{
+			//TODO correr algoritmo de reemplazo de pags
+		return contenido_pagina;
 	}
-
-	return contenido_pagina;
 }
 
-int32_t borrarEspacio(int32_t PID){
-	//todo
-	//buscar en TLB y sacarla
+/*Aca finalizan las funciones referentes a leer pagina*/
 
-	return RESULTADO_OK;
+/*Funciones referentes a escribir pagina*/
+
+void escribirPagina(){
+	//TODO
 }
 
+/*Aca finalizan las funciones referentes a escribir pagina*/
