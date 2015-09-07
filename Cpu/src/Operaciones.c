@@ -151,9 +151,10 @@ void ejecutarFIFO(int32_t id, PCB* pcb){
 	}
 	log_debug(loggerDebug, "Siguiente Instruccion %d", pcb->siguienteInstruccion);
 	fseek(prog, pcb->siguienteInstruccion, SEEK_SET);
-//	while(finalizar==false){
+	while(finalizar==false){
 		log_debug(loggerDebug, "Ejecuto una instruccion");
 		if(fgets(cadena, 100, prog) != NULL)
+
 		{
 
 			t_respuesta* respuesta=analizadorLinea(id,pcb,cadena);
@@ -164,6 +165,7 @@ void ejecutarFIFO(int32_t id, PCB* pcb){
 				//todo arreglar comunicacion ACA. Digito-pcb-texto?
 				finalizar=true;
 			}
+
 			if(respuesta->id==ENTRADASALIDA){
 				pcb->siguienteInstruccion=ftell(prog);
 				//TODO send to planif
@@ -171,7 +173,8 @@ void ejecutarFIFO(int32_t id, PCB* pcb){
 				finalizar=true;
 			}
 		}
-		//}
+		else finalizar = true;
+		}
 }
 
 void ejecutarRR(int32_t id, PCB* pcb){
@@ -192,50 +195,28 @@ void ejecutarRR(int32_t id, PCB* pcb){
 			string_append(&log_acciones, respuesta->texto);
 			if(respuesta->id==FINALIZAR){
 				pcb->siguienteInstruccion=ftell(prog);
-				//TODO send to planif
+				//TODO send to planif mandar finalizar pcb texto id de la CPU para decirle que esta libre ver orden en planif
 				//todo arreglar comunicacion ACA. Digito-pcb-texto?
+				return ;
 			}
 			if(respuesta->id==ENTRADASALIDA){
 				pcb->siguienteInstruccion=ftell(prog);
-				//TODO send to planif
+				//TODO send to planif entradaSalida retardo pcb y texto id de la CPU para decirle que esta libre ver orden en planif
 				//todo arreglar comunicacion ACA. Digito-retardo-pcb-texto?
+				return ;
 			}
+			//TODO if respuesta id es error le mando error id de la CPU para decirle que esta libre y ver...
 		}
 		ultimoQuantum++;
 	}
+	//TODO mandar la ultima respuesta al planificador, id de terminar el quantum el pcb y la respuesta y texto
+
+
 
 }
 
 
-PCB* deserializarPCB(char* serializado)
-{
-	PCB* pcb = malloc(sizeof(PCB));
-	int offset = 0;
-	int size_entero = sizeof(u_int32_t);
 
-	memcpy(&(pcb->PID), serializado + offset, size_entero);
-
-	offset += size_entero;
-	int32_t tamanio;
-	memcpy(&tamanio, serializado + offset, size_entero);
-
-	offset += size_entero;
-	pcb->ruta_archivo = malloc(tamanio);
-	memcpy(pcb->ruta_archivo, serializado + offset, tamanio);
-	pcb->ruta_archivo[tamanio] = '\0';
-
-	offset += tamanio;
-
-	memcpy(&(pcb->estado), serializado + offset, size_entero);
-
-	offset += size_entero;
-
-	memcpy(&(pcb->siguienteInstruccion), serializado + offset, size_entero);
-
-	offset += size_entero;
-	return pcb;
-
-}
 
 t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
     //mandar al admin de memoria que se inició un proceso de N paginas
@@ -255,6 +236,7 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 	enviado = _send_bytes(&(socketMemoria[id]),&cantDePaginas, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
 
+	//TODO hacerlo en cada operacion
 	log_debug(loggerDebug, "Envie el pcb %d, con %d paginas",pcb->PID, cantDePaginas);
 
 	free(header_A_Memoria);
@@ -280,6 +262,8 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 
 	free(header_de_memoria);
 	return response;
+
+
 }
 
 int32_t enviarResultadoAlPlanificador(int32_t codigo_resultado, sock_t* socket_planificador) {

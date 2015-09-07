@@ -37,7 +37,8 @@
 #define ERROR 2
 #define CONTENIDO_PAGINA 3
 
-PCB* deserializarPCB(char* serializado);
+PCB* deserializarPCB(char*);
+char* serializarPCB(PCB*);
 
 
 #endif /* COMUNICACION_H_ */

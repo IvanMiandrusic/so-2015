@@ -45,3 +45,33 @@ char* serializarPCB(PCB* pcb)
 
 	return pcbserializado;
 }
+
+PCB* deserializarPCB(char* serializado)
+{
+	PCB* pcb = malloc(sizeof(PCB));
+	int offset = 0;
+	int size_entero = sizeof(u_int32_t);
+
+	memcpy(&(pcb->PID), serializado + offset, size_entero);
+
+	offset += size_entero;
+	int32_t tamanio;
+	memcpy(&tamanio, serializado + offset, size_entero);
+
+	offset += size_entero;
+	pcb->ruta_archivo = malloc(tamanio);
+	memcpy(pcb->ruta_archivo, serializado + offset, tamanio);
+	pcb->ruta_archivo[tamanio] = '\0';
+
+	offset += tamanio;
+
+	memcpy(&(pcb->estado), serializado + offset, size_entero);
+
+	offset += size_entero;
+
+	memcpy(&(pcb->siguienteInstruccion), serializado + offset, size_entero);
+
+	offset += size_entero;
+	return pcb;
+
+}
