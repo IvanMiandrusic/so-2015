@@ -161,7 +161,11 @@ void ejecutarFIFO(int32_t id, PCB* pcb){
 			string_append(&log_acciones, respuesta->texto);
 			if(respuesta->id==FINALIZAR){
 				pcb->siguienteInstruccion=ftell(prog);
-				//TODO send to planif
+
+				int32_t enviar_Planificador = enviarResultadoAlPlanificador(FINALIZAR,socketPlanificador);
+				if(enviar_Planificador == ERROR_OPERATION) log_error(loggerError, "Error al enviar el codigo de finalizacion del proceso %d", pcb->PID);
+				if(enviar_Planificador == SUCCESS_OPERATION)log_debug(loggerDebug, "Se envio el codigo de finalizacion del proceso %d", pcb->PID);
+
 				//todo arreglar comunicacion ACA. Digito-pcb-texto?
 				finalizar=true;
 			}
