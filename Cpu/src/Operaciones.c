@@ -50,6 +50,7 @@ void* thread_Cpu(void* id){
 		log_error(loggerError,"Se perdio la conexion con el Planificador");
 		exit(EXIT_FAILURE);
 	}
+	log_debug(loggerDebug, "Conectado con el planificador");
 
 	free(header_nueva_cpu);
 
@@ -105,7 +106,6 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 	case ENVIO_PCB:{
 		log_info(loggerInfo,"CPU recibio de Planificador codOperacion %d PCB",get_operation_code(header));
 		char* pedido_serializado = malloc(get_message_size(header));
-		log_debug(loggerDebug, "El socket planificador a enviar es %d", socketPlanificador[id].fd);
 		int32_t recibido = _receive_bytes(&(socketPlanificador[id]), pedido_serializado, get_message_size(header));
 		if(recibido == ERROR_OPERATION) {
 			log_debug(loggerDebug, "Error al recibir el PCB del planificador");
@@ -113,7 +113,6 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 		}
 
 		log_info(loggerInfo, "Recibio el PCB correctamente");
-		log_debug(loggerDebug, "El tamanio del serializado es %d", strlen(pedido_serializado));
 		PCB* pcb = deserializarPCB (pedido_serializado);
 
 		log_debug(loggerDebug, "PCB id %d estado %d ruta %s sig instruccion %d", pcb->PID, pcb->estado, pcb->ruta_archivo, pcb->siguienteInstruccion);
@@ -459,7 +458,7 @@ t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 		response->texto=string_new();
 		response->retardo = 0;
 		string_append_with_format(&response->texto, "error al finalizar el mProc %d ", pcb->PID);
-		log_error()(loggerError, "error al finalizar el mProc %d ", pcb->PID);
+		log_error(loggerError, "error al finalizar el mProc %d ", pcb->PID);
 	}
 
 	return response;

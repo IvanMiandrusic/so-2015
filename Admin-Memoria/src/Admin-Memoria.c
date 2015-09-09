@@ -392,7 +392,8 @@ t_resultado_busqueda TLB_buscar_pagina_escribir(t_pagina* pagina) {
 }
 
 t_resultado_busqueda buscar_pagina_a_escribir_tabla_paginas(t_pagina* pagina){
-	bool obtenerTabPagina(t_paginas_proceso* entrada){
+
+		bool obtenerTabPagina(t_paginas_proceso* entrada){
 			return entrada->PID == pagina->PID;
 		}
 
