@@ -44,7 +44,7 @@ ProcesoMemoria* crear_estructura_config(char* path) {
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie() {
-	log_info(loggerInfo, "Se dara de baja el proceso Memoria");
+	log_info(loggerInfo, ANSI_COLOR_BLUE "Se dara de baja el proceso Memoria"ANSI_COLOR_RESET);
 	exit(1);
 }
 
@@ -69,7 +69,7 @@ void dump(){
 	int pid=fork();
 
 	if(pid==-1){
-		log_error(loggerError, "Error al hacer el fork() para dump");
+		log_error(loggerError, ANSI_COLOR_RED "Error al hacer el fork() para dump" ANSI_COLOR_RESET);
 	}
 
 	if(!pid){
@@ -83,6 +83,7 @@ void dump(){
 		}
 		abort();
 	}
+	log_error(loggerError, ANSI_COLOR_GREEN "Dump realizado con exito" ANSI_COLOR_RESET);
 }
 
 /*Función donde se inicializan los semaforos */
@@ -90,10 +91,10 @@ void dump(){
 void inicializoSemaforos() {
 
 	int32_t semMutex = sem_init(&sem_mutex_tlb, 0, 1);
-	if (semMutex == -1)log_error(loggerError, "No pudo crearse el semaforo Mutex de la TLB");
+	if (semMutex == -1)log_error(loggerError, ANSI_COLOR_RED "No pudo crearse el semaforo Mutex de la TLB" ANSI_COLOR_RESET);
 
 	int32_t semMutexPaginas = sem_init(&sem_mutex_tabla_paginas, 0, 1);
-	if (semMutexPaginas == -1)log_error(loggerError, "No pudo crearse el semaforo Mutex de la tabla de paginas");
+	if (semMutexPaginas == -1)log_error(loggerError, ANSI_COLOR_RED "No pudo crearse el semaforo Mutex de la tabla de paginas" ANSI_COLOR_RESET);
 
 }
 
@@ -111,27 +112,27 @@ void crearArchivoDeLog() {
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
 int main(void) {
 
-	/*En el header Colores, se adjunta un ejemplo de uso de los colores por consola*/
+	/*Se genera el archivo de log, to-do lo que sale por pantalla */
+		crearArchivoDeLog();
 
 	/*Tratamiento del ctrl+c en el proceso */
 	if (signal(SIGINT, ifProcessDie) == SIG_ERR)
-		log_error(loggerError, "Error con la señal SIGINT");
+		log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGINT" ANSI_COLOR_RESET);
 
 	if (signal(SIGUSR1, ifSigusr1) == SIG_ERR)
-		log_error(loggerError, "Error con la señal SIGUSR1");
+		log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGUSR1" ANSI_COLOR_RESET);
 
 	if (signal(SIGUSR2, ifSigusr2) == SIG_ERR)
-		log_error(loggerError, "Error con la señal SIGUSR2");
+		log_error(loggerError,ANSI_COLOR_RED "Error con la señal SIGUSR2" ANSI_COLOR_RESET);
 
 	if (signal(SIGPOLL, ifSigpoll) == SIG_ERR)
-			log_error(loggerError, "Error con la señal SIGPOLL");
+			log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGPOLL" ANSI_COLOR_RESET);
 
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "../Admin-Memoria.config";
 	arch = crear_estructura_config(path);
 
-	/*Se genera el archivo de log, to-do lo que sale por pantalla */
-	crearArchivoDeLog();
+
 
 	/*Se inicializan todos los semaforos necesarios */
 	inicializoSemaforos();
@@ -143,16 +144,16 @@ int main(void) {
 	socketSwap = create_client_socket(arch->ip_swap, arch->puerto_swap);
 	int32_t resultado = connect_to_server(socketSwap);
 	if(resultado == ERROR_OPERATION) {
-		log_error(loggerError, "Error al conectar al swap");
+		log_error(loggerError, ANSI_COLOR_RED "Error al conectar al swap" ANSI_COLOR_RESET);
 		return EXIT_FAILURE;
 	}
 
-	log_debug(loggerDebug, "Conectado al swap");
+	log_info(loggerInfo, ANSI_COLOR_CYAN "Conectado al swap" ANSI_COLOR_RESET);
 
 	socketServidorCpus = create_server_socket(arch->puerto_escucha);
 	resultado = listen_connections(socketServidorCpus);
 	if(resultado == ERROR_OPERATION) {
-		log_error(loggerError, "Error al escuchar conexiones de las cpus");
+		log_error(loggerError, ANSI_COLOR_RED "Error al escuchar conexiones de las cpus" ANSI_COLOR_RESET);
 		return EXIT_FAILURE;
 	}
 
@@ -166,9 +167,7 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 	t_pedido_cpu* pedido_cpu = malloc(sizeof(t_pedido_cpu));
 	//Todo casos de envios
 	switch (get_operation_code(header)) {
-
 	case INICIAR: {
-
 		iniciar_proceso(socketCpu, pedido_cpu);
 		break;
 		}
@@ -185,11 +184,12 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 		break;
 		}
 	default: {
-		log_error(loggerError, "Desde la cpu recibo un codigo de operacion erroneo");
+		log_debug(loggerDebug, "Se recibio el codigo de operacion:%d", get_operation_code(header));
+		log_error(loggerError, ANSI_COLOR_RED "Desde la cpu recibo un codigo de operacion erroneo" ANSI_COLOR_RESET);
 		break;
 			}
 	}
-	log_info(loggerInfo,"Pedido procesado");
+	log_debug(loggerDebug, ANSI_COLOR_BOLDCYAN "Pedido procesado" ANSI_COLOR_RESET);
 }
 
 
@@ -271,15 +271,13 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 	int32_t resultado_operacion;
 
 	recibido = _receive_bytes(socketCpu, &(pedido_cpu->pid), sizeof(int32_t));
-	if (recibido == ERROR_OPERATION)
-		return;
+	if (recibido == ERROR_OPERATION) return;
 
 	recibido = _receive_bytes(socketCpu, &(pedido_cpu->cantidad_paginas),
 			sizeof(int32_t));
-	if (recibido == ERROR_OPERATION)
-		return;
+	if (recibido == ERROR_OPERATION) return;
 
-	log_debug(loggerDebug, "Recibi el pcb %d, con %d paginas",pedido_cpu->pid, pedido_cpu->cantidad_paginas);
+	log_debug(loggerDebug, ANSI_COLOR_YELLOW "Recibi el pcb %d, con %d paginas" ANSI_COLOR_RESET ,pedido_cpu->pid, pedido_cpu->cantidad_paginas);
 
 	//Envio al swap para que reserve espacio
 	header_t* headerSwap = _create_header(RESERVAR_ESPACIO,	2 * sizeof(int32_t));
@@ -303,7 +301,7 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 		header_t* headerCpu = _create_header(ERROR, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
-		log_debug(loggerDebug,"El swap informa que no se pudo asignar");
+		log_debug(loggerDebug,ANSI_COLOR_RED"El swap informa que no se pudo asignar" ANSI_COLOR_RESET);
 		return;
 	} else if (resultado_operacion == RESULTADO_OK) {
 		//Creo la tabla de paginas del PID dado
@@ -312,7 +310,7 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 		header_t* headerCpu = _create_header(OK, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
-		log_debug(loggerDebug,"En la memoria tambien se asigna");
+		log_debug(loggerDebug,ANSI_COLOR_GREEN "En la memoria tambien se asigna" ANSI_COLOR_RESET);
 	}
 
 	free(pedido_cpu);
@@ -326,7 +324,26 @@ void leer_pagina(sock_t* socketCpu, header_t* header){
 	int32_t recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
 	if(recibido == ERROR_OPERATION) return;
 	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
-	char* contenido_pagina = buscar_pagina(pagina_pedida);
+	log_debug(loggerDebug, "Debo leer la pagina:%d, del proceso: %d", pagina_pedida->nro_pagina, pagina_pedida->PID);
+	//char* contenido_pagina = buscar_pagina(pagina_pedida);			//todo probar
+	t_resultado_busqueda resultado_operacion=FOUND;
+	int32_t enviado;
+	if (resultado_operacion == NOT_FOUND) {
+		header_t* headerCpu = _create_header(ERROR, 0);
+		enviado = _send_header(socketCpu, headerCpu);
+		free(headerCpu);
+		log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo leer la pagina" ANSI_COLOR_RESET);
+		return;
+	} else if (resultado_operacion == FOUND) {
+		char* contenido_pagina="DiegoGFiorillo";
+		header_t* headerCpu = _create_header(OK, 0);
+		enviado = _send_header(socketCpu, headerCpu);
+		int32_t tamanio=strlen(contenido_pagina);
+		enviado = _send_bytes(socketCpu, &tamanio, sizeof(int32_t));
+		enviado = _send_bytes(socketCpu, contenido_pagina, tamanio);
+		free(headerCpu);
+		log_debug(loggerDebug,ANSI_COLOR_GREEN "Se leyo la pagina correctamente" ANSI_COLOR_RESET);
+	}
 	//Todo, si contenido es NULL enviar error, else, enviar contenido
 	//char* serializado= serializarTexto(leer_pagina(pagina_pedida));
 	//enviar serializado
@@ -358,8 +375,22 @@ void escribirPagina(sock_t* socketCpu, header_t* header){
 	int32_t recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
 	if(recibido == ERROR_OPERATION) return;
 	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
-	t_resultado_busqueda resultado = buscar_y_escribir_pagina(pagina_pedida);
-	//todo if resultado NOTFOUND devolver error, sino OK
+	log_debug(loggerDebug, "Se tiene que escribir del proceso:%d la pagina:%d con:%s", pagina_pedida->PID, pagina_pedida->nro_pagina, pagina_pedida->contenido);
+	//t_resultado_busqueda resultado = buscar_y_escribir_pagina(pagina_pedida);  //todo probar
+	t_resultado_busqueda resultado_operacion=FOUND;
+	int32_t enviado;
+	if (resultado_operacion == NOT_FOUND) {
+		header_t* headerCpu = _create_header(ERROR, 0);
+		enviado = _send_header(socketCpu, headerCpu);
+		free(headerCpu);
+		log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo escribir la pagina" ANSI_COLOR_RESET);
+		return;
+	} else if (resultado_operacion == FOUND) {
+		header_t* headerCpu = _create_header(OK, 0);
+		enviado = _send_header(socketCpu, headerCpu);
+		free(headerCpu);
+		log_debug(loggerDebug,ANSI_COLOR_GREEN "Se escribio la pagina correctamente" ANSI_COLOR_RESET);
+	}
 
 }
 

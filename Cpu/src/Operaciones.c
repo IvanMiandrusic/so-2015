@@ -205,10 +205,11 @@ void ejecutar(int32_t id, PCB* pcb){
 	while(finalizado == FALSE){
 		if(fgets(cadena, 100, prog) != NULL)
 		{
+			log_debug(loggerDebug, "Tengo una linea para ejecutar");
 			t_respuesta* respuesta=analizadorLinea(id,pcb,cadena);
 			string_append(&log_acciones, respuesta->texto);
-
 			pcb->siguienteInstruccion=ftell(prog);
+			log_debug(loggerDebug, "Analice y ejecute una linea, la proxima tiene PC en:%d", pcb->siguienteInstruccion);
 			if(respuesta->id==FINALIZAR){
 
 
@@ -221,7 +222,7 @@ void ejecutar(int32_t id, PCB* pcb){
 				int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,sizeof(tamanio_pcb));
 
 			ultimoQuantum = quantum;
-				return ;
+			return ;
 			}
 
 			if(respuesta->id==ENTRADASALIDA){
@@ -289,9 +290,9 @@ void ejecutar(int32_t id, PCB* pcb){
 t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
     //mandar al admin de memoria que se inició un proceso de N paginas
 
-	log_debug(loggerDebug, "Se procedera a iniciar un proceso en memoria socket %d", socketMemoria[id].fd);
+	log_debug(loggerDebug, "Se procedera a iniciar el proceso:%d", pcb->PID);
 	/** Envio header a la memoria con INICIAR **/
-	header_t* header_A_Memoria = _create_header(INICIAR, 2 * sizeof(int32_t));
+	header_t* header_A_Memoria = _create_header(M_INICIAR, 2 * sizeof(int32_t));
 
 	log_debug(loggerDebug, "Envie el header INICIAR con %d bytes",header_A_Memoria->size_message);
 
@@ -319,15 +320,15 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 		response->id=ERROR;
 		response->texto=string_new();
 		response->retardo = 0;
-		string_append_with_format(&response->texto, "mProc %d -Fallo",pcb->PID);
-		log_error(loggerError,"mProc %d -Fallo",pcb->PID);
+		string_append_with_format(&response->texto, "mProc %d - Fallo",pcb->PID);
+		log_error(loggerError,"mProc %d - Fallo",pcb->PID);
 	}
 	else {
 		response->id=INICIAR;
 		response->texto=string_new();
 		response->retardo = 0;
-		string_append_with_format(&response->texto, "mProc %d -Iniciado",pcb->PID);
-		log_info(loggerInfo,"mProc %d -Iniciado", pcb->PID);
+		string_append_with_format(&response->texto, "mProc %d - Iniciado",pcb->PID);
+		log_info(loggerInfo,"mProc %d - Iniciado", pcb->PID);
 	}
 
 	free(header_de_memoria);
@@ -353,9 +354,10 @@ int32_t enviarResultadoAlPlanificador(int32_t codigo_resultado, sock_t* socket_p
 
 t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 	//se debe leer de la memoria la pagina N
+	log_debug(loggerDebug, "Se procedera a leer del proceso:%d, la pagina:%d", pcb->PID, numDePagina);
 
 	/** Envio header a la memoria con LEER **/
-	header_t* header_A_Memoria = _create_header(LEER, 2 * sizeof(int32_t));
+	header_t* header_A_Memoria = _create_header(M_LEER, 3 * sizeof(int32_t));
 
 	int32_t enviado = _send_header(&(socketMemoria[id]), header_A_Memoria);
 	if(enviado == ERROR_OPERATION) return NULL;
@@ -364,6 +366,10 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 	if(enviado == ERROR_OPERATION) return NULL;
 
 	enviado = _send_bytes(&(socketMemoria[id]),&numDePagina, sizeof (int32_t));
+	if(enviado == ERROR_OPERATION) return NULL;
+
+	int32_t tamanio=0;
+	enviado = _send_bytes(&(socketMemoria[id]),&tamanio, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
 
 	log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d",pcb->PID, numDePagina);
@@ -380,9 +386,9 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 
 	char* contenido_pagina = malloc(longPagina);
 	recibido = _receive_bytes(&(socketMemoria[id]), contenido_pagina, longPagina);
+	contenido_pagina[longPagina]='\0';
 
 	if(recibido == ERROR_OPERATION) return NULL;
-
 	t_respuesta* response= malloc(sizeof(t_respuesta));
 	if (contenido_pagina != NULL){
 	response->id=LEER;
@@ -397,8 +403,8 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 		response->texto=string_new();
 		response->retardo = 0;
 
-		string_append_with_format(&response->texto, "error en el mProc %d - Pagina %d no leida: %s ",pcb->PID, numDePagina, contenido_pagina);
-		log_error(loggerError,"error en el mProc %d - Pagina %d NO leida: %s ",pcb->PID, numDePagina, contenido_pagina);
+		string_append_with_format(&response->texto, "Error en el mProc %d - Pagina %d no leida: %s ",pcb->PID, numDePagina, contenido_pagina);
+		log_error(loggerError,"Error en el mProc %d - Pagina %d NO leida: %s ",pcb->PID, numDePagina, contenido_pagina);
 
 	}
 
@@ -407,10 +413,10 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 
 t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* texto){
 	//se debe escribir en memoria el texto en la pagina N
-
+	log_debug(loggerDebug, "Se procedera a esribir del proceso:%d, la pagina: %d, %d bytes",pcb->PID, numDePagina, strlen(texto));
 	/** Envio header a la memoria con ESCRIBIR **/
 	int32_t tamanio = strlen(texto);
-	header_t* header_A_Memoria = _create_header(ESCRIBIR, 3 * sizeof(int32_t)+tamanio);
+	header_t* header_A_Memoria = _create_header(M_ESCRIBIR, 3 * sizeof(int32_t)+tamanio);
 
 	int32_t enviado_Header = _send_header(&(socketMemoria[id]), header_A_Memoria);
 
@@ -425,10 +431,9 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 
 	int32_t recibido = _receive_header(&(socketMemoria[id]), header_de_memoria);
 	//todo sacar el error o el ok y de ahi cambiar a error o nada
-
 	t_respuesta* response= malloc(sizeof(t_respuesta));
 
-	if (recibido == OK){
+	if (header_de_memoria->cod_op == OK){
 		response->id=ESCRIBIR;
 		response->texto=string_new();
 		response->retardo = 0;
@@ -442,9 +447,9 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 		response->texto=string_new();
 		response->retardo = 0;
 
-		string_append_with_format(&response->texto, "error en el mProc %d - Pagina %d NO escrita: %s", pcb->PID,numDePagina, texto);
+		string_append_with_format(&response->texto, "Error en el mProc %d - Pagina %d NO escrita: %s", pcb->PID,numDePagina, texto);
 
-		log_error(loggerError, "error en el mProc %d - Pagina %d NO escrita: %s", pcb->PID,numDePagina, texto);
+		log_error(loggerError, "Error en el mProc %d - Pagina %d NO escrita: %s", pcb->PID,numDePagina, texto);
 
 	}
 
@@ -456,6 +461,7 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 t_respuesta* mAnsisOp_IO(int32_t id, PCB* pcb,int32_t tiempo){
 	//decirle al planificador que se haga una i/o de cierto tiempo
 	//solo ver si se envio al planificador
+	log_debug(loggerDebug, "Se procedera a enviar el proceso:%d a IO con retardo: %d", pcb->PID, tiempo);
 
 	//TODO como se libera la CPU?
 	header_t* header_A_Planificador = _create_header(SOLICITUD_IO,2*sizeof(int32_t));
@@ -485,8 +491,9 @@ t_respuesta* mAnsisOp_IO(int32_t id, PCB* pcb,int32_t tiempo){
 
 t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 		//decirle a la memoria que se elimine la tabla asociada
+	log_debug(loggerDebug, "Se procedera a finalizar el proceso:%d", pcb->PID);
 
-	header_t* header_A_Memoria = _create_header(FINALIZAR, sizeof(int32_t));
+	header_t* header_A_Memoria = _create_header(M_FINALIZAR, sizeof(int32_t));
 
 	int32_t enviado_Header = _send_header(&(socketMemoria[id]),header_A_Memoria);
 	int32_t enviado_Id_Proceso = _send_bytes(&(socketMemoria[id]),&pcb->PID, sizeof (int32_t));
@@ -504,16 +511,16 @@ t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 	response->id=FINALIZAR;
 	response->texto=string_new();
 	response->retardo = 0;
-	string_append_with_format(&response->texto, "mProc %d finalizado", pcb->PID);
-	log_info(loggerInfo, "mProc %d finalizado", pcb->PID);
+	string_append_with_format(&response->texto, "mProc %d Finalizado", pcb->PID);
+	log_info(loggerInfo, "mProc %d Finalizado", pcb->PID);
 
 	}else
 	{
 		response->id=ERROR;
 		response->texto=string_new();
 		response->retardo = 0;
-		string_append_with_format(&response->texto, "error al finalizar el mProc %d ", pcb->PID);
-		log_error(loggerError, "error al finalizar el mProc %d ", pcb->PID);
+		string_append_with_format(&response->texto, "Error al finalizar el mProc %d ", pcb->PID);
+		log_error(loggerError, "Error al finalizar el mProc %d ", pcb->PID);
 	}
 
 	return response;

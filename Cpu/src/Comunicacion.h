@@ -27,10 +27,10 @@
 
 
 /**Codigos de operacion en los envios hacia la memoria **/
-#define INICIAR 1
-#define LEER 2
-#define ESCRIBIR 3
-#define FINALIZAR 4
+#define M_INICIAR 1
+#define M_LEER 2
+#define M_ESCRIBIR 3
+#define M_FINALIZAR 4
 
 /** Codigos de operacion en las recepciones desde la memoria **/
 #define OK 1

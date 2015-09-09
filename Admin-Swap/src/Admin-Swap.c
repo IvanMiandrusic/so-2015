@@ -42,7 +42,7 @@ ProcesoSwap* crear_estructura_config(char* path)
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie(){
-		log_error(loggerError, ANSI_COLOR_RED "Se da por finalizado el proceso Swap"ANSI_COLOR_RESET);
+		log_error(loggerError, ANSI_COLOR_BLUE "Se da por finalizado el proceso Swap"ANSI_COLOR_RESET);
 		exit(1);
 }
 
@@ -316,7 +316,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 				int32_t enviado = _send_header(socketMemoria, headerMemoria);
 				if(enviado == ERROR_OPERATION) return;
 				free(headerMemoria);
-				log_debug(loggerDebug, "Se reservo el espacio solicitado");
+				log_info(loggerInfo, ANSI_COLOR_GREEN"Se reservo el espacio solicitado" ANSI_COLOR_RESET);
 			}
 			break;
 		}

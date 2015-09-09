@@ -66,6 +66,7 @@ void TLB_flush() {
 	sem_wait(&sem_mutex_tlb);
 	list_iterate(TLB_tabla, limpiar_entradas);
 	sem_post(&sem_mutex_tlb);
+	log_info(loggerInfo, ANSI_COLOR_GREEN "Se realizo correctamente el TLB Flush" ANSI_COLOR_RESET);
 }
 
 void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
@@ -86,7 +87,6 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 
 		list_add(nueva_entrada_proceso->paginas, nuevaEntrada);
 	}
-	log_debug(loggerDebug,"espero el semaforo");
 	sem_wait(&sem_mutex_tabla_paginas);
 	list_add(tabla_Paginas, nueva_entrada_proceso);
 	sem_post(&sem_mutex_tabla_paginas);
