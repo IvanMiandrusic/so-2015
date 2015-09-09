@@ -469,11 +469,13 @@ int32_t escribir_pagina(t_pagina* pagina_pedida){
 	FILE* espacioDeDatos=abrirArchivoConTPagina(pagina_pedida);
 	int32_t posicion = ftell(espacioDeDatos);
 
-	//todo ver fwrite y que devuelve
-	int32_t resultado=fwrite(pagina_pedida->contenido, sizeof(char),strlen(pagina_pedida->contenido), espacioDeDatos);
-	//si el fwrite deja el cursor al final de donde escribio
-	int32_t resultado2=fwrite('\0', sizeof(char),arch->tamanio_pagina-strlen(pagina_pedida->contenido), espacioDeDatos);
+	int32_t resultado=fwrite(pagina_pedida->contenido,strlen(pagina_pedida->contenido), 1, espacioDeDatos);
 
+	int i;
+	int32_t resultado2=0;
+	for(i=0;i<((arch->tamanio_pagina)-(strlen(pagina_pedida->contenido)));i++){
+		resultado2+=fwrite("\0", 1,1, espacioDeDatos);
+	}
 	fclose(espacioDeDatos);
 
 	if (resultado+resultado2==arch->tamanio_pagina){
