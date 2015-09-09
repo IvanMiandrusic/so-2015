@@ -43,7 +43,7 @@ ProcesoSwap* crear_estructura_config(char* path)
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie(){
 		log_error(loggerError, "Se da por finalizado el proceso Swap");
-	exit(1);
+		exit(1);
 }
 
 /*Función donde se inicializan los semaforos */
@@ -94,8 +94,8 @@ void creoEstructuraSwap(){
 
 void leeryEscribir(NodoOcupado* nodoViejo,int32_t comienzo){
 
-	int i =nodoViejo->comienzo;
-	for(i;i<nodoViejo->paginas+nodoViejo->comienzo;i++){
+	int i;
+	for(i=nodoViejo->comienzo;i<nodoViejo->paginas+nodoViejo->comienzo;i++){
 
 		t_pagina* pagina=malloc(sizeof(t_pagina));
 		pagina->PID=nodoViejo->PID;
@@ -350,12 +350,26 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 }
 
 int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
-	//todo falta saber si es bestfit-firstfit-worstfit o solo asignación contigua
 	int32_t libre=calcularEspacioLibre();
 	if(libre <= pedido_pid->cantidad_paginas)return RESULTADO_ERROR;
-	//asignarBF
-	//asignarFF
-	//asignarWF
+	bool tieneEspacio(NodoLibre* nodo)
+		{
+				return nodo->paginas>=pedido_pid->cantidad_paginas;
+		}
+
+	NodoLibre* nodoLibre=list_find(espacioLibre, tieneEspacio);
+	if(nodoLibre==NULL){
+		compactar();
+		nodoLibre=list_get(espacioLibre, 1);
+	}
+	NodoOcupado* nodoNuevo=malloc(sizeof(NodoOcupado));
+	nodoNuevo->PID=pedido_pid->pid;
+	nodoNuevo->comienzo=nodoLibre->comienzo;
+	nodoNuevo->paginas=pedido_pid->cantidad_paginas;
+
+	nodoLibre->comienzo=nodoNuevo->comienzo+nodoNuevo->paginas;
+	nodoLibre->paginas= nodoLibre->paginas-nodoNuevo->paginas;
+
 	return RESULTADO_OK;
 }
 
