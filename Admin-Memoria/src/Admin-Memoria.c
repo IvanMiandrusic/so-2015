@@ -90,8 +90,11 @@ void dump(){
 void inicializoSemaforos() {
 
 	int32_t semMutex = sem_init(&sem_mutex_tlb, 0, 1);
-	if (semMutex == -1)
-		log_error(loggerError, "No pudo crearse el semaforo Mutex");
+	if (semMutex == -1)log_error(loggerError, "No pudo crearse el semaforo Mutex de la TLB");
+
+	int32_t semMutexPaginas = sem_init(&sem_mutex_tabla_paginas, 0, 1);
+	if (semMutexPaginas == -1)log_error(loggerError, "No pudo crearse el semaforo Mutex de la tabla de paginas");
+
 }
 
 /*Se crea un archivo de log donde se registra to-do */
@@ -134,6 +137,7 @@ int main(void) {
 	inicializoSemaforos();
 
 	TLB_crear();
+	TP_crear();
 	MP_crear();
 
 	socketSwap = create_client_socket(arch->ip_swap, arch->puerto_swap);
@@ -278,39 +282,37 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 	log_debug(loggerDebug, "Recibi el pcb %d, con %d paginas",pedido_cpu->pid, pedido_cpu->cantidad_paginas);
 
 	//Envio al swap para que reserve espacio
-	header_t* headerSwap = _create_header(RESERVAR_ESPACIO,
-			2 * sizeof(int32_t));
+	header_t* headerSwap = _create_header(RESERVAR_ESPACIO,	2 * sizeof(int32_t));
 	enviado = _send_header(socketSwap, headerSwap);
 	if (enviado == ERROR_OPERATION)
 		return;
 	free(headerSwap);
 
 	enviado = _send_bytes(socketSwap, &(pedido_cpu->pid), sizeof(int32_t));
-	if (enviado == ERROR_OPERATION)
-		return;
+	if (enviado == ERROR_OPERATION) return;
 
 	enviado = _send_bytes(socketSwap, &(pedido_cpu->cantidad_paginas),
 			sizeof(int32_t));
-	if (enviado == ERROR_OPERATION)
-		return;
+	if (enviado == ERROR_OPERATION) return;
 
 	recibido = _receive_bytes(socketSwap, &(resultado_operacion),
 			sizeof(int32_t));
-	if (recibido == ERROR_OPERATION)
-		return;
+	if (recibido == ERROR_OPERATION) return;
 
 	if (resultado_operacion == RESULTADO_ERROR) {
 		header_t* headerCpu = _create_header(ERROR, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
+		log_debug(loggerDebug,"El swap informa que no se pudo asignar");
 		return;
 	} else if (resultado_operacion == RESULTADO_OK) {
 		//Creo la tabla de paginas del PID dado
+		log_debug(loggerDebug,"El swap informa que se pudo asignar");
 		crear_tabla_pagina_PID(pedido_cpu->pid, pedido_cpu->cantidad_paginas);
 		header_t* headerCpu = _create_header(OK, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
-
+		log_debug(loggerDebug,"En la memoria tambien se asigna");
 	}
 
 	free(pedido_cpu);

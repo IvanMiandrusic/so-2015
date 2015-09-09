@@ -29,6 +29,10 @@ void TLB_crear() {
 	}
 }
 
+void TP_crear() {
+
+		tabla_Paginas = list_create();
+}
 void TLB_init() {
 
 	int i;
@@ -66,8 +70,8 @@ void TLB_flush() {
 
 void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 
-	t_paginas_proceso* nueva_entrada_proceso = malloc(
-			sizeof(t_paginas_proceso));
+
+	t_paginas_proceso* nueva_entrada_proceso = malloc(sizeof(t_paginas_proceso));
 	nueva_entrada_proceso->PID = processID;
 	nueva_entrada_proceso->paginas = list_create();
 
@@ -82,10 +86,12 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 
 		list_add(nueva_entrada_proceso->paginas, nuevaEntrada);
 	}
-
+	log_debug(loggerDebug,"espero el semaforo");
 	sem_wait(&sem_mutex_tabla_paginas);
 	list_add(tabla_Paginas, nueva_entrada_proceso);
 	sem_post(&sem_mutex_tabla_paginas);
+
+	log_debug(loggerDebug,"Se reserva espacio para pid:%d paginas:%d", processID, cantidad_paginas);
 
 }
 

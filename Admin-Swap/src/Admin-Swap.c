@@ -303,18 +303,20 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			log_debug(loggerDebug, "Recibi este pedido: %d y cant paginas %d", pedido_memoria->pid, pedido_memoria->cantidad_paginas);
 
 			int32_t operacionValida= reservarEspacio(pedido_memoria);
-
+			log_debug (loggerDebug, "Reservo espacio con resultado: %d", operacionValida);
 			if (operacionValida == RESULTADO_ERROR) {
 				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
 				int32_t enviado = _send_header(socketMemoria, headerMemoria);
 				if(enviado == ERROR_OPERATION) return;
 				free(headerMemoria);
+				log_debug(loggerDebug, "No se reservo el espacio solicitado");
 				return;
 			} else if (operacionValida == RESULTADO_OK) {
 				header_t* headerMemoria = _create_header(RESULTADO_OK, 0);
 				int32_t enviado = _send_header(socketMemoria, headerMemoria);
 				if(enviado == ERROR_OPERATION) return;
 				free(headerMemoria);
+				log_debug(loggerDebug, "Se reservo el espacio solicitado");
 			}
 			break;
 		}
@@ -356,9 +358,12 @@ int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 		{
 				return nodo->paginas>=pedido_pid->cantidad_paginas;
 		}
-
+	sem_wait(&sem_mutex_libre);
 	NodoLibre* nodoLibre=list_find(espacioLibre, tieneEspacio);
+	sem_post(&sem_mutex_libre);
+
 	if(nodoLibre==NULL){
+		log_debug(loggerDebug, "Se debe compactar, no hay espacio libre");
 		compactar();
 		nodoLibre=list_get(espacioLibre, 1);
 	}
@@ -367,8 +372,14 @@ int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 	nodoNuevo->comienzo=nodoLibre->comienzo;
 	nodoNuevo->paginas=pedido_pid->cantidad_paginas;
 
+	sem_wait(&sem_mutex_ocupado);
+	list_add(espacioOcupado, nodoNuevo);
+	sem_post(&sem_mutex_ocupado);
+
 	nodoLibre->comienzo=nodoNuevo->comienzo+nodoNuevo->paginas;
 	nodoLibre->paginas= nodoLibre->paginas-nodoNuevo->paginas;
+	log_debug(loggerDebug, "Creo un proceso: %d, comienzo:%d, cantpags:%d", nodoNuevo->PID, nodoNuevo->comienzo, nodoNuevo->paginas);
+	log_debug(loggerDebug, "Creo un hueco, comienzo:%d, cantpags:%d",  nodoLibre->comienzo, nodoLibre->paginas);
 
 	return RESULTADO_OK;
 }
