@@ -42,7 +42,7 @@ ProcesoSwap* crear_estructura_config(char* path)
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie(){
-		log_error(loggerError, "Se da por finalizado el proceso Swap");
+		log_error(loggerError, ANSI_COLOR_RED "Se da por finalizado el proceso Swap"ANSI_COLOR_RESET);
 		exit(1);
 }
 
@@ -51,10 +51,10 @@ void ifProcessDie(){
 void inicializoSemaforos(){
 
 	int32_t semMutexLibre = sem_init(&sem_mutex_libre,0,1);
-	if(semMutexLibre==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex del espacio Libre");
+	if(semMutexLibre==-1)log_error(loggerError, ANSI_COLOR_RED"No pudo crearse el semaforo Mutex del espacio Libre"ANSI_COLOR_RESET);
 
 	int32_t semMutexOcupado = sem_init(&sem_mutex_ocupado,0,1);
-	if(semMutexOcupado==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex del espacio Ocupado");
+	if(semMutexOcupado==-1)log_error(loggerError, ANSI_COLOR_RED"No pudo crearse el semaforo Mutex del espacio Ocupado"ANSI_COLOR_RESET);
 
 }
 
@@ -116,15 +116,15 @@ int32_t compactar(){
 	sem_wait(&sem_mutex_ocupado);
 
 	if (list_is_empty(espacioOcupado)){
-		log_error(loggerError, "No se puede compactar una memoria vacía");
+		log_error(loggerError, ANSI_COLOR_RED "No se puede compactar una memoria vacía"ANSI_COLOR_RESET);
 		return -1;
 	}
 	if(list_is_empty(espacioLibre)){
-		log_error(loggerError, "No se puede compactar una memoria completamente llena");
+		log_error(loggerError, ANSI_COLOR_RED "No se puede compactar una memoria completamente llena"ANSI_COLOR_RESET);
 		return -1;
 	}
 
-	log_info(loggerInfo,"Compactacion iniciada por fragmentacion externa");
+	log_info(loggerInfo, ANSI_COLOR_GREEN"Compactacion iniciada por fragmentacion externa"ANSI_COLOR_RESET);
 
 	NodoOcupado* primerNodo=list_get(espacioOcupado, 0);
 	if(primerNodo->comienzo!=0){
@@ -197,13 +197,13 @@ printf("▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 	   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n"
 	   "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n");
 
-	log_info(loggerInfo,"Compactacion finalizada por fragmentacion externa");
+	log_info(loggerInfo, ANSI_COLOR_GREEN"Compactacion finalizada por fragmentacion externa"ANSI_COLOR_RESET);
 }
 
 int main(void) {
 
 	/*Tratamiento del ctrl+c en el proceso */
-	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError,"Error con la señal SIGINT");
+	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError, ANSI_COLOR_RED"Error con la señal SIGINT"ANSI_COLOR_RESET);
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
@@ -225,7 +225,7 @@ int main(void) {
 	int32_t resultado = listen_connections(socketServidor);
 
 	if(resultado == ERROR_OPERATION) {
-		log_error(loggerError, "Error al escuchar nuevas conexiones");
+		log_error(loggerError, ANSI_COLOR_RED "Error al escuchar nuevas conexiones"ANSI_COLOR_RESET);
 		exit(EXIT_FAILURE);
 	}
 
@@ -343,7 +343,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 		}
 
 		default: {
-				log_error(loggerError, "Se recibió un codigo de operación no valido");
+				log_error(loggerError, ANSI_COLOR_RED "Se recibió un codigo de operación no valido"ANSI_COLOR_RESET);
 		}
 
 		}
@@ -428,7 +428,7 @@ int32_t borrarEspacio(int32_t PID){
 	sem_wait(&sem_mutex_libre);
 	list_add(espacioLibre,nuevoNodo);
 	sem_post(&sem_mutex_libre);
-	log_info(loggerInfo,"Proceso mProc liberado: PID: %d byte inicial: %d tamaño: %d",procesoRemovido->PID,
+	log_info(loggerInfo, ANSI_COLOR_GREEN"Proceso mProc liberado: PID: %d byte inicial: %d tamaño: %d"ANSI_COLOR_RESET,procesoRemovido->PID,
 				(procesoRemovido->comienzo)*(arch->tamanio_pagina),(procesoRemovido->paginas)*(arch->tamanio_pagina));
 	free(procesoRemovido);
 	return RESULTADO_OK;
@@ -445,12 +445,12 @@ FILE* abrirArchivoConTPagina(t_pagina* pagina_pedida){
 
 	FILE* espacioDeDatos = fopen(arch->nombre_swap,"r+");
 	if (espacioDeDatos==NULL) {
-		log_error(loggerError, "No se puede abrir el archivo de Swap para escribir");
+		log_error(loggerError, ANSI_COLOR_RED "No se puede abrir el archivo de Swap para escribir"ANSI_COLOR_RESET);
 		return ERROR_OPERATION;
 	}
 	int32_t bloque= nodoProceso->comienzo+pagina_pedida->nro_pagina;
 	if(fseek(espacioDeDatos, bloque*arch->tamanio_pagina,SEEK_SET)!=0){
-		log_error(loggerError, "No se puede ubicar la pagina a escribir");
+		log_error(loggerError, ANSI_COLOR_RED "No se puede ubicar la pagina a escribir"ANSI_COLOR_RESET);
 		return ERROR_OPERATION;
 	}
 
@@ -467,7 +467,7 @@ char* leer_pagina(t_pagina* pagina_pedida){
 	fclose(espacioDeDatos);
 
 	if (resultado==arch->tamanio_pagina){
-		log_info(loggerInfo,"Lectura: PID: %d byte inicial: %d tamaño: %d contenido: %s",pagina_pedida->PID,
+		log_info(loggerInfo, ANSI_COLOR_GREEN"Lectura: PID: %d byte inicial: %d tamaño: %d contenido: %s"ANSI_COLOR_RESET,pagina_pedida->PID,
 				posicion, strlen(texto),texto);
 		return texto;
 	}
@@ -490,7 +490,7 @@ int32_t escribir_pagina(t_pagina* pagina_pedida){
 	fclose(espacioDeDatos);
 
 	if (resultado+resultado2==arch->tamanio_pagina){
-		log_info(loggerInfo,"Escritura: PID: %d byte inicial: %d tamaño: %d contenido: %s",pagina_pedida->PID,
+		log_info(loggerInfo, ANSI_COLOR_GREEN"Escritura: PID: %d byte inicial: %d tamaño: %d contenido: %s"ANSI_COLOR_RESET,pagina_pedida->PID,
 				posicion, strlen(pagina_pedida->contenido),pagina_pedida->contenido);
 		return SUCCESS_OPERATION;
 	}
