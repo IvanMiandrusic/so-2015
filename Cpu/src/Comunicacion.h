@@ -15,7 +15,7 @@
 /** Codigos de operacion en los envios hacia el planificador **/
 #define NUEVA_CPU 1
 #define TERMINO_RAFAGA 2
-#define TERMINO_IO 3
+#define SOLICITUD_IO 3
 #define RESULTADO_OK 4
 #define RESULTADO_ERROR 5
 #define RESPUESTA_UTILIZACION_CPU 6
@@ -39,6 +39,7 @@
 
 PCB* deserializarPCB(char*);
 char* serializarPCB(PCB*);
+int32_t obtener_tamanio_pcb(PCB* pcb);
 
 
 #endif /* COMUNICACION_H_ */

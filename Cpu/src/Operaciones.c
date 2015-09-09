@@ -83,8 +83,7 @@ void* thread_Cpu(void* id){
 
 	}
 
-	//uso la funcion sacar digito para ver lo que me mando el planificador,
-	//un switch (digito) segun el "numero" ver que hace, case 1 envio_quantum... etc
+
 	//termina el switch y termina el while, y ponele que cierro los sockets
 	log_info(loggerInfo, "CPU_ID:%d->Finaliza sus tareas, hilo concluido", thread_id);
 
@@ -117,7 +116,7 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 
 		log_debug(loggerDebug, "PCB id %d estado %d ruta %s sig instruccion %d", pcb->PID, pcb->estado, pcb->ruta_archivo, pcb->siguienteInstruccion);
 
-		ejecutar_Instrucciones(id, pcb);
+		ejecutar(id, pcb);
 
 		break;
 	}
@@ -131,11 +130,7 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 }
 
 
-void ejecutar_Instrucciones (int32_t id, PCB* pcb){
-	if (quantum == 0) ejecutarFIFO(id, pcb);
-	if (quantum > 0) ejecutarRR(id, pcb);
 
-}
 
 void ejecutarFIFO(int32_t id, PCB* pcb){
 	log_debug(loggerDebug, "Entro a ejecutar FIFO");
@@ -190,43 +185,100 @@ void ejecutarFIFO(int32_t id, PCB* pcb){
 		}
 		else finalizar = true;
 		}
+
+
 }
 
-void ejecutarRR(int32_t id, PCB* pcb){
+void ejecutar(int32_t id, PCB* pcb){
 	int32_t ultimoQuantum=0;
+	int32_t tamanio_pcb = obtener_tamanio_pcb(pcb);
+
 	char cadena[100];
 	char* log_acciones=string_new();
 	FILE* prog = fopen(pcb->ruta_archivo, "r");
 	if (prog==NULL)
 	{
-		log_error (loggerError, "Error al abrir fichero.txt");
+		log_error (loggerError, "Error al abrir la ruta del archivo");
 		return;
 	}
-
-	while(ultimoQuantum<=quantum){
+	int32_t finalizado=FALSE;
+	while(finalizado == FALSE){
 		if(fgets(cadena, 100, prog) != NULL)
 		{
 			t_respuesta* respuesta=analizadorLinea(id,pcb,cadena);
 			string_append(&log_acciones, respuesta->texto);
-			if(respuesta->id==FINALIZAR){
-				pcb->siguienteInstruccion=ftell(prog);
-//TODO send to planif mandar finalizar pcb texto id de la CPU para decirle que esta libre ver orden en planif
-//todo arreglar comunicacion ACA. Digito-pcb-texto?
-				ultimoQuantum = quantum;
-				return ;
-			}
-			if(respuesta->id==ENTRADASALIDA){
-				pcb->siguienteInstruccion=ftell(prog);
-				//TODO send to planif entradaSalida retardo pcb y texto id de la CPU para decirle que esta libre ver orden en planif
-				//todo arreglar comunicacion ACA. Digito-retardo-pcb-texto?
-				return ;
-			}
-			//TODO if respuesta id es error le mando error id de la CPU para decirle que esta libre y ver...
-		}
-		ultimoQuantum++;
-	}
-	//TODO mandar la ultima respuesta al planificador, id de terminar el quantum el pcb y la respuesta y texto
 
+			pcb->siguienteInstruccion=ftell(prog);
+			if(respuesta->id==FINALIZAR){
+
+
+				header_t* header_finalizar = _create_header(RESULTADO_OK, sizeof(int32_t));
+				int32_t enviado =_send_header (socketPlanificador, header_finalizar);
+				int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
+
+				char* pcb_serializado = serializarPCB(pcb);
+				int32_t envio_tamanio_pcb = _send_bytes(socketPlanificador,&tamanio_pcb,sizeof(int32_t));
+				int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,sizeof(tamanio_pcb));
+
+			ultimoQuantum = quantum;
+				return ;
+			}
+
+			if(respuesta->id==ENTRADASALIDA){
+				int32_t tamanio_texto = strlen(respuesta->texto);
+
+				header_t* header_entrada_salida = _create_header(SOLICITUD_IO, 4*sizeof(int32_t) + tamanio_texto + tamanio_pcb);
+					int32_t enviado =_send_header (socketPlanificador, header_entrada_salida);
+
+					int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
+
+					int32_t envio_retardo = _send_bytes(socketPlanificador,&respuesta->retardo,sizeof(int32_t));
+
+					char* pcb_serializado = serializarPCB(pcb);
+					int32_t envio_tamanio_pcb = _send_bytes(socketPlanificador,&tamanio_pcb,sizeof(int32_t));
+					int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,sizeof(tamanio_pcb));
+
+					int32_t envio_tamanio_texto = _send_bytes(socketPlanificador,&tamanio_texto,sizeof(int32_t));
+					int32_t envio_texto = _send_bytes(socketPlanificador,respuesta->texto,sizeof(tamanio_texto));
+
+			return ;
+			}
+			if(respuesta->id==ERROR){
+
+				header_t* header_error = _create_header(RESULTADO_ERROR, 2*sizeof(int32_t)+ tamanio_pcb);
+				int32_t enviado_header = _send_header(socketPlanificador, header_error);
+
+				int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
+
+				char* pcb_serializado = serializarPCB(pcb);
+				int32_t envio_tamanio_pcb = _send_bytes(socketPlanificador,&tamanio_pcb,sizeof(int32_t));
+				int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,sizeof(tamanio_pcb));
+
+			return ;
+			}
+
+		} else finalizado = TRUE;
+
+		if (quantum > 0){
+					ultimoQuantum ++;
+					if (ultimoQuantum > quantum)finalizado = TRUE;
+			}
+
+
+	}
+
+	header_t* header_termino_rafaga = _create_header(TERMINO_RAFAGA, sizeof(int32_t)+ tamanio_pcb);
+	int32_t enviado_header = _send_header(socketPlanificador, header_termino_rafaga);
+
+	int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
+
+	char* pcb_serializado = serializarPCB(pcb);
+	int32_t envio_tamanio_pcb = _send_bytes(socketPlanificador,&tamanio_pcb,sizeof(int32_t));
+	int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,sizeof(tamanio_pcb));
+
+	int32_t tamanio_texto = strlen(log_acciones);
+	int32_t envio_tamanio_texto = _send_bytes(socketPlanificador,&tamanio_texto,sizeof(int32_t));
+	int32_t envio_texto = _send_bytes(socketPlanificador,log_acciones,sizeof(tamanio_texto));
 
 
 }
@@ -253,7 +305,7 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 	if(enviado == ERROR_OPERATION) return NULL;
 
 	//TODO hacerlo en cada operacion
-	log_debug(loggerDebug, "Envie el pcb %d, con %d paginas",pcb->PID, cantDePaginas);
+	log_debug(loggerDebug, "Envie el id %d, con %d paginas",pcb->PID, cantDePaginas);
 
 	free(header_A_Memoria);
 
@@ -314,6 +366,7 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 	enviado = _send_bytes(&(socketMemoria[id]),&numDePagina, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
 
+	log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d",pcb->PID, numDePagina);
 
 	/** Recibo header de la memoria con el codigo CONTENIDO_PAGINA o NULL **/
 	header_t* header_de_memoria = _create_empty_header();
@@ -366,7 +419,7 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 	int32_t enviado_tamanio_texto = _send_bytes(&(socketMemoria[id]),&tamanio, sizeof (int32_t));
 	int32_t enviado_texto = _send_bytes(&(socketMemoria[id]),texto, tamanio);
 
-
+	log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d,y el texto %s",pcb->PID, numDePagina, texto);
 	/** Recibo header de la memoria con el resultado (OK o ERROR) **/
 	header_t* header_de_memoria = _create_empty_header();
 
@@ -405,7 +458,7 @@ t_respuesta* mAnsisOp_IO(int32_t id, PCB* pcb,int32_t tiempo){
 	//solo ver si se envio al planificador
 
 	//TODO como se libera la CPU?
-	header_t* header_A_Planificador = _create_header(TERMINO_IO,2*sizeof(int32_t));
+	header_t* header_A_Planificador = _create_header(SOLICITUD_IO,2*sizeof(int32_t));
 
 //	int32_t enviado_Header = _send_header(&(socketPlanificador[id]),header_A_Planificador);
 //
@@ -437,6 +490,8 @@ t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 
 	int32_t enviado_Header = _send_header(&(socketMemoria[id]),header_A_Memoria);
 	int32_t enviado_Id_Proceso = _send_bytes(&(socketMemoria[id]),&pcb->PID, sizeof (int32_t));
+
+	log_debug(loggerDebug, "Envie el id %d de finalizar",pcb->PID);
 
 	int32_t resultado;
 	int32_t resultado_Mensaje = _receive_bytes(&(socketMemoria[id]),&resultado, sizeof (int32_t)); //aca recibo un que?

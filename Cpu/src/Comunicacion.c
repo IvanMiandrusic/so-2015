@@ -75,3 +75,7 @@ PCB* deserializarPCB(char* serializado)
 	return pcb;
 
 }
+
+int32_t obtener_tamanio_pcb(PCB* pcb) {
+	return 4*sizeof(int32_t) + string_length(pcb->ruta_archivo);
+}

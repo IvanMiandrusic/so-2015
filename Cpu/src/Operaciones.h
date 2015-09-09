@@ -17,14 +17,8 @@ typedef  struct {
 }t_respuesta;
 
 void* thread_Cpu(void*);
-
-void* iniciar (int32_t);
-void* leer (int32_t);
-void* escribir (int32_t, char* );
-void* entrada_salida (int32_t);
-void* finalizar ();
+void ejecutar(int32_t, PCB*);
 void tipo_Cod_Operacion(int32_t, header_t*);
-void ejecutar_Instrucciones (int32_t, PCB*);
 t_respuesta* mAnsisOp_iniciar(int32_t,PCB*, int32_t);
 int32_t enviarResultadoAlPlanificador(int32_t, sock_t*);
 t_respuesta* mAnsisOp_leer(int32_t, PCB*,int32_t);
