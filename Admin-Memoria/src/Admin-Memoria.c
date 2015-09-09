@@ -44,9 +44,7 @@ ProcesoMemoria* crear_estructura_config(char* path) {
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie() {
-
-	//Todo
-
+	log_info(loggerInfo, "Se dara de baja el proceso Memoria");
 	exit(1);
 }
 
@@ -175,7 +173,7 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 		break;
 		}
 	case ESCRIBIR: {
-
+		escribirPagina(socketCpu, header);
 		break;
 		}
 	case FINALIZAR: {
@@ -352,8 +350,70 @@ char* buscar_pagina(t_pagina* pagina_solicitada) {
 
 /*Funciones referentes a escribir pagina*/
 
-void escribirPagina(){
-	//TODO
+void escribirPagina(sock_t* socketCpu, header_t* header){
+	//TODO recibir t_pagina y texto
+	char* pedido_serializado = malloc(get_message_size(header));
+	int32_t recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
+	if(recibido == ERROR_OPERATION) return;
+	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
+	t_resultado_busqueda resultado = buscar_y_escribir_pagina(pagina_pedida);
+	//todo if resultado NOTFOUND devolver error, sino OK
+
 }
+
+t_resultado_busqueda buscar_y_escribir_pagina(t_pagina* pagina_pedida){
+	t_resultado_busqueda resultado = NOT_FOUND;
+	return resultado = TLB_buscar_pagina_escribir(pagina_pedida);
+}
+
+t_resultado_busqueda TLB_buscar_pagina_escribir(t_pagina* pagina) {
+
+	bool find_by_PID_page(TLB* entrada) {
+
+		return (entrada->PID == pagina->PID) && (entrada->pagina == pagina->nro_pagina);
+	}
+	TLB* entrada_pagina=NULL;
+	if(TLB_habilitada()) {
+		sem_wait(&sem_mutex_tlb);
+		entrada_pagina = list_find(TLB_tabla, find_by_PID_page);
+		sem_post(&sem_mutex_tlb);
+	}
+	if(entrada_pagina == NULL) {
+		log_debug(loggerDebug, "No se encontro la pagina en la TLB, se busca en la tabla de paginas");
+		return buscar_pagina_a_escribir_tabla_paginas(pagina);
+	}
+	else{
+		int32_t offset=entrada_pagina->marco*arch->tamanio_marco;
+		memcpy(mem_principal+offset, pagina->contenido, arch->tamanio_marco);
+		entrada_pagina->modificada=1;
+		return FOUND;
+		}
+
+}
+
+t_resultado_busqueda buscar_pagina_a_escribir_tabla_paginas(t_pagina* pagina){
+	bool obtenerTabPagina(t_paginas_proceso* entrada){
+			return entrada->PID == pagina->PID;
+		}
+
+		t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
+		if(tablaPagina!=NULL){
+			bool obtenerMarco_Pagina(TPagina* entradaBuscada){
+					return entradaBuscada->pagina== pagina->nro_pagina;
+				}
+
+			TPagina* entradaFound = list_find(tablaPagina->paginas, obtenerMarco_Pagina);
+			int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);
+			memcpy(mem_principal+offset,pagina->contenido,arch->tamanio_marco); 		//todo va con &?
+			entradaFound->modificada=1;
+			return FOUND;
+		}else {
+			log_debug(loggerDebug, "No se encontro en la tabla de paginas, se pide al swap");
+			//TODO es necesario que lo pida al swap?
+			return FOUND;
+		}
+
+
+	}
 
 /*Aca finalizan las funciones referentes a escribir pagina*/

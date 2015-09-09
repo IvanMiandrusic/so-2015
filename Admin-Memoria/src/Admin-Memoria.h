@@ -65,5 +65,8 @@ char* buscar_pagina(t_pagina*);
 void finalizarPid(sock_t* );
 int32_t limpiar_Informacion_PID(int32_t );
 void leer_pagina(sock_t* , header_t* );
-
+void escribirPagina(sock_t*, header_t*);
+t_resultado_busqueda buscar_y_escribir_pagina(t_pagina* );
+t_resultado_busqueda TLB_buscar_pagina_escribir(t_pagina*);
+t_resultado_busqueda buscar_pagina_a_escribir_tabla_paginas(t_pagina*);
 #endif /* ADMIN_MEMORIA_H_ */
