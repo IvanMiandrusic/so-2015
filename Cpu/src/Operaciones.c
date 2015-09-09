@@ -151,7 +151,7 @@ void ejecutarFIFO(int32_t id, PCB* pcb){
 	}
 	log_debug(loggerDebug, "Siguiente Instruccion %d", pcb->siguienteInstruccion);
 	fseek(prog, pcb->siguienteInstruccion, SEEK_SET);
-	while(finalizar==false){
+	while(finalizar==FALSE){
 		log_debug(loggerDebug, "Ejecuto una instruccion");
 		if(fgets(cadena, 100, prog) != NULL)
 
@@ -159,22 +159,34 @@ void ejecutarFIFO(int32_t id, PCB* pcb){
 
 			t_respuesta* respuesta=analizadorLinea(id,pcb,cadena);
 			string_append(&log_acciones, respuesta->texto);
+
+			pcb->siguienteInstruccion=ftell(prog);
+
 			if(respuesta->id==FINALIZAR){
-				pcb->siguienteInstruccion=ftell(prog);
 
 				int32_t enviar_Planificador = enviarResultadoAlPlanificador(FINALIZAR,socketPlanificador);
 				if(enviar_Planificador == ERROR_OPERATION) log_error(loggerError, "Error al enviar el codigo de finalizacion del proceso %d", pcb->PID);
 				if(enviar_Planificador == SUCCESS_OPERATION)log_debug(loggerDebug, "Se envio el codigo de finalizacion del proceso %d", pcb->PID);
 
 				//todo arreglar comunicacion ACA. Digito-pcb-texto?
-				finalizar=true;
+				finalizar=TRUE;
 			}
 
 			if(respuesta->id==ENTRADASALIDA){
-				pcb->siguienteInstruccion=ftell(prog);
-				//TODO send to planif
-				//todo arreglar comunicacion ACA. Digito-retardo-pcb-texto?
-				finalizar=true;
+
+				int32_t enviar_Planificador = enviarResultadoAlPlanificador(ENTRADASALIDA,socketPlanificador);
+				if(enviar_Planificador == ERROR_OPERATION) log_error(loggerError, "Error al enviar el codigo de Entrada/Salida del proceso %d", pcb->PID);
+				if(enviar_Planificador == SUCCESS_OPERATION)log_debug(loggerDebug, "Se envio el codigo de Entrada/Salida del proceso %d", pcb->PID);
+
+				finalizar=TRUE;
+			}
+			if(respuesta->id==RESULTADO_ERROR){
+				int32_t enviar_Planificador = enviarResultadoAlPlanificador(RESULTADO_ERROR,socketPlanificador);
+				if(enviar_Planificador == ERROR_OPERATION) log_error(loggerError, "Error al enviar el codigo de resultado error del proceso %d", pcb->PID);
+				if(enviar_Planificador == SUCCESS_OPERATION)log_debug(loggerDebug, "Se envio el codigo de resultado error del proceso %d", pcb->PID);
+
+
+				finalizar=TRUE;
 			}
 		}
 		else finalizar = true;
@@ -182,7 +194,7 @@ void ejecutarFIFO(int32_t id, PCB* pcb){
 }
 
 void ejecutarRR(int32_t id, PCB* pcb){
-	int32_t ultimoQuantum;
+	int32_t ultimoQuantum=0;
 	char cadena[100];
 	char* log_acciones=string_new();
 	FILE* prog = fopen(pcb->ruta_archivo, "r");
@@ -199,8 +211,9 @@ void ejecutarRR(int32_t id, PCB* pcb){
 			string_append(&log_acciones, respuesta->texto);
 			if(respuesta->id==FINALIZAR){
 				pcb->siguienteInstruccion=ftell(prog);
-				//TODO send to planif mandar finalizar pcb texto id de la CPU para decirle que esta libre ver orden en planif
-				//todo arreglar comunicacion ACA. Digito-pcb-texto?
+//TODO send to planif mandar finalizar pcb texto id de la CPU para decirle que esta libre ver orden en planif
+//todo arreglar comunicacion ACA. Digito-pcb-texto?
+				ultimoQuantum = quantum;
 				return ;
 			}
 			if(respuesta->id==ENTRADASALIDA){
@@ -254,12 +267,14 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 	if(get_operation_code(header_de_memoria) == ERROR_OPERATION) {
 		response->id=ERROR;
 		response->texto=string_new();
+		response->retardo = 0;
 		string_append_with_format(&response->texto, "mProc %d -Fallo",pcb->PID);
 		log_error(loggerError,"mProc %d -Fallo",pcb->PID);
 	}
 	else {
 		response->id=INICIAR;
 		response->texto=string_new();
+		response->retardo = 0;
 		string_append_with_format(&response->texto, "mProc %d -Iniciado",pcb->PID);
 		log_info(loggerInfo,"mProc %d -Iniciado", pcb->PID);
 	}
@@ -313,13 +328,28 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 
 	char* contenido_pagina = malloc(longPagina);
 	recibido = _receive_bytes(&(socketMemoria[id]), contenido_pagina, longPagina);
+
 	if(recibido == ERROR_OPERATION) return NULL;
 
 	t_respuesta* response= malloc(sizeof(t_respuesta));
+	if (contenido_pagina != NULL){
 	response->id=LEER;
 	response->texto=string_new();
+	response->retardo = 0;
+
 	string_append_with_format(&response->texto, "mProc %d - Pagina %d leida: %s ",pcb->PID, numDePagina, contenido_pagina);
 	log_info(loggerInfo,"mProc %d - Pagina %d leida: %s ",pcb->PID, numDePagina, contenido_pagina);
+	}
+	else{
+		response->id=ERROR;
+		response->texto=string_new();
+		response->retardo = 0;
+
+		string_append_with_format(&response->texto, "error en el mProc %d - Pagina %d no leida: %s ",pcb->PID, numDePagina, contenido_pagina);
+		log_error(loggerError,"error en el mProc %d - Pagina %d NO leida: %s ",pcb->PID, numDePagina, contenido_pagina);
+
+	}
+
 	return response;
 }
 
@@ -343,12 +373,29 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 
 	int32_t recibido = _receive_header(&(socketMemoria[id]), header_de_memoria);
 	//todo sacar el error o el ok y de ahi cambiar a error o nada
-	t_respuesta* response= malloc(sizeof(t_respuesta));
-	response->id=ESCRIBIR;
-	response->texto=string_new();
-	string_append_with_format(&response->texto, "mProc %d - Pagina %d escrita: %s", pcb->PID,numDePagina, texto);
 
-	log_info(loggerInfo, "mProc %d - Pagina %d escrita: %s", pcb->PID,numDePagina, texto);
+	t_respuesta* response= malloc(sizeof(t_respuesta));
+
+	if (recibido == OK){
+		response->id=ESCRIBIR;
+		response->texto=string_new();
+		response->retardo = 0;
+
+		string_append_with_format(&response->texto, "mProc %d - Pagina %d escrita: %s", pcb->PID,numDePagina, texto);
+
+		log_info(loggerInfo, "mProc %d - Pagina %d escrita: %s", pcb->PID,numDePagina, texto);
+	} else {
+
+		response->id=ERROR;
+		response->texto=string_new();
+		response->retardo = 0;
+
+		string_append_with_format(&response->texto, "error en el mProc %d - Pagina %d NO escrita: %s", pcb->PID,numDePagina, texto);
+
+		log_error(loggerError, "error en el mProc %d - Pagina %d NO escrita: %s", pcb->PID,numDePagina, texto);
+
+	}
+
 
 	return response;
 
@@ -361,20 +408,23 @@ t_respuesta* mAnsisOp_IO(int32_t id, PCB* pcb,int32_t tiempo){
 	//TODO como se libera la CPU?
 	header_t* header_A_Planificador = _create_header(TERMINO_IO,2*sizeof(int32_t));
 
-	int32_t enviado_Header = _send_header(&(socketPlanificador[id]),header_A_Planificador);
+//	int32_t enviado_Header = _send_header(&(socketPlanificador[id]),header_A_Planificador);
+//
+//	int32_t enviado_Id_Proceso = _send_bytes(&(socketPlanificador[id]),&pcb->PID,sizeof(int32_t));
+//	int32_t enviado_Tiempo = _send_bytes(&(socketPlanificador[id]),&tiempo,sizeof(int32_t));
+//
+//	int32_t resultado;
+//	int32_t recibi_Resultado = _receive_bytes(&(socketPlanificador[id]),&resultado,sizeof (int32_t));
+//
+//	if(recibi_Resultado == ERROR_OPERATION) return NULL;
 
-	int32_t enviado_Id_Proceso = _send_bytes(&(socketPlanificador[id]),&pcb->PID,sizeof(int32_t));
-	int32_t enviado_Tiempo = _send_bytes(&(socketPlanificador[id]),&tiempo,sizeof(int32_t));
-
-	int32_t resultado;
-	int32_t recibi_Resultado = _receive_bytes(&(socketPlanificador[id]),&resultado,sizeof (int32_t));
-
-	if(recibi_Resultado == ERROR_OPERATION) return NULL;
 
 	//todo, pasarle el tiempo de IO
 	t_respuesta* response= malloc(sizeof(t_respuesta));
+
 	response->id=ENTRADASALIDA;
 	response->texto=string_new();
+	response->retardo = tiempo;
 	string_append_with_format(&response->texto, "mProc %d en entrada-salida de tiempo %d", id,tiempo);
 	log_info(loggerInfo, "mProc %d en entrada-salida de tiempo %d", id,tiempo);
 
@@ -394,10 +444,23 @@ t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 	if(resultado_Mensaje == ERROR_OPERATION) return NULL;
 
 	t_respuesta* response= malloc(sizeof(t_respuesta));
-	response->id=ENTRADASALIDA;
+
+	if (resultado_Mensaje ==OK){
+
+	response->id=FINALIZAR;
 	response->texto=string_new();
+	response->retardo = 0;
 	string_append_with_format(&response->texto, "mProc %d finalizado", pcb->PID);
 	log_info(loggerInfo, "mProc %d finalizado", pcb->PID);
+
+	}else
+	{
+		response->id=ERROR;
+		response->texto=string_new();
+		response->retardo = 0;
+		string_append_with_format(&response->texto, "error al finalizar el mProc %d ", pcb->PID);
+		log_error()(loggerError, "error al finalizar el mProc %d ", pcb->PID);
+	}
 
 	return response;
 

@@ -11,7 +11,8 @@
 #include "parser.h"
 
 typedef  struct {
-	int id;
+	int32_t id;
+	int32_t retardo;
 	char* texto;
 }t_respuesta;
 
