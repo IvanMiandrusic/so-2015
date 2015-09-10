@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "Consola.h"
-#include "Colores.h"
+#include "Utils.h"
 #include "Planificador.h"
 
 void consola_planificador(){

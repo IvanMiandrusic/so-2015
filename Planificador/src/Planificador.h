@@ -60,6 +60,7 @@ typedef struct estructura_CPU      //estructura que contiene los datos que nos e
 }CPU_t;
 
 
+
 /* DECLARACION DE VARIABLES GLOBALES */
 extern ProcesoPlanificador* arch;
 extern t_log* loggerInfo;
@@ -69,6 +70,7 @@ extern t_list* colaListos;
 extern t_list* colaBlock;
 extern t_list* colaExec;
 extern t_list* colaFinalizados;
+extern t_dictionary* retardos_PCB;
 
 ProcesoPlanificador* crear_estructura_config(char*);
 void ifProcessDie();
@@ -87,8 +89,8 @@ int32_t obtener_tamanio_pcb(PCB* pcb);
 void enviarPCB(char* unPaquete, int32_t tamanio_pcb);
 CPU_t* obtener_cpu_libre();
 bool hay_cpu_libre();
-PCB* operarIO(int32_t id, int32_t tiempo, PCB* pcb);
-void finalizarIO(PCB* pcb);
+void operarIO(int32_t id, int32_t tiempo, PCB* pcb);
+void procesar_IO();
 void agregarPcbACola(t_list* unaLista, PCB* pcb);
 void agregarColaCPUs(CPU_t* cpu);
 

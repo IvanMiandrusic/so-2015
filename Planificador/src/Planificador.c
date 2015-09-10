@@ -12,7 +12,7 @@
 /* Include para las librerias */
 #include <stdio.h>
 #include <stdlib.h>
-#include "Colores.h"
+#include "Utils.h"
 #include "Planificador.h"
 #include "Consola.h"
 #include "Comunicacion.h"
@@ -31,6 +31,7 @@ t_list* colaBlock;
 t_list* colaExec;
 t_list* colaFinalizados;
 t_list* colaCPUs;
+t_dictionary* retardos_PCB;
 /** ID para los PCB **/
 int32_t idParaPCB = 0;
 /** SOCKET SERVIDOR **/
@@ -38,6 +39,7 @@ sock_t* socketServidor;
 /** Semaforos **/
 sem_t semMutex_cola;
 sem_t semMutex_colaCPUs;
+sem_t sem_dictionary_retardos;
 
 
 ProcesoPlanificador* crear_estructura_config(char* path)
@@ -60,11 +62,14 @@ void ifProcessDie(){
 
 void inicializoSemaforos(){
 
-	int32_t semMutex = sem_init(&semMutex_cola,1,0);
-	if(semMutex==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas PCB");
+	int32_t semMutexColasPCB = sem_init(&semMutex_cola,1,0);
+	if(semMutexColasPCB==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas PCB");
 
 	int32_t semMutexCpu = sem_init(&semMutex_colaCPUs,1,0);
 		if(semMutexCpu==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas CPU");
+
+	int32_t semMutexRetardos = sem_init(&sem_dictionary_retardos,1,0);
+		if(semMutexRetardos==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas CPU");
 
 }
 
@@ -104,6 +109,7 @@ void creoEstructurasDeManejo(){
 	colaExec=list_create();
 	colaFinalizados=list_create();
 	colaCPUs=list_create();
+	retardos_PCB = dictionary_create();
 
 }
 
@@ -112,6 +118,7 @@ void clean(){
 	list_destroy_and_destroy_elements(colaExec, free);
 	list_destroy_and_destroy_elements(colaBlock, free);
 	list_destroy_and_destroy_elements(colaFinalizados, free);
+	dictionary_destroy_and_destroy_elements(retardos_PCB, free);
 	log_destroy(loggerInfo);
 	log_destroy(loggerError);
 	log_destroy(loggerDebug);
@@ -183,18 +190,10 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	case INSTRUCCION_IO: {
 
-		/*
-		 * Todo: Recibir :
-		 * 			cpu_id
-		 * 			pcb (la estructura entera) -----> Porque entero? con solo el ID se puede sacar de la "colaExec"
-		 * 			retardo (ya estaria)
-		 * 			resultado_operaciones (char* es el tipo) --> es lo que ejecuto el cpu antes de cortar por quantum o IO
-		 */
-
 			/** recibo el evento I/O **/
 
 			//recibo el ID del  cpu
-			recibido = _receive_bytes(socketCPU, &(cpu_id), sizeof(int32_t)); //Todo el get_message_size(header) es el tamaño entero del mensaje
+			recibido = _receive_bytes(socketCPU, &(cpu_id), sizeof(int32_t));
 			if(recibido == ERROR_OPERATION) return;
 			log_debug(loggerDebug, "Recibo cpu_id, para una IO");
 
@@ -205,19 +204,26 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 
 			/** recibo el PCB **/
-			char* pcb_serializado = malloc(get_message_size(header));
-			recibido = _receive_bytes(socketCPU, pcb_serializado, get_message_size(header));
+			char* pcb_serializado = malloc(sizeof(PCB));
+			recibido = _receive_bytes(socketCPU, pcb_serializado, sizeof(PCB));
 			if(recibido == ERROR_OPERATION) return;
 			log_debug(loggerDebug, "Recibo un pcb desde la cpu, para una IO");
 			PCB* pcb = deserializarPCB(pcb_serializado);
 
 			/** recibo el char* de resultados **/
-			//todo:
+			int32_t tamanio_resultado_operaciones;
+			recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
+			if(recibido == ERROR_OPERATION) return;
 
+			char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
+			recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
+			if(recibido == ERROR_OPERATION) return;
+			log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
+
+			/** Loggeo resultado operaciones Todo **/
 
 			/** operar la IO **/
-			int32_t pcb_id = operarIO(cpu_id, tiempo, pcb);
-			finalizarIO(pcb_id);
+			operarIO(cpu_id, tiempo, pcb);
 
 			log_debug(loggerDebug, "Finalizo la I/O");
 		break;
@@ -251,7 +257,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 }
 
-PCB* operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
+void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
 
 	bool getPcbByID(PCB* unPCB){
 			return unPCB->PID == pcb->PID;
@@ -261,54 +267,55 @@ PCB* operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
 			return unaCPU->ID == cpu_id;
 	}
 
-	list_remove_by_condition(colaExec, getPcbByID);
-	pcb->estado= BLOQUEADO;
-	agregarPcbACola(colaBlock, pcb);
+	/** Guardarme el PID y su retardo **/
+	sem_wait(&sem_dictionary_retardos);
+	dictionary_put(retardos_PCB, convertToString(pcb->PID), &tiempo);
+	sem_post(&sem_dictionary_retardos);
+
+	PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
+	pcb_found->estado= BLOQUEADO;
+	agregarPcbACola(colaBlock, pcb_found);
 	log_debug(loggerDebug, "Cambio de estado (block) y de lista del pcb con id %d", pcb->PID);
 
-	// Cambio estado CPU a LIBRE //
+	/** Cambio estado CPU a LIBRE **/
 	CPU_t* cpu_encontrada = list_remove_by_condition(colaCPUs, getCpuByID);
 	cpu_encontrada->estado= LIBRE;
 	log_debug(loggerDebug, "Cambio de estado (LIBRE) de la cpu con id %d", cpu_encontrada->ID);
-	//Se asigna un nuevo PCB a la cpu q se libera
+
+	/** Se asigna un nuevo PCB a la cpu q se libera **/
 	asignarPCBaCPU();
 
-
-	//todo: seria algo asi??
-	// aca dispararia el hilo de IO, sino se te duerme to-do el proceso-- FIX
-	int32_t hiloIO;
-		pthread_t IO_thread;
-				hiloIO = pthread_create(&IO_thread, NULL, (void*)sleep(tiempo), NULL);
-				if (hiloIO != 0) {
-					log_error(loggerError,"Error al crear el hilo de IO");
-					exit(EXIT_FAILURE);
-				}else{
-					log_info(loggerInfo, "Se creo exitosamente el hilo de IO");
-				}
-		pthread_join(IO_thread, NULL);
-
-	return pcb;
-
 }
 
 
+/** Funcion del hilo de IO **/
 
-void finalizarIO(PCB* pcb){
+void procesar_IO(){
 
-	bool getPcbByID(PCB* unPCB){					//SE PODRIA EVITAR REPETIR ESTE CODIGO EN VARIOS METODOS??
-				return unPCB->PID == pcb->PID;
+	while(true) {
+
+		if(list_size(colaBlock)>0) {
+			PCB* pcb_to_sleep = list_remove(colaBlock, 0);
+
+			/** Saco ese PID del diccionario de retardos **/
+			sem_wait(&sem_dictionary_retardos);
+			int32_t* tiempo_retardo = dictionary_remove(retardos_PCB, convertToString(pcb_to_sleep->PID));
+			sem_post(&sem_dictionary_retardos);
+
+			/** Simulo la IO del proceso **/
+			sleep(*tiempo_retardo);
+
+			/** El proceso va a la cola de LISTOS **/
+			pcb_to_sleep->estado= LISTO;
+			agregarPcbACola(colaListos, pcb_to_sleep);
 		}
-	list_remove_by_condition(colaBlock, getPcbByID);
-	pcb->estado= LISTO;
-	agregarPcbACola(colaListos, pcb);
-	return;
 
-	// Al finalizar una I/O, el planificador deberia poner el pcb al final de la lista de LISTOS
+	}
 
 }
 
 
-//Funcion que saca el tamaño de un PCB para enviar
+/** Funcion que saca el tamaño de un PCB para enviar **/
 int32_t obtener_tamanio_pcb(PCB* pcb) {
 	return 4*sizeof(int32_t) + string_length(pcb->ruta_archivo);
 }
@@ -449,12 +456,21 @@ int main(void) {
 	}
 
 	pthread_t consola_thread;
-	resultado = pthread_create(&server_thread, NULL, consola_planificador, NULL);
+	resultado = pthread_create(&consola_thread, NULL, consola_planificador, NULL);
 	if (resultado != 0) {
 		log_error(loggerError,"Error al crear el hilo de la consola");
 		exit(EXIT_FAILURE);
 	}else{
 		log_info(loggerInfo, "Se creo exitosamente el hilo de la consola");
+	}
+
+	pthread_t io_thread;
+	resultado = pthread_create(&io_thread, NULL, procesar_IO, NULL);
+	if (resultado != 0) {
+		log_error(loggerError,"Error al crear el hilo de IO");
+		exit(EXIT_FAILURE);
+	}else{
+		log_info(loggerInfo, "Se creo exitosamente el hilo de IO");
 	}
 
 
