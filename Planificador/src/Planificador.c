@@ -227,10 +227,14 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 			if(recibido_tiempo == ERROR_OPERATION) return;
 			log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO");
 
+			/** tamaño pcb **/ //todo: estaria bien asi?
+			int32_t tamanio_pcb;
+			recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
+			if(recibido == ERROR_OPERATION) return;
 
 			/** recibo el PCB **/ //todo: Se podria abstraer esto en un externo??
 			char* pcb_serializado = malloc(sizeof(PCB));
-			recibido = _receive_bytes(socketCPU, pcb_serializado, sizeof(PCB));
+			recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
 			if(recibido == ERROR_OPERATION) return;
 			log_debug(loggerDebug, "Recibo un pcb desde la cpu, para una IO");
 			PCB* pcb = deserializarPCB(pcb_serializado);
@@ -256,12 +260,27 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	case RESULTADO_ERROR :{
 
+		/** tamaño pcb **/
+		int32_t tamanio_pcb;
+		recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
+		if(recibido == ERROR_OPERATION) return;
+
 		/** recibo el PCB **/
 		char* pcb_serializado = malloc(sizeof(PCB));
-		recibido = _receive_bytes(socketCPU, pcb_serializado, sizeof(PCB));
+		recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
 		if(recibido == ERROR_OPERATION) return;
 		log_debug(loggerDebug, "Recibo un pcb desde la cpu, por un Error");
 		PCB* pcb = deserializarPCB(pcb_serializado);
+
+		/** recibo el char* de resultados **/
+		int32_t tamanio_resultado_operaciones;
+		recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
+		if(recibido == ERROR_OPERATION) return;
+
+		char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
+		recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
+		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
 
 		finalizarPCB(pcb->PID, RESULTADO_ERROR);
 		liberarCPU(cpu_id);
@@ -277,12 +296,28 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 		 * enviar algun mensaje por consola?? o algo por el estilo??
 		 */
 
+		/** tamaño pcb **/
+		int32_t tamanio_pcb;
+		recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
+		if(recibido == ERROR_OPERATION) return;
+
+
 		/** recibo el PCB **/
 			char* pcb_serializado = malloc(sizeof(PCB));
 			recibido = _receive_bytes(socketCPU, pcb_serializado, sizeof(PCB));
 			if(recibido == ERROR_OPERATION) return;
 			log_debug(loggerDebug, "Recibo un pcb desde la cpu, por un Error");
 			PCB* pcb = deserializarPCB(pcb_serializado);
+
+			/** recibo el char* de resultados **/
+			int32_t tamanio_resultado_operaciones;
+			recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
+			if(recibido == ERROR_OPERATION) return;
+			char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
+			recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
+			if(recibido == ERROR_OPERATION) return;
+			log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
+
 
 			finalizarPCB(pcb->PID, RESULTADO_OK);
 			liberarCPU(cpu_id);
