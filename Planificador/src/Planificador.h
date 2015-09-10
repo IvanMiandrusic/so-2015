@@ -89,6 +89,9 @@ CPU_t* obtener_cpu_libre();
 bool hay_cpu_libre();
 PCB* operarIO(int32_t id, int32_t tiempo, PCB* pcb);
 void finalizarIO(PCB* pcb);
+void agregarPcbACola(t_list* unaLista, PCB* pcb);
+void agregarColaCPUs(CPU_t* cpu);
+
 
 
 /** Closures **/

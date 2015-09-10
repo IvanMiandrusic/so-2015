@@ -35,6 +35,9 @@ t_list* colaCPUs;
 int32_t idParaPCB = 0;
 /** SOCKET SERVIDOR **/
 sock_t* socketServidor;
+/** Semaforos **/
+sem_t semMutex_cola;
+sem_t semMutex_colaCPUs;
 
 
 ProcesoPlanificador* crear_estructura_config(char* path)
@@ -57,9 +60,12 @@ void ifProcessDie(){
 
 void inicializoSemaforos(){
 
-	/* Abajo, una inicialización ejemplo, sem_init(&semaforo, flags, valor) con su validacion
-	int32_t semMutex = sem_init(&sem_mutex,1,0);
-	if(semMutex==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex"); */
+	int32_t semMutex = sem_init(&semMutex_cola,1,0);
+	if(semMutex==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas PCB");
+
+	int32_t semMutexCpu = sem_init(&semMutex_colaCPUs,1,0);
+		if(semMutexCpu==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas CPU");
+
 }
 
 /*Se crea un archivo de log donde se registra to-do */
@@ -116,7 +122,7 @@ void administrarPath(char* filePath){
 
 	idParaPCB++;
 	PCB* unPCB = generarPCB(idParaPCB, filePath);
-	list_add(colaListos, unPCB);
+	agregarPcbACola(colaListos, unPCB);
 	log_debug(loggerDebug, "El PCB se genero con id %d, estado %d y mCod %s", unPCB->PID, unPCB->estado, unPCB->ruta_archivo);
 	return;
 
@@ -146,7 +152,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 			recibido = _receive_bytes(socketCPU, &(cpu_id), get_message_size(header));
 			if(recibido == ERROR_OPERATION) return;
 			CPU_t* nuevaCPU = generarCPU(cpu_id ,socketCPU);
-			list_add(colaCPUs, nuevaCPU);
+			agregarColaCPUs(nuevaCPU);
 
 			log_debug(loggerDebug, "Recibi una CPU nueva con id %d y socket %d", nuevaCPU->ID, nuevaCPU->socketCPU->fd);
 
@@ -190,16 +196,19 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 			//recibo el ID del  cpu
 			recibido = _receive_bytes(socketCPU, &(cpu_id), sizeof(int32_t)); //Todo el get_message_size(header) es el tamaño entero del mensaje
 			if(recibido == ERROR_OPERATION) return;
+			log_debug(loggerDebug, "Recibo cpu_id, para una IO");
 
 			//recibe el tiempo de I/O
 			int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo), sizeof(int32_t));
 			if(recibido_tiempo == ERROR_OPERATION) return;
+			log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO");
 
 
 			/** recibo el PCB **/
 			char* pcb_serializado = malloc(get_message_size(header));
 			recibido = _receive_bytes(socketCPU, pcb_serializado, get_message_size(header));
 			if(recibido == ERROR_OPERATION) return;
+			log_debug(loggerDebug, "Recibo un pcb desde la cpu, para una IO");
 			PCB* pcb = deserializarPCB(pcb_serializado);
 
 			/** recibo el char* de resultados **/
@@ -223,8 +232,10 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 		/*
 		 * Debe reasignar un nuevo PCB a la CPU
-		 *
+		 * Agregar el PCB en la lista de finalizados
+		 * enviar algun mensaje por consola?? o algo por el estilo??
 		 * */
+
 
 
 		break;
@@ -252,22 +263,34 @@ PCB* operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
 
 	list_remove_by_condition(colaExec, getPcbByID);
 	pcb->estado= BLOQUEADO;
-	list_add(colaBlock, pcb);
+	agregarPcbACola(colaBlock, pcb);
 	log_debug(loggerDebug, "Cambio de estado (block) y de lista del pcb con id %d", pcb->PID);
 
 	// Cambio estado CPU a LIBRE //
 	CPU_t* cpu_encontrada = list_remove_by_condition(colaCPUs, getCpuByID);
 	cpu_encontrada->estado= LIBRE;
 	log_debug(loggerDebug, "Cambio de estado (LIBRE) de la cpu con id %d", cpu_encontrada->ID);
-	//todo: Deberia asignarle un nuevo PCB a la cpu q se libera??
-	//asignarPCBaCPU();
+	//Se asigna un nuevo PCB a la cpu q se libera
+	asignarPCBaCPU();
 
 
-	//todo: pthread_join(consola_thread, NULL); // seria algo asi??
-	sleep(tiempo); //todo: aca dispararia el hilo de IO, sino se te duerme to-do el proceso-- FIX
+	//todo: seria algo asi??
+	// aca dispararia el hilo de IO, sino se te duerme to-do el proceso-- FIX
+	int32_t hiloIO;
+		pthread_t IO_thread;
+				hiloIO = pthread_create(&IO_thread, NULL, (void*)sleep(tiempo), NULL);
+				if (hiloIO != 0) {
+					log_error(loggerError,"Error al crear el hilo de IO");
+					exit(EXIT_FAILURE);
+				}else{
+					log_info(loggerInfo, "Se creo exitosamente el hilo de IO");
+				}
+		pthread_join(IO_thread, NULL);
+
 	return pcb;
 
 }
+
 
 
 void finalizarIO(PCB* pcb){
@@ -277,7 +300,7 @@ void finalizarIO(PCB* pcb){
 		}
 	list_remove_by_condition(colaBlock, getPcbByID);
 	pcb->estado= LISTO;
-	list_add(colaListos, pcb);
+	agregarPcbACola(colaListos, pcb);
 	return;
 
 	// Al finalizar una I/O, el planificador deberia poner el pcb al final de la lista de LISTOS
@@ -313,7 +336,7 @@ void asignarPCBaCPU(){
 
 		/** Pongo el PCB en ejecucion **/
 		pcbAEnviar->estado = EJECUCION;
-		list_add(colaExec, pcbAEnviar);
+		agregarPcbACola(colaExec, pcbAEnviar);
 
 	}else{
 		printf("No hay CPUs Disponibles que asignar \n");
@@ -354,6 +377,29 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb){
 }
 
 
+// todo: Faltarian para lo casos de remove
+
+void agregarPcbACola(t_list* unaLista,PCB* pcb){
+
+
+	sem_wait(&semMutex_cola);
+	list_add(unaLista, pcb);
+	sem_post(&semMutex_cola);
+	return;
+
+}
+
+
+
+void agregarColaCPUs(CPU_t* cpu){
+
+
+	sem_wait(&semMutex_colaCPUs);
+	list_add(colaCPUs, cpu);
+	sem_post(&semMutex_colaCPUs);
+	return;
+
+}
 
 //----------------------------------// MAIN //------------------------------------------//
 
@@ -411,15 +457,6 @@ int main(void) {
 		log_info(loggerInfo, "Se creo exitosamente el hilo de la consola");
 	}
 
-
-	pthread_t IO_thread;
-		resultado = pthread_create(&IO_thread, NULL, consola_planificador, NULL);
-		if (resultado != 0) {
-			log_error(loggerError,"Error al crear el hilo de IO");
-			exit(EXIT_FAILURE);
-		}else{
-			log_info(loggerInfo, "Se creo exitosamente el hilo de IO");
-		}
 
 
 	pthread_join(server_thread, NULL); //espero a que el hilo termine su ejecución */
