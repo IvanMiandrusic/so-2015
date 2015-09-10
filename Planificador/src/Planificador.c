@@ -37,7 +37,10 @@ int32_t idParaPCB = 0;
 /** SOCKET SERVIDOR **/
 sock_t* socketServidor;
 /** Semaforos **/
-sem_t semMutex_cola;
+sem_t semMutex_colaBlock;
+sem_t semMutex_colaExec;
+sem_t semMutex_colaFinalizados;
+sem_t semMutex_colaListos;
 sem_t semMutex_colaCPUs;
 sem_t sem_dictionary_retardos;
 
@@ -62,14 +65,23 @@ void ifProcessDie(){
 
 void inicializoSemaforos(){
 
-	int32_t semMutexColasPCB = sem_init(&semMutex_cola,1,0);
-	if(semMutexColasPCB==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas PCB");
+	int32_t semMutexColaListos = sem_init(&semMutex_colaListos,1,0);
+	if(semMutexColaListos==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Cola listos");
+
+	int32_t semMutexColaBlock = sem_init(&semMutex_colaBlock,1,0);
+	if(semMutexColaBlock==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Cola Block");
+
+	int32_t semMutexColaExec = sem_init(&semMutex_colaExec,1,0);
+	if(semMutexColaExec==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Cola Exec");
+
+	int32_t semMutexColaFinalizados = sem_init(&semMutex_colaFinalizados,1,0);
+	if(semMutexColaFinalizados==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Cola Finalizados");
 
 	int32_t semMutexCpu = sem_init(&semMutex_colaCPUs,1,0);
 		if(semMutexCpu==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas CPU");
 
 	int32_t semMutexRetardos = sem_init(&sem_dictionary_retardos,1,0);
-		if(semMutexRetardos==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas CPU");
+		if(semMutexRetardos==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de directory_retardos");
 
 }
 
@@ -129,7 +141,7 @@ void administrarPath(char* filePath){
 
 	idParaPCB++;
 	PCB* unPCB = generarPCB(idParaPCB, filePath);
-	agregarPcbACola(colaListos, unPCB);
+	agregarPcbAColaListos(unPCB);
 	log_debug(loggerDebug, "El PCB se genero con id %d, estado %d y mCod %s", unPCB->PID, unPCB->estado, unPCB->ruta_archivo);
 	return;
 
@@ -148,6 +160,13 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	int32_t pcb_id;
 	int32_t tiempo;
 
+	/** Recibo el cpu_id desde la CPU **/
+	recibido = _receive_bytes(socketCPU, &(cpu_id), sizeof(int32_t));
+	if(recibido == ERROR_OPERATION) return;
+	log_debug(loggerDebug, "Recibo cpu_id");
+	// El cpu_id lo usan todos los casos, asi evito repetir codigo (?)
+
+
 	//todo: tratar los errores
 
 
@@ -155,9 +174,8 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	case NUEVA_CPU: {
 
-			/** Recibo el cpu_id desde la CPU **/
-			recibido = _receive_bytes(socketCPU, &(cpu_id), get_message_size(header));
-			if(recibido == ERROR_OPERATION) return;
+			/** Genero un nuevo cpu_t **/
+
 			CPU_t* nuevaCPU = generarCPU(cpu_id ,socketCPU);
 			agregarColaCPUs(nuevaCPU);
 
@@ -177,13 +195,25 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	case TERMINO_RAFAGA: {
 
-		/*
-		 * Todo: Recibir :
-		 * 			cpu_id
-		 * 			pcb (la estructura entera)
-		 * 			resultado_operaciones (char* es el tipo) --> es lo que ejecuto el cpu antes de cortar por quantum o IO
-		 */
+		/** recibo el PCB **/ //todo: Se podria abstraer esto en un externo??
+		char* pcb_serializado = malloc(sizeof(PCB));
+		recibido = _receive_bytes(socketCPU, pcb_serializado, sizeof(PCB));
+		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo un pcb desde la cpu, para una IO");
+		PCB* pcb = deserializarPCB(pcb_serializado);
 
+
+		/** recibo el char* de resultados **/
+		int32_t tamanio_resultado_operaciones;
+		recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
+		if(recibido == ERROR_OPERATION) return;
+
+		char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
+		recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
+		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
+
+		//todo: terminar
 
 			break;
 	}
@@ -192,18 +222,13 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 			/** recibo el evento I/O **/
 
-			//recibo el ID del  cpu
-			recibido = _receive_bytes(socketCPU, &(cpu_id), sizeof(int32_t));
-			if(recibido == ERROR_OPERATION) return;
-			log_debug(loggerDebug, "Recibo cpu_id, para una IO");
-
 			//recibe el tiempo de I/O
 			int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo), sizeof(int32_t));
 			if(recibido_tiempo == ERROR_OPERATION) return;
 			log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO");
 
 
-			/** recibo el PCB **/
+			/** recibo el PCB **/ //todo: Se podria abstraer esto en un externo??
 			char* pcb_serializado = malloc(sizeof(PCB));
 			recibido = _receive_bytes(socketCPU, pcb_serializado, sizeof(PCB));
 			if(recibido == ERROR_OPERATION) return;
@@ -231,17 +256,37 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	case RESULTADO_ERROR :{
 
+		/** recibo el PCB **/
+		char* pcb_serializado = malloc(sizeof(PCB));
+		recibido = _receive_bytes(socketCPU, pcb_serializado, sizeof(PCB));
+		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo un pcb desde la cpu, por un Error");
+		PCB* pcb = deserializarPCB(pcb_serializado);
+
+		finalizarPCB(pcb->PID, RESULTADO_ERROR);
+		liberarCPU(cpu_id);
+		asignarPCBaCPU();
+
+
 		break;
 	}
 
 	case RESULTADO_OK: {
 
 		/*
-		 * Debe reasignar un nuevo PCB a la CPU
-		 * Agregar el PCB en la lista de finalizados
 		 * enviar algun mensaje por consola?? o algo por el estilo??
-		 * */
+		 */
 
+		/** recibo el PCB **/
+			char* pcb_serializado = malloc(sizeof(PCB));
+			recibido = _receive_bytes(socketCPU, pcb_serializado, sizeof(PCB));
+			if(recibido == ERROR_OPERATION) return;
+			log_debug(loggerDebug, "Recibo un pcb desde la cpu, por un Error");
+			PCB* pcb = deserializarPCB(pcb_serializado);
+
+			finalizarPCB(pcb->PID, RESULTADO_OK);
+			liberarCPU(cpu_id);
+			asignarPCBaCPU();
 
 
 		break;
@@ -257,15 +302,65 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 }
 
+void liberarCPU(int32_t cpu_id){
+
+	bool getCpuByID(CPU_t* unaCPU){
+			return unaCPU->ID == cpu_id;
+	}
+
+	CPU_t* cpu_encontrada = list_remove_by_condition(colaCPUs, getCpuByID);
+	cpu_encontrada->estado= LIBRE;
+	log_debug(loggerDebug, "Cambio de estado (LIBRE) de la cpu con id %d", cpu_encontrada->ID);
+
+
+
+}
+
+
+
+void finalizarPCB(int32_t pcbID, int32_t tipo){
+
+	switch(tipo){
+
+	bool getPcbByID(PCB* unPCB){
+						return unPCB->PID == pcbID;
+			}
+
+	case RESULTADO_OK:{
+
+
+		PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
+		pcb_found->estado= FINALIZADO_OK;
+		agregarPcbAColaFinalizados(pcb_found);
+		log_debug(loggerDebug, "Cambio de estado (finalizado_ok) y de lista del pcb con id %d", pcbID);
+
+		return;
+	}
+
+	case RESULTADO_ERROR:{
+
+		PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
+		pcb_found->estado= FINALIZADO_ERROR;
+		agregarPcbAColaFinalizados(pcb_found);
+		log_debug(loggerDebug, "Cambio de estado (finalizado_error) y de lista del pcb con id %d", pcbID);
+
+
+
+		return;
+	}
+
+
+	}
+
+}
+
+
 void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
 
 	bool getPcbByID(PCB* unPCB){
 			return unPCB->PID == pcb->PID;
 	}
 
-	bool getCpuByID(CPU_t* unaCPU){
-			return unaCPU->ID == cpu_id;
-	}
 
 	/** Guardarme el PID y su retardo **/
 	sem_wait(&sem_dictionary_retardos);
@@ -274,13 +369,11 @@ void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
 
 	PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
 	pcb_found->estado= BLOQUEADO;
-	agregarPcbACola(colaBlock, pcb_found);
+	agregarPcbAColaBlock(pcb_found);
 	log_debug(loggerDebug, "Cambio de estado (block) y de lista del pcb con id %d", pcb->PID);
 
 	/** Cambio estado CPU a LIBRE **/
-	CPU_t* cpu_encontrada = list_remove_by_condition(colaCPUs, getCpuByID);
-	cpu_encontrada->estado= LIBRE;
-	log_debug(loggerDebug, "Cambio de estado (LIBRE) de la cpu con id %d", cpu_encontrada->ID);
+	liberarCPU(cpu_id);
 
 	/** Se asigna un nuevo PCB a la cpu q se libera **/
 	asignarPCBaCPU();
@@ -307,7 +400,7 @@ void procesar_IO(){
 
 			/** El proceso va a la cola de LISTOS **/
 			pcb_to_sleep->estado= LISTO;
-			agregarPcbACola(colaListos, pcb_to_sleep);
+			agregarPcbAColaListos(pcb_to_sleep);
 		}
 
 	}
@@ -343,7 +436,7 @@ void asignarPCBaCPU(){
 
 		/** Pongo el PCB en ejecucion **/
 		pcbAEnviar->estado = EJECUCION;
-		agregarPcbACola(colaExec, pcbAEnviar);
+		agregarPcbAColaExec(pcbAEnviar);
 
 	}else{
 		printf("No hay CPUs Disponibles que asignar \n");
@@ -386,17 +479,45 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb){
 
 // todo: Faltarian para lo casos de remove
 
-void agregarPcbACola(t_list* unaLista,PCB* pcb){
+void agregarPcbAColaListos(PCB* pcb){
 
 
-	sem_wait(&semMutex_cola);
-	list_add(unaLista, pcb);
-	sem_post(&semMutex_cola);
+	sem_wait(&semMutex_colaListos);
+	list_add(colaListos, pcb);
+	sem_post(&semMutex_colaListos);
 	return;
 
 }
 
+void agregarPcbAColaBlock(PCB* pcb){
 
+
+	sem_wait(&semMutex_colaBlock);
+	list_add(colaBlock, pcb);
+	sem_post(&semMutex_colaBlock);
+	return;
+
+}
+
+void agregarPcbAColaExec(PCB* pcb){
+
+
+	sem_wait(&semMutex_colaExec);
+	list_add(colaExec, pcb);
+	sem_post(&semMutex_colaExec);
+	return;
+
+}
+
+void agregarPcbAColaFinalizados(PCB* pcb){
+
+
+	sem_wait(&semMutex_colaExec);
+	list_add(colaFinalizados, pcb);
+	sem_post(&semMutex_colaExec);
+	return;
+
+}
 
 void agregarColaCPUs(CPU_t* cpu){
 

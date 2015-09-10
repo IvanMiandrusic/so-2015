@@ -30,6 +30,7 @@ typedef enum estados_pcb {
        FINALIZADO_ERROR=5
 }estados_pcb_t;
 
+
 typedef enum estados_cpu {
 
 	LIBRE=1,
@@ -91,8 +92,13 @@ CPU_t* obtener_cpu_libre();
 bool hay_cpu_libre();
 void operarIO(int32_t id, int32_t tiempo, PCB* pcb);
 void procesar_IO();
-void agregarPcbACola(t_list* unaLista, PCB* pcb);
+void agregarPcbAColaListos(PCB* pcb);
+void agregarPcbAColaBlock(PCB* pcb);
+void agregarPcbAColaFinalizados(PCB* pcb);
+void agregarPcbAColaExec(PCB* pcb);
 void agregarColaCPUs(CPU_t* cpu);
+void finalizarPCB(int32_t pcbID, int32_t tipo);
+void liberarCPU(int32_t cpu_id);
 
 
 
