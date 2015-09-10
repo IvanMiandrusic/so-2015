@@ -113,7 +113,7 @@ void creoEstructurasDeManejo(){
 
 }
 
-void clean(){
+void cleanAll(){
 	list_destroy_and_destroy_elements(colaListos, free);
 	list_destroy_and_destroy_elements(colaExec, free);
 	list_destroy_and_destroy_elements(colaBlock, free);
@@ -477,8 +477,9 @@ int main(void) {
 
 	pthread_join(server_thread, NULL); //espero a que el hilo termine su ejecución */
 	pthread_join(consola_thread, NULL);
+	pthread_join(io_thread, NULL);
 
-	clean();
+	cleanAll();
 
 	return EXIT_SUCCESS;
 }

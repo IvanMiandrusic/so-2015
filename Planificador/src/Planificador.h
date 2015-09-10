@@ -78,7 +78,7 @@ void inicializoSemaforos();
 void crearArchivoDeLog();
 PCB* generarPCB(int32_t, char*);
 void creoEstructurasDeManejo();
-void clean();
+void cleanAll();
 void consola_planificador();
 void administrarPath(char* filePath);
 void servidor_conexiones();
