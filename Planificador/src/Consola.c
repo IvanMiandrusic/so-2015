@@ -20,42 +20,26 @@ void consola_planificador(){
 		while(finalizar==false){
 		printf(ANSI_COLOR_BOLDCYAN "INGRESE EL COMANDO QUE DESE EJECUTAR: " ANSI_COLOR_RESET);
 		scanf("%[^\n]s", comandoSeleccionado);
+		printf("\n");
 
 		operacionAsociada = analizar_operacion_asociada(comandoSeleccionado);
 
 		switch (operacionAsociada) {
 
 		case CORRER_PATH: {
-			printf("Ha elegido la opcion: Correr PATH\n");
 			correrPath(comandoSeleccionado);
-			limpiarBuffer();
 			break;  //fin correr path
 		}
 		case FINALIZAR_PID: {
-			int32_t proc_id;
-			printf("Ha elegido la opcion: Finalizar PID\n");
-			printf("Ingrese PID del proceso a finalizar\n");
-
-			while(scanf("%d",&proc_id) != 1)
-			{
-				printf("Por favor solo ingrese números\n");
-				while(getchar() != '\n');
-			}
-
-			finalizarPID(proc_id);
-			limpiarBuffer();
+			finalizarPID(comandoSeleccionado);
 			break;  //fin finalizar PID
 		}
 		case PS: {
-			printf("Ha elegido la opcion: Comando PS\n");
 			comandoPS();
-			limpiarBuffer();
 			break; //fin comando ps
 		}
 		case CPU: {
-			printf("Ha elegido la opcion: Chequear uso de las Cpu\n" );
 			usoDeLasCpus();
-			limpiarBuffer();
 			break; //fin uso de las Cpus
 		}
 		case CERRAR_CONSOLA:{
@@ -64,20 +48,21 @@ void consola_planificador(){
 		}
 		case HELP: {
 			mostrarComandos();
-			limpiarBuffer();
 			break;
 		}
 		default: {
-			printf(ANSI_COLOR_RED "EL COMANDO INGRESADO NO CORRESPONDE CON NINGUNA DE LAS OPERACIONES \n");
-			printf(ANSI_COLOR_BOLDCYAN "INGRESE help PARA VER COMANDOS DISPONIBLES." ANSI_COLOR_RESET ENTER);
-			limpiarBuffer();
+			printf(ANSI_COLOR_BOLDRED "EL COMANDO INGRESADO NO CORRESPONDE CON NINGUNA DE LAS OPERACIONES"ANSI_COLOR_RESET "\n\n");
+			printf(ANSI_COLOR_BOLDYELLOW "INGRESE help PARA VER COMANDOS DISPONIBLES." ANSI_COLOR_RESET);
 			break;
 		}
 		}
 
+		limpiarBuffer();
+		printf(ENTER);
+
 		}
 
-		printf(ANSI_COLOR_CYAN "    ╔═══════════════════════════════╗ \n    ║ CONSOLA PLANIFICADOR ENDS     ║ \n    ╚═══════════════════════════════╝" ANSI_COLOR_RESET ENTER);
+		printf(ANSI_COLOR_BOLDCYAN "    ╔═══════════════════════════════╗ \n    ║ CONSOLA PLANIFICADOR ENDS     ║ \n    ╚═══════════════════════════════╝" ANSI_COLOR_RESET ENTER);
 
 }
 
@@ -100,6 +85,8 @@ void correrPath(char* comando) {
 
 	char* filePath = strstr(comando, " ") + 1;
 
+	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a iniciar un mProc nuevo con mCod %s" ANSI_COLOR_RESET "\n", filePath);
+
 	if (string_equals_ignore_case(arch->algoritmo, "FIFO")) {
 		//se hace esto si es fifo
 		administrarPath(filePath);
@@ -110,7 +97,14 @@ void correrPath(char* comando) {
 	}
 }
 
-void finalizarPID(int32_t proc_id) {
+void finalizarPID(char* comando) {
+
+	char* pid_comando = strstr(comando, " ") + 1;
+	int32_t PID = atoi(pid_comando);
+
+	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a finalizar un mProc con id %d" ANSI_COLOR_RESET "\n", PID);
+
+	/** Todo manda a finalizar proceso **/
 
 }
 
@@ -132,8 +126,10 @@ void comandoPS() {
 		char* proceso = string_new();
 		string_append_with_format(&proceso, "mProc %d: %s -> %s\n", unPcb->PID,
 				unPcb->ruta_archivo, get_estado_proceso(unPcb->estado));
-		printf("%s \n", proceso);
+		printf(ANSI_COLOR_BOLDGREEN "%s \n" ANSI_COLOR_RESET, proceso);
 	}
+
+	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a mostrar el estado de los mProc en el sistema" ANSI_COLOR_RESET "\n");
 
 	list_iterate(colaListos, mostrarEstadoProceso);
 	list_iterate(colaBlock, mostrarEstadoProceso);
@@ -143,25 +139,30 @@ void comandoPS() {
 }
 
 void mostrarEstadoCpus() {
-	//pedir a todas las cpus su rendimiento en el ultimo minuto
-	//un paquete id y rendimiento
-	char* cpus = string_new();
-	//string_append_with_format(&cpus, "cpu %d: %d%%\n", id, rendimiento);
-	printf("%s", cpus);
+
+	void mostrar_rendimiento(CPU_t* cpu) {
+		char* cpu_a_mostrar = string_new();
+		string_append_with_format(&cpu_a_mostrar, "CPU %d: %d%%\n", cpu->ID, cpu->rendimiento);
+		printf(ANSI_COLOR_BOLDGREEN "%s \n" ANSI_COLOR_RESET, cpu_a_mostrar);
+	}
+
+	list_iterate(colaCPUs, mostrar_rendimiento);
 }
 
 void usoDeLasCpus() {
-	printf("El porcentaje de uso de las cpus en el último minuto es:\n");
+
+	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a mostrar el porcentaje de uso de las cpus en el último minuto" ANSI_COLOR_RESET "\n");
+
 	mostrarEstadoCpus();
 }
 
 void mostrarComandos() {
 
-	printf(ENTER ANSI_COLOR_BOLDCYAN "Los comandos disponibles son: \n\n");
+	printf(ANSI_COLOR_BOLDYELLOW "Los comandos disponibles son: \n\n");
 	printf("correr PATH \t\t PATH es la ruta relativa al programa mCod \n");
 	printf("finalizar PID \t\t PID es el numero de proceso mProc \n");
 	printf("ps \t\t\t Lista los mProc y su estado actual \n");
 	printf("cpu \t\t\t Listar las cpus con su utilizacion \n");
-	printf("cerrar consola \t\t Cerrar la consola" ANSI_COLOR_RESET ENTER);
+	printf("cerrar consola \t\t Cerrar la consola" ANSI_COLOR_RESET);
 }
 

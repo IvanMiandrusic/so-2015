@@ -58,6 +58,7 @@ typedef struct estructura_CPU      //estructura que contiene los datos que nos e
 	int32_t ID;
 	sock_t* socketCPU;
 	t_estado_cpu estado;
+	int32_t rendimiento;
 }CPU_t;
 
 typedef struct estructura_retardo     //estructura que contiene los datos del retardo
@@ -77,6 +78,7 @@ extern t_list* colaListos;
 extern t_list* colaBlock;
 extern t_list* colaExec;
 extern t_list* colaFinalizados;
+extern t_list* colaCPUs;
 extern t_list* retardos_PCB;
 
 ProcesoPlanificador* crear_estructura_config(char*);

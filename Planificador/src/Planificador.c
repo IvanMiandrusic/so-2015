@@ -501,11 +501,9 @@ void asignarPCBaCPU(){
 		agregarPcbAColaExec(pcbAEnviar);
 
 	}else{
-		printf("No hay CPUs Disponibles que asignar \n");
+		printf(ANSI_COLOR_BOLDRED "No hay CPUs Disponibles que asignar" ANSI_COLOR_RESET);
 		log_error(loggerError, "No hay una CPU disponible");
 		return;
-	//todo: tratar el caso en que no hay CPUs disponibles pero si hay PCBs, corta la ejecucion? para mi deberia
-	//retornar a la consola.
 	}
 
 }
@@ -537,9 +535,6 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb){
 	/** La cpu ahora esta en estado ocupado **/
 	CPU->estado = OCUPADO;
 }
-
-
-// todo: Faltarian para lo casos de remove
 
 void agregarPcbAColaListos(PCB* pcb){
 
@@ -630,39 +625,39 @@ int main(void) {
 
 
 	/** Creo hilos CONSOLA y SERVIDOR DE CONEXIONES **/
-
-	pthread_t server_thread;
-	int32_t resultado = pthread_create(&server_thread, NULL, servidor_conexiones, NULL);
-	if (resultado != 0) {
-		log_error(loggerError,"Error al crear el hilo del servidor de conexiones");
-		abort();
-	}else{
-		log_info(loggerInfo, "Se creo exitosamente el hilo de servidor de conexiones");
-	}
+	int32_t resultado_creacion_hilos;
+//	pthread_t server_thread;
+//	resultado_creacion_hilos = pthread_create(&server_thread, NULL, servidor_conexiones, NULL);
+//	if (resultado_creacion_hilos != 0) {
+//		log_error(loggerError,"Error al crear el hilo del servidor de conexiones");
+//		abort();
+//	}else{
+//		log_info(loggerInfo, "Se creo exitosamente el hilo de servidor de conexiones");
+//	}
 
 	pthread_t consola_thread;
-	resultado = pthread_create(&consola_thread, NULL, consola_planificador, NULL);
-	if (resultado != 0) {
+	resultado_creacion_hilos = pthread_create(&consola_thread, NULL, consola_planificador, NULL);
+	if (resultado_creacion_hilos != 0) {
 		log_error(loggerError,"Error al crear el hilo de la consola");
 		exit(EXIT_FAILURE);
 	}else{
 		log_info(loggerInfo, "Se creo exitosamente el hilo de la consola");
 	}
 
-	pthread_t io_thread;
-	resultado = pthread_create(&io_thread, NULL, procesar_IO, NULL);
-	if (resultado != 0) {
-		log_error(loggerError,"Error al crear el hilo de IO");
-		exit(EXIT_FAILURE);
-	}else{
-		log_info(loggerInfo, "Se creo exitosamente el hilo de IO");
-	}
+//	pthread_t io_thread;
+//	resultado_creacion_hilos = pthread_create(&io_thread, NULL, procesar_IO, NULL);
+//	if (resultado_creacion_hilos != 0) {
+//		log_error(loggerError,"Error al crear el hilo de IO");
+//		exit(EXIT_FAILURE);
+//	}else{
+//		log_info(loggerInfo, "Se creo exitosamente el hilo de IO");
+//	}
 
 
 
-	pthread_join(server_thread, NULL); //espero a que el hilo termine su ejecución */
+//	pthread_join(server_thread, NULL);
 	pthread_join(consola_thread, NULL);
-	pthread_join(io_thread, NULL);
+//	pthread_join(io_thread, NULL);
 
 	cleanAll();
 

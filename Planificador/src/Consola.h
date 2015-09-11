@@ -30,7 +30,7 @@ void consola_planificador();
 void limpiarBuffer();
 int32_t analizar_operacion_asociada(char*);
 void correrPath(char*);
-void finalizarPID(int32_t);
+void finalizarPID(char*);
 void comandoPS();
 void usoDeLasCpus();
 void mostrarComandos();
