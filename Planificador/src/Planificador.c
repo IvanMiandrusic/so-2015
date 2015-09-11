@@ -43,6 +43,7 @@ sem_t semMutex_colaFinalizados;
 sem_t semMutex_colaListos;
 sem_t semMutex_colaCPUs;
 sem_t sem_list_retardos;
+sem_t sem_io;
 
 
 ProcesoPlanificador* crear_estructura_config(char* path)
@@ -78,10 +79,13 @@ void inicializoSemaforos(){
 	if(semMutexColaFinalizados==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Cola Finalizados");
 
 	int32_t semMutexCpu = sem_init(&semMutex_colaCPUs,0,1);
-		if(semMutexCpu==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas CPU");
+	if(semMutexCpu==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas CPU");
 
 	int32_t semMutexRetardos = sem_init(&sem_list_retardos,0,1);
-		if(semMutexRetardos==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de lista retardos");
+	if(semMutexRetardos==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de lista retardos");
+
+	int32_t semIO = sem_init(&sem_io, 0, 0);
+	if(semIO==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex para manejar la IO");
 
 }
 
@@ -201,7 +205,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 		log_debug(loggerDebug, "Recibo tamanio:%d", tamanio_pcb);
 
-		/** recibo el PCB **/ //todo: Se podria abstraer esto en un externo??
+		/** recibo el PCB **/
 		char* pcb_serializado = malloc(tamanio_pcb);
 		recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
 		if(recibido == ERROR_OPERATION) return;
@@ -226,14 +230,12 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	case INSTRUCCION_IO: {
 
-			/** recibo el evento I/O **/
-
 			//recibe el tiempo de I/O
 			int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo), sizeof(int32_t));
 			if(recibido_tiempo == ERROR_OPERATION) return;
 			log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO: %d", tiempo);
 
-			/** tamaño pcb **/ //todo: estaria bien asi?
+			/** tamaño pcb **/
 			int32_t tamanio_pcb;
 			recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
 			if(recibido == ERROR_OPERATION) return;
@@ -410,16 +412,21 @@ void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
 	retardo* retardo_nuevo=malloc(sizeof(retardo));
 	retardo_nuevo->ID=pcb->PID;
 	retardo_nuevo->retardo=tiempo;
+
 	/** Guardarme el PID y su retardo **/
 	sem_wait(&sem_list_retardos);
 	list_add(retardos_PCB, retardo_nuevo);
 	sem_post(&sem_list_retardos);
 	log_debug(loggerDebug, "guardo en bloqueado pid: %d, tiempo: %d", pcb->PID, tiempo);
+
+	/** PCB de Listos a Bloqueado **/
 	PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
 	pcb_found->estado= BLOQUEADO;
 	agregarPcbAColaBlock(pcb_found);
 	log_debug(loggerDebug, "Cambio de estado (block) y de lista del pcb con id %d", pcb->PID);
-	//todo sem_post
+
+	sem_post(&sem_io);
+
 	/** Cambio estado CPU a LIBRE **/
 	liberarCPU(cpu_id);
 
@@ -434,26 +441,29 @@ void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
 void procesar_IO(){
 
 	while(true) {
-		//todo sem_wait(semaforo que avisa que hay uno)
-		if(list_size(colaBlock)>0) {
-			PCB* pcb_to_sleep = list_get(colaBlock, 0);
-			bool getPcbByID(PCB* unPCB){
-				return unPCB->PID == pcb_to_sleep->PID;
-			}
 
-			log_debug(loggerDebug, "Saco el pcb con id: %d", pcb_to_sleep->PID);
-			/** Saco ese PID del diccionario de retardos **/
-			sem_wait(&sem_list_retardos);
-			retardo* tiempo_retardo = list_remove_by_condition(retardos_PCB, getPcbByID);
-			sem_post(&sem_list_retardos);
-			log_debug(loggerDebug, "obtengo un retardo:%d", tiempo_retardo->retardo);
-			/** Simulo la IO del proceso **/
-			sleep(tiempo_retardo->retardo);
-			/** El proceso va a la cola de LISTOS **/
-			pcb_to_sleep->estado= LISTO;
-			agregarPcbAColaListos(pcb_to_sleep);
-			list_remove_and_destroy_element(colaBlock, 0, free);
+		sem_wait(&sem_io);
+
+		PCB* pcb_to_sleep = list_get(colaBlock, 0);
+		bool getPcbByID(PCB* unPCB){
+			return unPCB->PID == pcb_to_sleep->PID;
 		}
+
+		log_debug(loggerDebug, "Saco el pcb con id: %d", pcb_to_sleep->PID);
+
+		/** Saco ese PID de la lista de retardos **/
+		sem_wait(&sem_list_retardos);
+		retardo* tiempo_retardo = list_remove_by_condition(retardos_PCB, getPcbByID);
+		sem_post(&sem_list_retardos);
+		log_debug(loggerDebug, "obtengo un retardo:%d", tiempo_retardo->retardo);
+
+		/** Simulo la IO del proceso **/
+		sleep(tiempo_retardo->retardo);
+
+		/** El proceso va a la cola de LISTOS **/
+		pcb_to_sleep->estado= LISTO;
+		agregarPcbAColaListos(pcb_to_sleep);
+		list_remove_and_destroy_element(colaBlock, 0, free);
 
 	}
 
