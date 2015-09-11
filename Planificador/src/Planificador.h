@@ -60,6 +60,12 @@ typedef struct estructura_CPU      //estructura que contiene los datos que nos e
 	t_estado_cpu estado;
 }CPU_t;
 
+typedef struct estructura_retardo     //estructura que contiene los datos del retardo
+{
+	int32_t ID;
+	int32_t retardo;
+}retardo;
+
 
 
 /* DECLARACION DE VARIABLES GLOBALES */
@@ -71,7 +77,7 @@ extern t_list* colaListos;
 extern t_list* colaBlock;
 extern t_list* colaExec;
 extern t_list* colaFinalizados;
-extern t_dictionary* retardos_PCB;
+extern t_list* retardos_PCB;
 
 ProcesoPlanificador* crear_estructura_config(char*);
 void ifProcessDie();

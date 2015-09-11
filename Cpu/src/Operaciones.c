@@ -237,10 +237,10 @@ void ejecutar(int32_t id, PCB* pcb){
 
 					char* pcb_serializado = serializarPCB(pcb);
 					int32_t envio_tamanio_pcb = _send_bytes(socketPlanificador,&tamanio_pcb,sizeof(int32_t));
-					int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,sizeof(tamanio_pcb));
+					int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,tamanio_pcb);
 
 					int32_t envio_tamanio_texto = _send_bytes(socketPlanificador,&tamanio_texto,sizeof(int32_t));
-					int32_t envio_texto = _send_bytes(socketPlanificador,respuesta->texto,sizeof(tamanio_texto));
+					int32_t envio_texto = _send_bytes(socketPlanificador,respuesta->texto,tamanio_texto);
 
 			return ;
 			}

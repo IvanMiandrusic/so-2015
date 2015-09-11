@@ -31,7 +31,7 @@ t_list* colaBlock;
 t_list* colaExec;
 t_list* colaFinalizados;
 t_list* colaCPUs;
-t_dictionary* retardos_PCB;
+t_list* retardos_PCB;
 /** ID para los PCB **/
 int32_t idParaPCB = 0;
 /** SOCKET SERVIDOR **/
@@ -42,7 +42,7 @@ sem_t semMutex_colaExec;
 sem_t semMutex_colaFinalizados;
 sem_t semMutex_colaListos;
 sem_t semMutex_colaCPUs;
-sem_t sem_dictionary_retardos;
+sem_t sem_list_retardos;
 
 
 ProcesoPlanificador* crear_estructura_config(char* path)
@@ -57,8 +57,8 @@ ProcesoPlanificador* crear_estructura_config(char* path)
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie(){
-		//Queda a cargo del programador la implementación de la función
-	exit(1);
+		log_info(loggerInfo, ANSI_COLOR_BLUE"Se dio de baja el proceso Planificador"ANSI_COLOR_RESET);
+		exit(1);
 }
 
 /*Función donde se inicializan los semaforos */
@@ -80,8 +80,8 @@ void inicializoSemaforos(){
 	int32_t semMutexCpu = sem_init(&semMutex_colaCPUs,0,1);
 		if(semMutexCpu==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas CPU");
 
-	int32_t semMutexRetardos = sem_init(&sem_dictionary_retardos,0,1);
-		if(semMutexRetardos==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de directory_retardos");
+	int32_t semMutexRetardos = sem_init(&sem_list_retardos,0,1);
+		if(semMutexRetardos==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de lista retardos");
 
 }
 
@@ -121,7 +121,7 @@ void creoEstructurasDeManejo(){
 	colaExec=list_create();
 	colaFinalizados=list_create();
 	colaCPUs=list_create();
-	retardos_PCB = dictionary_create();
+	retardos_PCB = list_create();
 
 }
 
@@ -130,7 +130,7 @@ void cleanAll(){
 	list_destroy_and_destroy_elements(colaExec, free);
 	list_destroy_and_destroy_elements(colaBlock, free);
 	list_destroy_and_destroy_elements(colaFinalizados, free);
-	dictionary_destroy_and_destroy_elements(retardos_PCB, free);
+	list_destroy_and_destroy_elements(retardos_PCB, free);
 	log_destroy(loggerInfo);
 	log_destroy(loggerError);
 	log_destroy(loggerDebug);
@@ -225,15 +225,16 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 			//recibe el tiempo de I/O
 			int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo), sizeof(int32_t));
 			if(recibido_tiempo == ERROR_OPERATION) return;
-			log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO");
+			log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO: %d", tiempo);
 
 			/** tamaño pcb **/ //todo: estaria bien asi?
 			int32_t tamanio_pcb;
 			recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
 			if(recibido == ERROR_OPERATION) return;
 
-			/** recibo el PCB **/ //todo: Se podria abstraer esto en un externo??
-			char* pcb_serializado = malloc(sizeof(PCB));
+			log_debug(loggerDebug, "Recibo tamanio:%d", tamanio_pcb);
+
+			char* pcb_serializado = malloc(tamanio_pcb);
 			recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
 			if(recibido == ERROR_OPERATION) return;
 			log_debug(loggerDebug, "Recibo un pcb desde la cpu, para una IO");
@@ -343,7 +344,7 @@ void liberarCPU(int32_t cpu_id){
 			return unaCPU->ID == cpu_id;
 	}
 
-	CPU_t* cpu_encontrada = list_remove_by_condition(colaCPUs, getCpuByID);
+	CPU_t* cpu_encontrada = list_find(colaCPUs, getCpuByID);
 	cpu_encontrada->estado= LIBRE;
 	log_debug(loggerDebug, "Cambio de estado (LIBRE) de la cpu con id %d", cpu_encontrada->ID);
 
@@ -396,17 +397,19 @@ void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
 			return unPCB->PID == pcb->PID;
 	}
 
-
+	retardo* retardo_nuevo=malloc(sizeof(retardo));
+	retardo_nuevo->ID=pcb->PID;
+	retardo_nuevo->retardo=tiempo;
 	/** Guardarme el PID y su retardo **/
-	sem_wait(&sem_dictionary_retardos);
-	dictionary_put(retardos_PCB, convertToString(pcb->PID), &tiempo);
-	sem_post(&sem_dictionary_retardos);
-
+	sem_wait(&sem_list_retardos);
+	list_add(retardos_PCB, retardo_nuevo);
+	sem_post(&sem_list_retardos);
+	log_debug(loggerDebug, "guardo en bloqueado pid: %d, tiempo: %d", pcb->PID, tiempo);
 	PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
 	pcb_found->estado= BLOQUEADO;
 	agregarPcbAColaBlock(pcb_found);
 	log_debug(loggerDebug, "Cambio de estado (block) y de lista del pcb con id %d", pcb->PID);
-
+	//todo sem_post
 	/** Cambio estado CPU a LIBRE **/
 	liberarCPU(cpu_id);
 
@@ -421,21 +424,25 @@ void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
 void procesar_IO(){
 
 	while(true) {
-
+		//todo sem_wait(semaforo que avisa que hay uno)
 		if(list_size(colaBlock)>0) {
-			PCB* pcb_to_sleep = list_remove(colaBlock, 0);
+			PCB* pcb_to_sleep = list_get(colaBlock, 0);
+			bool getPcbByID(PCB* unPCB){
+				return unPCB->PID == pcb_to_sleep->PID;
+			}
 
+			log_debug(loggerDebug, "Saco el pcb con id: %d", pcb_to_sleep->PID);
 			/** Saco ese PID del diccionario de retardos **/
-			sem_wait(&sem_dictionary_retardos);
-			int32_t* tiempo_retardo = dictionary_remove(retardos_PCB, convertToString(pcb_to_sleep->PID));
-			sem_post(&sem_dictionary_retardos);
-
+			sem_wait(&sem_list_retardos);
+			retardo* tiempo_retardo = list_remove_by_condition(retardos_PCB, getPcbByID);
+			sem_post(&sem_list_retardos);
+			log_debug(loggerDebug, "obtengo un retardo:%d", tiempo_retardo->retardo);
 			/** Simulo la IO del proceso **/
-			sleep(*tiempo_retardo);
-
+			sleep(tiempo_retardo->retardo);
 			/** El proceso va a la cola de LISTOS **/
 			pcb_to_sleep->estado= LISTO;
 			agregarPcbAColaListos(pcb_to_sleep);
+			list_remove_and_destroy_element(colaBlock, 0, free);
 		}
 
 	}
@@ -459,7 +466,7 @@ bool hay_cpu_libre() {
 
 void asignarPCBaCPU(){
 
-	if(hay_cpu_libre()) {
+	if(hay_cpu_libre()&& !list_is_empty(colaListos)) {
 
 		PCB* pcbAEnviar = list_remove(colaListos, 0);
 		log_debug(loggerDebug, "Agarre el primer pcb: id= %d, arch= %s sigInt= %d", pcbAEnviar->PID, pcbAEnviar->ruta_archivo, pcbAEnviar->siguienteInstruccion);
@@ -476,7 +483,7 @@ void asignarPCBaCPU(){
 	}else{
 		printf("No hay CPUs Disponibles que asignar \n");
 		log_error(loggerError, "No hay una CPU disponible");
-
+		return;
 	//todo: tratar el caso en que no hay CPUs disponibles pero si hay PCBs, corta la ejecucion? para mi deberia
 	//retornar a la consola.
 	}
@@ -570,6 +577,9 @@ void agregarColaCPUs(CPU_t* cpu){
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
 int main(void) {
 
+	/*Se genera el archivo de log, to-do lo que sale por pantalla */
+	crearArchivoDeLog();
+
 	/*Tratamiento del ctrl+c en el proceso */
 	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError,"Error con la señal SIGINT");
 
@@ -578,8 +588,7 @@ int main(void) {
 	char* path = "../Planificador.config";
 	arch = crear_estructura_config(path);
 
-	/*Se genera el archivo de log, to-do lo que sale por pantalla */
-	crearArchivoDeLog();
+
 
 
 	/*Se inicializan todos los semaforos necesarios */
