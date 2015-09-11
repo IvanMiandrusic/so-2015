@@ -195,9 +195,15 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	case TERMINO_RAFAGA: {
 
+		int32_t tamanio_pcb;
+		recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
+		if(recibido == ERROR_OPERATION) return;
+
+		log_debug(loggerDebug, "Recibo tamanio:%d", tamanio_pcb);
+
 		/** recibo el PCB **/ //todo: Se podria abstraer esto en un externo??
-		char* pcb_serializado = malloc(sizeof(PCB));
-		recibido = _receive_bytes(socketCPU, pcb_serializado, sizeof(PCB));
+		char* pcb_serializado = malloc(tamanio_pcb);
+		recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
 		if(recibido == ERROR_OPERATION) return;
 		log_debug(loggerDebug, "Recibo un pcb desde la cpu, para una IO");
 		PCB* pcb = deserializarPCB(pcb_serializado);
@@ -267,7 +273,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 		if(recibido == ERROR_OPERATION) return;
 
 		/** recibo el PCB **/
-		char* pcb_serializado = malloc(sizeof(PCB));
+		char* pcb_serializado = malloc(tamanio_pcb);
 		recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
 		if(recibido == ERROR_OPERATION) return;
 		log_debug(loggerDebug, "Recibo un pcb desde la cpu, por un Error");
@@ -304,8 +310,8 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 
 		/** recibo el PCB **/
-			char* pcb_serializado = malloc(sizeof(PCB));
-			recibido = _receive_bytes(socketCPU, pcb_serializado, sizeof(PCB));
+			char* pcb_serializado = malloc(tamanio_pcb);
+			recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
 			if(recibido == ERROR_OPERATION) return;
 			log_debug(loggerDebug, "Recibo un pcb desde la cpu, por un Error");
 			PCB* pcb = deserializarPCB(pcb_serializado);
@@ -329,7 +335,11 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	}
 
 	case RESPUESTA_UTILIZACION_CPU: {
-
+		int32_t tiempo_uso_cpu;
+		recibido = _receive_bytes(socketCPU, &tiempo_uso_cpu, sizeof(int32_t));
+		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibi de la cpu con id: %d, el porcentaje: %d%%", tiempo_uso_cpu);
+		//todo obtener el struct de la cpu y actualizar valor
 		break;
 	}
 
