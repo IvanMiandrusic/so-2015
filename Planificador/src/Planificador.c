@@ -65,22 +65,22 @@ void ifProcessDie(){
 
 void inicializoSemaforos(){
 
-	int32_t semMutexColaListos = sem_init(&semMutex_colaListos,1,0);
+	int32_t semMutexColaListos = sem_init(&semMutex_colaListos,0,1);
 	if(semMutexColaListos==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Cola listos");
 
-	int32_t semMutexColaBlock = sem_init(&semMutex_colaBlock,1,0);
+	int32_t semMutexColaBlock = sem_init(&semMutex_colaBlock,0,1);
 	if(semMutexColaBlock==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Cola Block");
 
-	int32_t semMutexColaExec = sem_init(&semMutex_colaExec,1,0);
+	int32_t semMutexColaExec = sem_init(&semMutex_colaExec,0,1);
 	if(semMutexColaExec==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Cola Exec");
 
-	int32_t semMutexColaFinalizados = sem_init(&semMutex_colaFinalizados,1,0);
+	int32_t semMutexColaFinalizados = sem_init(&semMutex_colaFinalizados,0,1);
 	if(semMutexColaFinalizados==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Cola Finalizados");
 
-	int32_t semMutexCpu = sem_init(&semMutex_colaCPUs,1,0);
+	int32_t semMutexCpu = sem_init(&semMutex_colaCPUs,0,1);
 		if(semMutexCpu==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas CPU");
 
-	int32_t semMutexRetardos = sem_init(&sem_dictionary_retardos,1,0);
+	int32_t semMutexRetardos = sem_init(&sem_dictionary_retardos,0,1);
 		if(semMutexRetardos==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de directory_retardos");
 
 }
@@ -164,7 +164,6 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	recibido = _receive_bytes(socketCPU, &(cpu_id), sizeof(int32_t));
 	if(recibido == ERROR_OPERATION) return;
 	log_debug(loggerDebug, "Recibo cpu_id");
-	// El cpu_id lo usan todos los casos, asi evito repetir codigo (?)
 
 
 	//todo: tratar los errores
@@ -177,6 +176,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 			/** Genero un nuevo cpu_t **/
 
 			CPU_t* nuevaCPU = generarCPU(cpu_id ,socketCPU);
+			log_debug(loggerDebug, "Cpu generada correctamente");
 			agregarColaCPUs(nuevaCPU);
 
 			log_debug(loggerDebug, "Recibi una CPU nueva con id %d y socket %d", nuevaCPU->ID, nuevaCPU->socketCPU->fd);
@@ -556,8 +556,8 @@ void agregarPcbAColaFinalizados(PCB* pcb){
 
 void agregarColaCPUs(CPU_t* cpu){
 
-
 	sem_wait(&semMutex_colaCPUs);
+	log_debug(loggerDebug, "El semaforo me jugo mala pasada");
 	list_add(colaCPUs, cpu);
 	sem_post(&semMutex_colaCPUs);
 	return;
