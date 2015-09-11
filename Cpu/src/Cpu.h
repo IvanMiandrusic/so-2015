@@ -10,6 +10,7 @@
 #define CPU_H_
 
 #include "libsocket.h"
+#include "Colores.h"
 
 typedef struct estructura_configuracion			//estructura que contiene los datos del archivo de configuracion
 {
