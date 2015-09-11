@@ -21,6 +21,10 @@ extern sock_t* socketMemoria;
 #define FALSE 0
 int32_t quantum;
 
+void* thread_Use(void* id){
+	int32_t thread_id = (void*) id;
+	return NULL;
+}
 void* thread_Cpu(void* id){
 
 	int32_t thread_id = (void*) id;
@@ -55,6 +59,13 @@ void* thread_Cpu(void* id){
 
 	free(header_nueva_cpu);
 
+	pthread_t CPUuse;
+
+	int32_t resultado_uso = pthread_create(&CPUuse, NULL, thread_Use, (void*) id );
+	if (resultado_uso != 0) {
+		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de uso de CPU número: %d"ANSI_COLOR_RESET, id);
+		abort();
+	}
 
 	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
 	if(connect_to_server(socket_Memoria)!=SUCCESS_OPERATION){

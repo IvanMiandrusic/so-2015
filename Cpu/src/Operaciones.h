@@ -16,6 +16,7 @@ typedef  struct {
 	char* texto;
 }t_respuesta;
 
+void* thread_Use(void* );
 void* thread_Cpu(void*);
 void ejecutar(int32_t, PCB*);
 void tipo_Cod_Operacion(int32_t, header_t*);
@@ -26,9 +27,6 @@ t_respuesta* mAnsisOp_escribir(int32_t,PCB*, int32_t,char*);
 t_respuesta* mAnsisOp_IO(int32_t,PCB*,int32_t);
 t_respuesta* mAnsisOp_finalizar(int32_t, PCB*);
 t_respuesta* analizadorLinea(int32_t,PCB*,char* const );
-
-void ejecutarFIFO(int32_t, PCB*);
-void ejecutarRR(int32_t, PCB*);
 
 
 #endif /* OPERACIONES_H_ */

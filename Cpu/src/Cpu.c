@@ -34,6 +34,10 @@ t_log* loggerError;
 t_log* loggerDebug;
 sock_t* socketMemoria;
 sock_t* socketPlanificador;
+int32_t* tiempoInicial;
+int32_t* tiempoFinal;
+int32_t* tiempoAcumulado;
+
 
 
 ProcesoCPU* crear_estructura_config(char* path)
@@ -81,7 +85,7 @@ int main(void) {
 	/*En el header Colores, se adjunta un ejemplo de uso de los colores por consola*/
 
 	/*Tratamiento del ctrl+c en el proceso */
-	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError,"Error con la señal SIGINT");
+	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGINT" ANSI_COLOR_RESET);
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
@@ -89,6 +93,9 @@ int main(void) {
 	arch = crear_estructura_config(path);
 	socketMemoria=malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
 	socketPlanificador=malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
+	tiempoInicial=(int*)malloc(sizeof(int32_t)* (arch->cantidad_hilos));
+	tiempoFinal=(int*)malloc(sizeof(int32_t)* (arch->cantidad_hilos));
+	tiempoAcumulado=(int*)malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
 	crearArchivoDeLog();
@@ -109,38 +116,20 @@ int main(void) {
 
     	int resultado = pthread_create(&CPUthreads[i], NULL, thread_Cpu, (void*) i );
     	if (resultado != 0) {
-    		log_error(loggerError,"Error al crear el hilo de ejecucion CPU número: %d", i);
+    		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de ejecucion CPU número: %d"ANSI_COLOR_RESET, i);
     		abort();
-    	}else{log_info(loggerInfo, "Se creo exitosamente el hilo de ejecucion CPU número: %d", i);}
+    	}else{log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Se creo exitosamente el hilo de ejecucion CPU número: %d"ANSI_COLOR_RESET, i);}
 
     }
 	for(i=0;i<cantidad_hilos;i++){ // espera a que terminen los hilos para terminar el proceso
 		pthread_join(CPUthreads[i],NULL);
 	}
-
+	free(socketMemoria);
+	free(socketPlanificador);
+	free(tiempoAcumulado);
+	free(tiempoFinal);
+	free(tiempoInicial);
 	return EXIT_SUCCESS;
 
 }
-
-/*	Algo de commons y manejo de arrays:
- * de las commons obtengo la hora actual, y la separo en horas, minutos y segundos:
- *
- * 	char* tiempo= temporal_get_string_time();
-	char* hora=malloc(2);
-	hora[0]=tiempo[0];
-	hora[1]=tiempo[1];
-	char* minutos=malloc(2);
-	minutos[0]=tiempo[3];
-	minutos[1]=tiempo[4];
-	minutos[2]='\0';
-	char* segundos=malloc(2);
-	segundos[0]=tiempo[6];
-	segundos[1]=tiempo[7];
-	segundos[2]='\0';
-	log_info(loggerInfo, ANSI_COLOR_BLUE "Time: %s" ANSI_COLOR_RESET, tiempo);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "hora: %s" ANSI_COLOR_RESET, hora);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "minutos: %s" ANSI_COLOR_RESET, minutos);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "segundos: %s" ANSI_COLOR_RESET, segundos);
- *
- */
 
