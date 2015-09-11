@@ -116,6 +116,7 @@ CPU_t* generarCPU(int32_t ID, sock_t* socketCPU){
 	unaCPU->socketCPU= malloc(sizeof(sock_t));
 	unaCPU->socketCPU->fd = socketCPU->fd;
 	unaCPU->estado = LIBRE;
+	unaCPU->rendimiento=0;
 	return unaCPU;
 }
 
@@ -268,11 +269,12 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	}
 
 	case RESULTADO_ERROR :{
-
+		log_debug(loggerDebug, "Recibo un pid con error de la cpu:%d", cpu_id);
 		/** tamaño pcb **/
 		int32_t tamanio_pcb;
 		recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
 		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo un tamanio pcb:%d", tamanio_pcb);
 
 		/** recibo el PCB **/
 		char* pcb_serializado = malloc(tamanio_pcb);
@@ -289,7 +291,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 		char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
 		recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
 		if(recibido == ERROR_OPERATION) return;
-		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
+		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU:%s", resultado_operaciones);
 
 		finalizarPCB(pcb->PID, RESULTADO_ERROR);
 		liberarCPU(cpu_id);
@@ -501,8 +503,8 @@ void asignarPCBaCPU(){
 		agregarPcbAColaExec(pcbAEnviar);
 
 	}else{
-		printf(ANSI_COLOR_BOLDRED "No hay CPUs Disponibles que asignar" ANSI_COLOR_RESET);
-		log_error(loggerError, "No hay una CPU disponible");
+		if(hay_cpu_libre())log_error(loggerError, "No hay un PCB disponible");
+		if(!list_is_empty(colaListos))log_error(loggerError, "No hay una CPU disponible");
 		return;
 	}
 

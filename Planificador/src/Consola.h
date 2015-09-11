@@ -23,7 +23,8 @@ typedef enum comandos {
 	PS=3,
 	CPU=4,
 	CERRAR_CONSOLA=5,
-	HELP=6
+	HELP=6,
+	CLEAR=7
 }t_command;
 
 void consola_planificador();

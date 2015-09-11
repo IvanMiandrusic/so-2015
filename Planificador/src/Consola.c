@@ -50,6 +50,10 @@ void consola_planificador(){
 			mostrarComandos();
 			break;
 		}
+		case CLEAR: {
+			printf(ENTER ENTER ENTER ENTER ENTER ENTER);
+			break;
+		}
 		default: {
 			printf(ANSI_COLOR_BOLDRED "EL COMANDO INGRESADO NO CORRESPONDE CON NINGUNA DE LAS OPERACIONES"ANSI_COLOR_RESET "\n\n");
 			printf(ANSI_COLOR_BOLDYELLOW "INGRESE help PARA VER COMANDOS DISPONIBLES." ANSI_COLOR_RESET);
@@ -78,7 +82,8 @@ int32_t analizar_operacion_asociada(char* comandoSeleccionado) {
 	if(string_starts_with(comandoSeleccionado, "cpu")) return 4;
 	if(string_starts_with(comandoSeleccionado, "cerrar")) return 5;
 	if(string_starts_with(comandoSeleccionado, "help")) return 6;
-	return 7;
+	if(string_starts_with(comandoSeleccionado, "clear")) return 7;
+	return 8;
 }
 
 void correrPath(char* comando) {
@@ -163,6 +168,7 @@ void mostrarComandos() {
 	printf("finalizar PID \t\t PID es el numero de proceso mProc \n");
 	printf("ps \t\t\t Lista los mProc y su estado actual \n");
 	printf("cpu \t\t\t Listar las cpus con su utilizacion \n");
+	printf("clear \t\t\t Limpia la consola \n");
 	printf("cerrar consola \t\t Cerrar la consola" ANSI_COLOR_RESET);
 }
 

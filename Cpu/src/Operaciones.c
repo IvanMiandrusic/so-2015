@@ -153,16 +153,23 @@ void ejecutar(int32_t id, PCB* pcb){
 	FILE* prog = fopen(pcb->ruta_archivo, "r");
 	if (prog==NULL)
 	{
+		string_append(&log_acciones, "No se pudo encontrar la ruta del archivo del proceso con id: %d", pcb->PID);
+		int32_t tamanio_texto=strlen(log_acciones);
+
 		log_error (loggerError, ANSI_COLOR_RED "Error al abrir la ruta del archivo del proceso:%d"ANSI_COLOR_RESET, pcb->PID);
-		header_t* header_error = _create_header(RESULTADO_ERROR, 2*sizeof(int32_t)+ tamanio_pcb);
+
+		header_t* header_error = _create_header(RESULTADO_ERROR, 3*sizeof(int32_t)+ tamanio_pcb+tamanio_texto);
 		int32_t enviado_header = _send_header(socketPlanificador, header_error);
 
 		int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
 
-		char* pcb_serializado = serializarPCB(pcb);
+		char* pcb_serializado = malloc(tamanio_pcb);
+		pcb_serializado=serializarPCB(pcb);
 		int32_t envio_tamanio_pcb = _send_bytes(socketPlanificador,&tamanio_pcb,sizeof(int32_t));
-		int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,sizeof(tamanio_pcb));
+		int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,tamanio_pcb);
 
+		int32_t envio_tamanio_texto = _send_bytes(socketPlanificador,&tamanio_texto,sizeof(int32_t));
+		int32_t envio_texto = _send_bytes(socketPlanificador,log_acciones,tamanio_texto);
 		return;
 	}
 	int32_t finalizado=FALSE;
@@ -176,23 +183,25 @@ void ejecutar(int32_t id, PCB* pcb){
 			log_debug(loggerDebug, "Analice y ejecute una linea, la proxima tiene PC en:%d", pcb->siguienteInstruccion);
 			if(respuesta->id==FINALIZAR){
 
-
-				header_t* header_finalizar = _create_header(RESULTADO_OK, sizeof(int32_t));
+				int32_t tamanio_texto = strlen(log_acciones);
+				header_t* header_finalizar = _create_header(RESULTADO_OK, sizeof(int32_t));	//todo cambiar tamanio
 				int32_t enviado =_send_header (socketPlanificador, header_finalizar);
 				int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
 
 				char* pcb_serializado = serializarPCB(pcb);
 				int32_t envio_tamanio_pcb = _send_bytes(socketPlanificador,&tamanio_pcb,sizeof(int32_t));
-				int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,sizeof(tamanio_pcb));
+				int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,tamanio_pcb);
 
+				int32_t envio_tamanio_texto = _send_bytes(socketPlanificador,&tamanio_texto,sizeof(int32_t));
+				int32_t envio_texto = _send_bytes(socketPlanificador,log_acciones,tamanio_texto);
 			ultimoQuantum = quantum;
 			return ;
 			}
 
 			if(respuesta->id==ENTRADASALIDA){
-				int32_t tamanio_texto = strlen(respuesta->texto);
+					int32_t tamanio_texto = strlen(log_acciones);
 
-				header_t* header_entrada_salida = _create_header(SOLICITUD_IO, 4*sizeof(int32_t) + tamanio_texto + tamanio_pcb);
+					header_t* header_entrada_salida = _create_header(SOLICITUD_IO, 4*sizeof(int32_t) + tamanio_texto + tamanio_pcb);
 					int32_t enviado =_send_header (socketPlanificador, header_entrada_salida);
 
 					int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
@@ -204,21 +213,23 @@ void ejecutar(int32_t id, PCB* pcb){
 					int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,tamanio_pcb);
 
 					int32_t envio_tamanio_texto = _send_bytes(socketPlanificador,&tamanio_texto,sizeof(int32_t));
-					int32_t envio_texto = _send_bytes(socketPlanificador,respuesta->texto,tamanio_texto);
+					int32_t envio_texto = _send_bytes(socketPlanificador,log_acciones,tamanio_texto);
 
 			return ;
 			}
 			if(respuesta->id==ERROR){
-
-				header_t* header_error = _create_header(RESULTADO_ERROR, 2*sizeof(int32_t)+ tamanio_pcb);
+				int32_t tamanio_texto = strlen(log_acciones);
+				header_t* header_error = _create_header(RESULTADO_ERROR, 3*sizeof(int32_t)+ tamanio_pcb+tamanio_texto);
 				int32_t enviado_header = _send_header(socketPlanificador, header_error);
 
 				int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
 
 				char* pcb_serializado = serializarPCB(pcb);
 				int32_t envio_tamanio_pcb = _send_bytes(socketPlanificador,&tamanio_pcb,sizeof(int32_t));
-				int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,sizeof(tamanio_pcb));
+				int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,tamanio_pcb);
 
+				int32_t envio_tamanio_texto = _send_bytes(socketPlanificador,&tamanio_texto,sizeof(int32_t));
+				int32_t envio_texto = _send_bytes(socketPlanificador,log_acciones,tamanio_texto);
 			return ;
 			}
 
@@ -231,19 +242,19 @@ void ejecutar(int32_t id, PCB* pcb){
 
 
 	}
+	int32_t tamanio_texto = strlen(log_acciones);
 
-	header_t* header_termino_rafaga = _create_header(TERMINO_RAFAGA, sizeof(int32_t)+ tamanio_pcb);
+	header_t* header_termino_rafaga = _create_header(TERMINO_RAFAGA, 3* sizeof(int32_t)+ tamanio_pcb+tamanio_texto);
 	int32_t enviado_header = _send_header(socketPlanificador, header_termino_rafaga);
 
 	int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
 
 	char* pcb_serializado = serializarPCB(pcb);
 	int32_t envio_tamanio_pcb = _send_bytes(socketPlanificador,&tamanio_pcb,sizeof(int32_t));
-	int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,sizeof(tamanio_pcb));
+	int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,tamanio_pcb);
 
-	int32_t tamanio_texto = strlen(log_acciones);
 	int32_t envio_tamanio_texto = _send_bytes(socketPlanificador,&tamanio_texto,sizeof(int32_t));
-	int32_t envio_texto = _send_bytes(socketPlanificador,log_acciones,sizeof(tamanio_texto));
+	int32_t envio_texto = _send_bytes(socketPlanificador,log_acciones,tamanio_texto);
 
 
 }
