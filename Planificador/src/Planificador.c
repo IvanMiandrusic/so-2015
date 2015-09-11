@@ -626,14 +626,15 @@ int main(void) {
 
 	/** Creo hilos CONSOLA y SERVIDOR DE CONEXIONES **/
 	int32_t resultado_creacion_hilos;
-//	pthread_t server_thread;
-//	resultado_creacion_hilos = pthread_create(&server_thread, NULL, servidor_conexiones, NULL);
-//	if (resultado_creacion_hilos != 0) {
-//		log_error(loggerError,"Error al crear el hilo del servidor de conexiones");
-//		abort();
-//	}else{
-//		log_info(loggerInfo, "Se creo exitosamente el hilo de servidor de conexiones");
-//	}
+
+	pthread_t server_thread;
+	resultado_creacion_hilos = pthread_create(&server_thread, NULL, servidor_conexiones, NULL);
+	if (resultado_creacion_hilos != 0) {
+		log_error(loggerError,"Error al crear el hilo del servidor de conexiones");
+		abort();
+	}else{
+		log_info(loggerInfo, "Se creo exitosamente el hilo de servidor de conexiones");
+	}
 
 	pthread_t consola_thread;
 	resultado_creacion_hilos = pthread_create(&consola_thread, NULL, consola_planificador, NULL);
@@ -644,20 +645,20 @@ int main(void) {
 		log_info(loggerInfo, "Se creo exitosamente el hilo de la consola");
 	}
 
-//	pthread_t io_thread;
-//	resultado_creacion_hilos = pthread_create(&io_thread, NULL, procesar_IO, NULL);
-//	if (resultado_creacion_hilos != 0) {
-//		log_error(loggerError,"Error al crear el hilo de IO");
-//		exit(EXIT_FAILURE);
-//	}else{
-//		log_info(loggerInfo, "Se creo exitosamente el hilo de IO");
-//	}
+	pthread_t io_thread;
+	resultado_creacion_hilos = pthread_create(&io_thread, NULL, procesar_IO, NULL);
+	if (resultado_creacion_hilos != 0) {
+		log_error(loggerError,"Error al crear el hilo de IO");
+		exit(EXIT_FAILURE);
+	}else{
+		log_info(loggerInfo, "Se creo exitosamente el hilo de IO");
+	}
 
 
 
-//	pthread_join(server_thread, NULL);
+	pthread_join(server_thread, NULL);
 	pthread_join(consola_thread, NULL);
-//	pthread_join(io_thread, NULL);
+	pthread_join(io_thread, NULL);
 
 	cleanAll();
 
