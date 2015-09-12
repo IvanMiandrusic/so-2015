@@ -72,3 +72,14 @@ PCB* deserializarPCB(char* serializado)
 int32_t obtener_tamanio_pcb(PCB* pcb) {
 	return 4*sizeof(int32_t) + string_length(pcb->ruta_archivo);
 }
+
+int32_t obtengoSegundos(){
+	char* tiempo= temporal_get_string_time();
+	char* segundos=malloc(2);
+	segundos[0]=tiempo[6];
+	segundos[1]=tiempo[7];
+	segundos[2]='\0';
+	int32_t valor=atoi(segundos);
+	free(segundos);
+	return valor;
+}

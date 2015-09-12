@@ -79,10 +79,7 @@ void crearArchivoDeLog() {
 }
 
 
-/*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
 int main(void) {
-
-	/*En el header Colores, se adjunta un ejemplo de uso de los colores por consola*/
 
 	/*Tratamiento del ctrl+c en el proceso */
 	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGINT" ANSI_COLOR_RESET);
@@ -93,9 +90,9 @@ int main(void) {
 	arch = crear_estructura_config(path);
 	socketMemoria=malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
 	socketPlanificador=malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
-	tiempoInicial=(int*)malloc(sizeof(int32_t)* (arch->cantidad_hilos));
-	tiempoFinal=(int*)malloc(sizeof(int32_t)* (arch->cantidad_hilos));
-	tiempoAcumulado=(int*)malloc(sizeof(int32_t)* (arch->cantidad_hilos));
+	tiempoInicial=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
+	tiempoFinal=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
+	tiempoAcumulado=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
 	crearArchivoDeLog();

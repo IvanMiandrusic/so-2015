@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "Cpu.h"
+#include <commons/temporal.h>
 
 /** Codigos de operacion en los envios hacia el planificador **/
 #define NUEVA_CPU 1
@@ -32,7 +33,7 @@
 
 PCB* deserializarPCB(char*);
 char* serializarPCB(PCB*);
-int32_t obtener_tamanio_pcb(PCB* pcb);
-
+int32_t obtener_tamanio_pcb(PCB*);
+int32_t obtengoSegundos();
 
 #endif /* COMUNICACION_H_ */
