@@ -291,7 +291,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 		char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
 		recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
 		if(recibido == ERROR_OPERATION) return;
-		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU:%s", resultado_operaciones);
+		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
 
 		finalizarPCB(pcb->PID, RESULTADO_ERROR);
 		liberarCPU(cpu_id);
@@ -447,15 +447,16 @@ void procesar_IO(){
 		sem_wait(&sem_io);
 
 		PCB* pcb_to_sleep = list_get(colaBlock, 0);
-		bool getPcbByID(PCB* unPCB){
-			return unPCB->PID == pcb_to_sleep->PID;
+
+		bool getRetardoByID(retardo* unPCB){
+			return unPCB->ID == pcb_to_sleep->PID;
 		}
 
 		log_debug(loggerDebug, "Saco el pcb con id: %d", pcb_to_sleep->PID);
 
 		/** Saco ese PID de la lista de retardos **/
 		sem_wait(&sem_list_retardos);
-		retardo* tiempo_retardo = list_remove_by_condition(retardos_PCB, getPcbByID);
+		retardo* tiempo_retardo = list_remove_by_condition(retardos_PCB, getRetardoByID);
 		sem_post(&sem_list_retardos);
 		log_debug(loggerDebug, "obtengo un retardo:%d", tiempo_retardo->retardo);
 
