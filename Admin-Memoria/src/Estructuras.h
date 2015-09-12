@@ -50,6 +50,7 @@ extern t_list* tabla_Paginas;
 
 /** TLB functions **/
 void TLB_crear();
+void tabla_paginas_crear();
 void TLB_init();
 void TLB_flush();
 bool TLB_habilitada();

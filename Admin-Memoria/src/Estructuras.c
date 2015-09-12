@@ -29,7 +29,7 @@ void TLB_crear() {
 	}
 }
 
-void TP_crear() {
+void tabla_paginas_crear() {
 
 		tabla_Paginas = list_create();
 }

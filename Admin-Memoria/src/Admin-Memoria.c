@@ -138,7 +138,7 @@ int main(void) {
 	inicializoSemaforos();
 
 	TLB_crear();
-	TP_crear();
+	tabla_paginas_crear();
 	MP_crear();
 
 	socketSwap = create_client_socket(arch->ip_swap, arch->puerto_swap);
