@@ -19,22 +19,32 @@ extern int32_t* tiempoAcumulado;
 int32_t quantum;
 
 void* thread_Use(void* thread_id){
-	int32_t id = (void*) thread_id;
+	int32_t id = (void*)thread_id;
 	tiempoAcumulado[id]=1;
 	tiempoInicial[id]=0;
 	tiempoFinal[id]=0;
+	int32_t toAnterior;
+	int32_t tfAnterior;
+	int32_t porcentaje;
 	while(TRUE){
 		sleep(60);
-		if(tiempoFinal[id]<tiempoInicial[id]){
-			tiempoAcumulado[id]=60-tiempoInicial[id];
+		if(tiempoFinal[id]==toAnterior && tiempoInicial[id]==tfAnterior){
+			porcentaje=0;
 		}
-		int32_t porcentaje=tiempoAcumulado[id]*10/6;
+		if(tiempoFinal[id]<tiempoInicial[id]){
+			tiempoAcumulado[id]+=60-tiempoInicial[id];
+			porcentaje=tiempoAcumulado[id]*10/6;
+		}
+		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"Valores- Inicial:%d, Final:%d, Acumulado:%d" ANSI_COLOR_RESET, tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
+
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"El porcentaje de uso es:%d" ANSI_COLOR_RESET, porcentaje);
 		header_t* header_uso_cpu = _create_header(RESPUESTA_UTILIZACION_CPU, 2*sizeof(int32_t));
 		int32_t enviado = _send_header (&(socketPlanificador[id]), header_uso_cpu);
 		int32_t envio_id = _send_bytes(&(socketPlanificador[id]),&id,sizeof(int32_t));
 		int32_t envio_uso = _send_bytes(&(socketPlanificador[id]),&porcentaje,sizeof(int32_t));
-
+		tiempoAcumulado[id]=0;
+		toAnterior=tiempoInicial[id];
+		tfAnterior=tiempoFinal[id];
 	}
 	return NULL;
 }
@@ -73,13 +83,13 @@ void* thread_Cpu(void* id){
 
 	free(header_nueva_cpu);
 
-//	pthread_t CPUuse;
-//
-//	int32_t resultado_uso = pthread_create(&CPUuse, NULL, thread_Use, (void*) id );
-//	if (resultado_uso != 0) {
-//		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de uso de CPU número: %d"ANSI_COLOR_RESET, id);
-//		abort();
-//	}
+	pthread_t CPUuse;
+
+	int32_t resultado_uso = pthread_create(&CPUuse, NULL, thread_Use, (void*) id );
+	if (resultado_uso != 0) {
+		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de uso de CPU número: %d"ANSI_COLOR_RESET, id);
+		abort();
+	}
 
 	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
 	if(connect_to_server(socket_Memoria)!=SUCCESS_OPERATION){
@@ -142,20 +152,22 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 
 		log_debug(loggerDebug, "PCB id %d estado %d ruta %s sig instruccion %d", pcb->PID, pcb->estado, pcb->ruta_archivo, pcb->siguienteInstruccion);
 
-//		int32_t inicial;
-//		int32_t final;
-//		inicial=obtengoSegundos();
-//		tiempoInicial[id]=inicial;
-//		sleep(2);
+		int32_t inicial;
+		int32_t final;
+		inicial=obtengoSegundos();
+		tiempoInicial[id]=inicial;
+		sleep(2);
 		ejecutar(id, pcb);
-//		sleep(2);
-//		final=obtengoSegundos();
-//		tiempoFinal[id]=final;
-//		if(tiempoAcumulado[id]==0){
-//			tiempoAcumulado[id]=tiempoAcumulado[id]+final;
-//		}else{
-//			tiempoAcumulado[id]=tiempoAcumulado[id]+(final-inicial);
-//		}
+		sleep(2);
+		final=obtengoSegundos();
+		tiempoFinal[id]=final;
+		if(tiempoAcumulado[id]==0){
+			tiempoAcumulado[id]=tiempoAcumulado[id]+final;
+		}else{
+			tiempoAcumulado[id]=tiempoAcumulado[id]+(final-inicial);
+		}
+		log_debug(loggerDebug, ANSI_COLOR_BOLDGREEN "Valores: inicial %d final %d acumulado %d" ANSI_COLOR_RESET,
+				tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
 		break;
 	}
 

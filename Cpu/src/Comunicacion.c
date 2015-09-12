@@ -6,7 +6,7 @@
 char* serializarPCB(PCB* pcb)
 
 {
-	char* pcbserializado = malloc(3 * sizeof(u_int32_t)+strlen(pcb->ruta_archivo));
+	char* pcbserializado = malloc(4 * sizeof(u_int32_t)+strlen(pcb->ruta_archivo));
 
 	u_int32_t offset = 0;
 	u_int32_t size_to_send;										//El orden de serializado es el siguiente:

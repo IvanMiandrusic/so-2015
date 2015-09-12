@@ -61,7 +61,7 @@ void ifSigurs2();
 /** Funciones de operaciones con CPU **/
 void procesar_pedido(sock_t*, header_t* );
 void iniciar_proceso(sock_t*, t_pedido_cpu*);
-char* buscar_pagina(t_pagina*);
+void buscar_pagina(t_pagina*);
 void finalizarPid(sock_t* );
 int32_t limpiar_Informacion_PID(int32_t );
 void leer_pagina(sock_t* , header_t* );

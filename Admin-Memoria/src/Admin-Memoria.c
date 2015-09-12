@@ -326,44 +326,32 @@ void leer_pagina(sock_t* socketCpu, header_t* header){
 	if(recibido == ERROR_OPERATION) return;
 	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
 	log_debug(loggerDebug, "Debo leer la pagina:%d, del proceso: %d", pagina_pedida->nro_pagina, pagina_pedida->PID);
-	//char* contenido_pagina = buscar_pagina(pagina_pedida);			//todo probar
-	t_resultado_busqueda resultado_operacion=FOUND;
+	buscar_pagina(pagina_pedida);			//todo probar
 	int32_t enviado;
-	if (resultado_operacion == NOT_FOUND) {
+	if (pagina_pedida->contenido==NULL) {
 		header_t* headerCpu = _create_header(ERROR, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
 		log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo leer la pagina" ANSI_COLOR_RESET);
 		return;
-	} else if (resultado_operacion == FOUND) {
-		char* contenido_pagina="DiegoGFiorillo";
+	} else {
 		header_t* headerCpu = _create_header(OK, 0);
 		enviado = _send_header(socketCpu, headerCpu);
-		int32_t tamanio=strlen(contenido_pagina);
+		int32_t tamanio=pagina_pedida->tamanio_contenido;
 		enviado = _send_bytes(socketCpu, &tamanio, sizeof(int32_t));
-		enviado = _send_bytes(socketCpu, contenido_pagina, tamanio);
+		enviado = _send_bytes(socketCpu, pagina_pedida->contenido, tamanio);
 		free(headerCpu);
 		log_debug(loggerDebug,ANSI_COLOR_GREEN "Se leyo la pagina correctamente" ANSI_COLOR_RESET);
 	}
-	//Todo, si contenido es NULL enviar error, else, enviar contenido
-	//char* serializado= serializarTexto(leer_pagina(pagina_pedida));
-	//enviar serializado
 }
 
-char* buscar_pagina(t_pagina* pagina_solicitada) {
+void buscar_pagina(t_pagina* pagina_solicitada) {
 
 	/** Las paginas tienen el mismo tamaño del marco (como maximo) **/
-	char* contenido_pagina = malloc(arch->tamanio_marco);
+	pagina_solicitada->contenido = malloc(arch->tamanio_marco);
 
-	t_resultado_busqueda resultado = NOT_FOUND;
+	TLB_buscar_pagina(pagina_solicitada);
 
-	resultado = TLB_buscar_pagina(pagina_solicitada, &contenido_pagina);
-	if(resultado==NOT_FOUND){
-		return NULL;
-	}else{
-			//TODO correr algoritmo de reemplazo de pags
-		return contenido_pagina;
-	}
 }
 
 /*Aca finalizan las funciones referentes a leer pagina*/
@@ -371,22 +359,21 @@ char* buscar_pagina(t_pagina* pagina_solicitada) {
 /*Funciones referentes a escribir pagina*/
 
 void escribirPagina(sock_t* socketCpu, header_t* header){
-	//TODO recibir t_pagina y texto
+
 	char* pedido_serializado = malloc(get_message_size(header));
 	int32_t recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
 	if(recibido == ERROR_OPERATION) return;
 	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
 	log_debug(loggerDebug, "Se tiene que escribir del proceso:%d la pagina:%d con:%s", pagina_pedida->PID, pagina_pedida->nro_pagina, pagina_pedida->contenido);
-	//t_resultado_busqueda resultado = buscar_y_escribir_pagina(pagina_pedida);  //todo probar
-	t_resultado_busqueda resultado_operacion=FOUND;
+	t_resultado_busqueda resultado = buscar_y_escribir_pagina(pagina_pedida);  //todo probar
 	int32_t enviado;
-	if (resultado_operacion == NOT_FOUND) {
+	if (resultado == NOT_FOUND) {
 		header_t* headerCpu = _create_header(ERROR, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
 		log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo escribir la pagina" ANSI_COLOR_RESET);
 		return;
-	} else if (resultado_operacion == FOUND) {
+	} else if (resultado== FOUND) {
 		header_t* headerCpu = _create_header(OK, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
@@ -404,14 +391,16 @@ t_resultado_busqueda TLB_buscar_pagina_escribir(t_pagina* pagina) {
 
 	bool find_by_PID_page(TLB* entrada) {
 
-		return (entrada->PID == pagina->PID) && (entrada->pagina == pagina->nro_pagina);
+		return (entrada->PID == pagina->PID) && (entrada->pagina == pagina->nro_pagina) && (entrada->presente==1);
 	}
+
 	TLB* entrada_pagina=NULL;
 	if(TLB_habilitada()) {
 		sem_wait(&sem_mutex_tlb);
 		entrada_pagina = list_find(TLB_tabla, find_by_PID_page);
 		sem_post(&sem_mutex_tlb);
 	}
+
 	if(entrada_pagina == NULL) {
 		log_debug(loggerDebug, "No se encontro la pagina en la TLB, se busca en la tabla de paginas");
 		return buscar_pagina_a_escribir_tabla_paginas(pagina);
@@ -433,18 +422,20 @@ t_resultado_busqueda buscar_pagina_a_escribir_tabla_paginas(t_pagina* pagina){
 
 		t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
 		if(tablaPagina!=NULL){
+
 			bool obtenerMarco_Pagina(TPagina* entradaBuscada){
-					return entradaBuscada->pagina== pagina->nro_pagina;
+					return entradaBuscada->pagina== pagina->nro_pagina && entradaBuscada->presente==1;
 				}
 
 			TPagina* entradaFound = list_find(tablaPagina->paginas, obtenerMarco_Pagina);
 			int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);
-			memcpy(mem_principal+offset,pagina->contenido,arch->tamanio_marco); 		//todo va con &?
+			memcpy(mem_principal+offset,pagina->contenido,arch->tamanio_marco);
 			entradaFound->modificada=1;
 			return FOUND;
 		}else {
 			log_debug(loggerDebug, "No se encontro en la tabla de paginas, se pide al swap");
-			//TODO es necesario que lo pida al swap?
+			pedidoPagina_Swap(pagina);
+			//todo escribir
 			return FOUND;
 		}
 

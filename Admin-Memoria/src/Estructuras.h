@@ -30,6 +30,7 @@ typedef struct estructura_tabla_paginas			//estructura que contiene los datos de
   int32_t pagina;
   int32_t modificada; 		//1 si, 0 no
   int32_t presente;			//Presente en MP (1 si, 0 no)
+  int32_t contador_LRU;		//Contador para reemplazo LRU
 }TPagina;
 
 //Lista doblemente enlazada de procesos
@@ -43,6 +44,13 @@ typedef enum resultado_operacion_busqueda_pagina {
 	NOT_FOUND=0
 }t_resultado_busqueda;
 
+typedef enum algoritmo_reemplazo {
+	FIFO=1,
+	LRU=2,
+	CLOCK_MODIFICADO=3,
+	INDEFINIDO=4
+}t_algoritmo_reemplazo;
+
 /** Declaracion de variables globales **/
 extern t_list* TLB_tabla;
 extern char* mem_principal;
@@ -54,13 +62,17 @@ void tabla_paginas_crear();
 void TLB_init();
 void TLB_flush();
 bool TLB_habilitada();
-t_resultado_busqueda TLB_buscar_pagina(t_pagina*, char**); //Recibe la direccion del char* donde se guardara el contenido de esa pagina
-t_resultado_busqueda pedidoPagina_Swap(t_pagina* , char** );
+void TLB_buscar_pagina(t_pagina*);
+void pedidoPagina_Swap(t_pagina*);
 
 /** Funciones tabla_paginas y MP **/
 void MP_crear();
 void crear_tabla_pagina_PID(int32_t , int32_t);
-t_resultado_busqueda buscar_pagina_tabla_paginas(t_pagina*, char**);
+void buscar_pagina_tabla_paginas(t_pagina*);
+void reemplazar_pagina(t_pagina*);
+
+/** Utils **/
+t_algoritmo_reemplazo obtener_codigo_algoritmo(char*);
 
 
 #endif /* ESTRUCTURAS_H_ */

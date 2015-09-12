@@ -100,75 +100,141 @@ bool TLB_habilitada() {
 	return string_equals_ignore_case(arch->tlb_habilitada, "SI");
 }
 
-t_resultado_busqueda TLB_buscar_pagina(t_pagina* pagina, char** contenido_pagina) {
+void TLB_buscar_pagina(t_pagina* pagina) {
 
 	bool find_by_PID_page(TLB* entrada) {
 
-		return (entrada->PID == pagina->PID) && (entrada->pagina == pagina->nro_pagina);
+		return (entrada->PID == pagina->PID) && (entrada->pagina == pagina->nro_pagina) && (entrada->presente==1);
 	}
+
 	TLB* entrada_pagina=NULL;
+
 	if(TLB_habilitada()) {
 		sem_wait(&sem_mutex_tlb);
 		entrada_pagina = list_find(TLB_tabla, find_by_PID_page);
 		sem_post(&sem_mutex_tlb);
 	}
+
 	if(entrada_pagina == NULL) {
 		log_debug(loggerDebug, "No se encontro la pagina en la TLB, se busca en la tabla de paginas");
-		return buscar_pagina_tabla_paginas(pagina, contenido_pagina); //todo porque con & ?
+		buscar_pagina_tabla_paginas(pagina);
 	}
 	else{
 		int32_t offset=entrada_pagina->marco*arch->tamanio_marco;
-		memcpy(contenido_pagina, mem_principal+offset, arch->tamanio_marco);
-		return FOUND;
-		//Todo Traer el contenido de MP
+		memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
 	}
 
 }
 
-t_resultado_busqueda buscar_pagina_tabla_paginas(t_pagina* pagina, char** contenido) {
+void buscar_pagina_tabla_paginas(t_pagina* pagina) {
 
 	bool obtenerTabPagina(t_paginas_proceso* entrada){
 		return entrada->PID == pagina->PID;
 	}
 
 	t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
+
 	if(tablaPagina!=NULL){
 		bool obtenerMarco_Pagina(TPagina* entradaBuscada){
-				return entradaBuscada->pagina== pagina->nro_pagina;
+				return entradaBuscada->pagina== pagina->nro_pagina && (entradaBuscada->presente==1);
 			}
 
 		TPagina* entradaFound = list_find(tablaPagina->paginas, obtenerMarco_Pagina);
 		int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);
-		memcpy(contenido, mem_principal+offset, arch->tamanio_marco); 		//todo va con &?
-		return FOUND;
-	}else {
+		memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
+	}
+	else {
 		log_debug(loggerDebug, "No se encontro en la tabla de paginas, se pide al swap");
-		return pedidoPagina_Swap(pagina, contenido);
+		pedidoPagina_Swap(pagina);
+		//todo leer;
 	}
 
-	//Todo buscar pagina en la tabla de paginas del PID
 }
 
-t_resultado_busqueda pedidoPagina_Swap(t_pagina* pagina, char** contenido) {
+void pedidoPagina_Swap(t_pagina* pagina) {
 
 		int32_t enviado;
 		int32_t recibido;
+
 		//Envio al swap para pedir la pagina
-		header_t* headerSwap = _create_header(LEER_PAGINA,2 * sizeof(int32_t));
+		header_t* headerSwap = _create_header(LEER_PAGINA,3 * sizeof(int32_t));
 		enviado = _send_header(socketSwap, headerSwap);
-		if (enviado == ERROR_OPERATION) return NOT_FOUND;
+		if (enviado == ERROR_OPERATION) return;
 		free(headerSwap);
 
 		enviado = _send_bytes(socketSwap, &(pagina->PID), sizeof(int32_t));
-		if (enviado == ERROR_OPERATION) return NOT_FOUND;
+		if (enviado == ERROR_OPERATION) return;
 
 		enviado = _send_bytes(socketSwap, &(pagina->nro_pagina), sizeof(int32_t));
-		if (enviado == ERROR_OPERATION) return NOT_FOUND;
+		if (enviado == ERROR_OPERATION) return;
 
-		//todo recibir del swap la pagina y guardarla en contenido
-		//recibido = _receive_bytes(socketSwap, &(resultado_operacion), sizeof(int32_t));
-		//if (recibido == ERROR_OPERATION) return NOT_FOUND;
-		//if (la encontre) return FOUND
-		return NOT_FOUND; //depende si encuentra
+		pagina->tamanio_contenido = 0;
+		enviado = _send_bytes(socketSwap, &(pagina->tamanio_contenido), sizeof(int32_t));
+		if (enviado == ERROR_OPERATION) return;
 
+		header_t* header_resultado_swap = _create_empty_header();
+		recibido = _receive_header(socketSwap, header_resultado_swap);
+
+		if(get_operation_code(header_resultado_swap)==RESULTADO_OK) {
+
+			recibido = _receive_bytes(socketSwap, &(pagina->tamanio_contenido), sizeof(int32_t));
+			if (enviado == ERROR_OPERATION) return;
+
+			recibido = _receive_bytes(socketSwap, pagina->contenido, sizeof(int32_t));
+			if (enviado == ERROR_OPERATION) return;
+
+			log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Exito al leer pagina en el swap" ANSI_COLOR_RESET);
+
+			/** Se reemplaza la pagina en MP **/
+			reemplazar_pagina(pagina);
+	}
+		else
+			log_error(loggerError, ANSI_COLOR_BOLDRED "Error al leer pagina en el swap" ANSI_COLOR_RESET);
+
+}
+
+void reemplazar_pagina(t_pagina* pagina) {
+
+	//arch->algoritmo_reemplazo
+	t_algoritmo_reemplazo algoritmo_reemplazo=FIFO;
+	//t_algoritmo_reemplazo algoritmo_reemplazo = obtener_codigo_algoritmo(arch->algoritmo_reemplazo);
+	switch(algoritmo_reemplazo) {
+	//** Todo *//
+	case FIFO : {
+
+		/** Obtener tabla de paginas del PID **/
+		/** Saco primer pagina teniendo en cuenta asignacion fija y presencia en 1 **/
+		/** Escribo pagina en swap **/
+		/** Colo pagina nueva en tabla paginas y pongo presencia en 1**/
+
+		break;
+	}
+	case LRU : {
+
+		/** Obtener tabla de paginas del PID **/
+		/** Saco ultima pagina que se uso teniendo en cuenta asignacion fija y presencia en 1 **/
+		/** TIP: tener en cuenta el contador_LRU **/
+		/** Escribo pagina en swap **/
+		/** Colo pagina nueva en tabla paginas y pongo presencia en 1**/
+
+		break;
+	}
+	case CLOCK_MODIFICADO : {
+
+			/*VER TODO*/
+		break;
+	}
+
+	default: {break;}
+
+	}
+}
+
+t_algoritmo_reemplazo obtener_codigo_algoritmo(char* algoritmo) {
+
+	if(string_equals_ignore_case(algoritmo, "FIFO")) return FIFO;
+	if(string_equals_ignore_case(algoritmo, "LRU")) return LRU;
+	if(string_equals_ignore_case(algoritmo, "CLOCK_MODIFICADO")) return CLOCK_MODIFICADO;
+
+	return INDEFINIDO;
 }
