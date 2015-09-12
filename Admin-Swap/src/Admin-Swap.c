@@ -308,15 +308,15 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
 				int32_t enviado = _send_header(socketMemoria, headerMemoria);
 				if(enviado == ERROR_OPERATION) return;
-				free(headerMemoria);
 				log_debug(loggerDebug, "No se reservo el espacio solicitado");
+				free(headerMemoria);
 				return;
 			} else if (operacionValida == RESULTADO_OK) {
 				header_t* headerMemoria = _create_header(RESULTADO_OK, 0);
 				int32_t enviado = _send_header(socketMemoria, headerMemoria);
 				if(enviado == ERROR_OPERATION) return;
-				free(headerMemoria);
 				log_info(loggerInfo, ANSI_COLOR_GREEN"Se reservo el espacio solicitado" ANSI_COLOR_RESET);
+				free(headerMemoria);
 			}
 			break;
 		}
@@ -331,12 +331,14 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
 				int32_t enviado = _send_header(socketMemoria, headerMemoria);
 				if(enviado == ERROR_OPERATION) return;
+				log_debug(loggerDebug, "Finalizado erroneo");
 				free(headerMemoria);
 				return;
 			} else if (operacionValida == RESULTADO_OK) {
 				header_t* headerMemoria = _create_header(RESULTADO_OK, 0);
 				int32_t enviado = _send_header(socketMemoria, headerMemoria);
 				if(enviado == ERROR_OPERATION) return;
+				log_debug(loggerDebug, "Finalizado correcto, se envia:%d", RESULTADO_OK);
 				free(headerMemoria);
 			}
 			break;
@@ -392,7 +394,7 @@ int32_t borrarEspacio(int32_t PID){
 			}
 
 	NodoOcupado* procesoRemovido = list_remove_by_condition(espacioOcupado, find_by_PID);
-
+	if (procesoRemovido==NULL) return RESULTADO_ERROR;
 	bool find_by_ConditionInitial(NodoLibre* espacioAnterior)
 				{
 					return espacioAnterior->comienzo+espacioAnterior->paginas==procesoRemovido->comienzo;

@@ -215,7 +215,7 @@ void finalizarPid(sock_t* socketCpu){
 			int32_t resultado_operacion;
 			recibido = _receive_bytes(socketSwap, &(resultado_operacion),sizeof(int32_t));
 			if (recibido == ERROR_OPERATION) return;
-
+			log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion); //todo, porque recibo 0???
 			if (resultado_operacion == RESULTADO_ERROR) {
 				log_debug(loggerDebug, "El swap informa que no pudo eliminar el pid:%d", PID);
 				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);

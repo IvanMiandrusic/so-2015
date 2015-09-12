@@ -174,9 +174,10 @@ void ejecutar(int32_t id, PCB* pcb){
 	}
 	int32_t finalizado=FALSE;
 	while(finalizado == FALSE){
+		fseek(prog, pcb->siguienteInstruccion, SEEK_SET);
 		if(fgets(cadena, 100, prog) != NULL)
 		{
-			log_debug(loggerDebug, "Tengo una linea para ejecutar");
+			log_debug(loggerDebug, "Tengo una linea para ejecutar:%s", cadena);
 			t_respuesta* respuesta=analizadorLinea(id,pcb,cadena);
 			string_append(&log_acciones, respuesta->texto);
 			pcb->siguienteInstruccion=ftell(prog);

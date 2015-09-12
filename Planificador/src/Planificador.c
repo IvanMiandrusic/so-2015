@@ -424,6 +424,7 @@ void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb){
 	/** PCB de Listos a Bloqueado **/
 	PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
 	pcb_found->estado= BLOQUEADO;
+	pcb_found->siguienteInstruccion=pcb->siguienteInstruccion;
 	agregarPcbAColaBlock(pcb_found);
 	log_debug(loggerDebug, "Cambio de estado (block) y de lista del pcb con id %d", pcb->PID);
 
@@ -462,13 +463,16 @@ void procesar_IO(){
 
 		/** Simulo la IO del proceso **/
 		sleep(tiempo_retardo->retardo);
-
 		/** El proceso va a la cola de LISTOS **/
 		pcb_to_sleep->estado= LISTO;
 		agregarPcbAColaListos(pcb_to_sleep);
-		list_remove_and_destroy_element(colaBlock, 0, free);
+		PCB* pcb=list_remove(colaBlock, 0);
+		//free(pcb); si hago el free se pierde el id...
+		/** Se asigna un nuevo PCB a la cpu q se libera **/
+		asignarPCBaCPU();
 
 	}
+
 
 }
 
@@ -488,9 +492,8 @@ bool hay_cpu_libre() {
 }
 
 void asignarPCBaCPU(){
-
 	if(hay_cpu_libre()&& !list_is_empty(colaListos)) {
-
+		printf("Asigno un pcb para ejecutar\n");
 		PCB* pcbAEnviar = list_remove(colaListos, 0);
 		log_debug(loggerDebug, "Agarre el primer pcb: id= %d, arch= %s sigInt= %d", pcbAEnviar->PID, pcbAEnviar->ruta_archivo, pcbAEnviar->siguienteInstruccion);
 		char* paquete = serializarPCB(pcbAEnviar);
@@ -541,32 +544,31 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb){
 
 void agregarPcbAColaListos(PCB* pcb){
 
-
+	printf("Agregue a colaListos el id:%d\n", pcb->PID);
 	sem_wait(&semMutex_colaListos);
 	list_add(colaListos, pcb);
 	sem_post(&semMutex_colaListos);
+
 	return;
 
 }
 
 void agregarPcbAColaBlock(PCB* pcb){
 
-
+	printf("Agregue a colaBlock\n");
 	sem_wait(&semMutex_colaBlock);
 	list_add(colaBlock, pcb);
 	sem_post(&semMutex_colaBlock);
 	return;
-
 }
 
 void agregarPcbAColaExec(PCB* pcb){
 
-
+	printf("Agregue a colaExec\n");
 	sem_wait(&semMutex_colaExec);
 	list_add(colaExec, pcb);
 	sem_post(&semMutex_colaExec);
 	return;
-
 }
 
 void agregarPcbAColaFinalizados(PCB* pcb){
@@ -582,7 +584,6 @@ void agregarPcbAColaFinalizados(PCB* pcb){
 void agregarColaCPUs(CPU_t* cpu){
 
 	sem_wait(&semMutex_colaCPUs);
-	log_debug(loggerDebug, "El semaforo me jugo mala pasada");
 	list_add(colaCPUs, cpu);
 	sem_post(&semMutex_colaCPUs);
 	return;
