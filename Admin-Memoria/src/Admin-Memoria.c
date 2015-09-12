@@ -212,24 +212,25 @@ void finalizarPid(sock_t* socketCpu){
 
 			log_debug(loggerDebug, "Envie al swap para finalizar el proceso:%d", PID);
 
-			int32_t resultado_operacion;
-			recibido = _receive_bytes(socketSwap, &(resultado_operacion),sizeof(int32_t));
+			header_t* headerNuevo=_create_empty_header();
+			recibido=_receive_header(socketSwap,headerNuevo);
+			int32_t resultado_operacion=get_operation_code(headerNuevo);
 			if (recibido == ERROR_OPERATION) return;
+
 			log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion); //todo, porque recibo 0???
 			if (resultado_operacion == RESULTADO_ERROR) {
 				log_debug(loggerDebug, "El swap informa que no pudo eliminar el pid:%d", PID);
-				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
+
+				header_t* headerMemoria = _create_header(ERROR, 0);
 				int32_t enviado = _send_header(socketCpu, headerMemoria);
-				if(enviado == ERROR_OPERATION) return;
 				free(headerMemoria);
 			} else if (resultado_operacion == RESULTADO_OK) {
-				log_debug(loggerDebug, "El swap informa que no pudo eliminar el pid:%d", PID);
+				log_debug(loggerDebug, "El swap informa que pudo eliminar el pid:%d", PID);
 				limpiar_Informacion_PID(PID);
-				header_t* headerMemoria = _create_header(RESULTADO_OK, 0);
+				header_t* headerMemoria = _create_header(OK, 0);
 				int32_t enviado = _send_header(socketCpu, headerMemoria);
-				if(enviado == ERROR_OPERATION) return;
 				free(headerMemoria);
-				log_info(loggerInfo, "Se ha borrado de memoria el proceso: %d", PID);
+				log_info(loggerInfo, "Se ha borrado de memoria el proceso: %d op:%d", PID, OK);
 			}
 
 }
@@ -293,9 +294,9 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 			sizeof(int32_t));
 	if (enviado == ERROR_OPERATION) return;
 
-	recibido = _receive_bytes(socketSwap, &(resultado_operacion),
-			sizeof(int32_t));
-	if (recibido == ERROR_OPERATION) return;
+	header_t* headerNuevo=_create_empty_header();
+	recibido=_receive_header(socketSwap,headerNuevo);
+	resultado_operacion=get_operation_code(headerNuevo);
 
 	if (resultado_operacion == RESULTADO_ERROR) {
 		header_t* headerCpu = _create_header(ERROR, 0);

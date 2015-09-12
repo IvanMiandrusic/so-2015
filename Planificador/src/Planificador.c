@@ -544,7 +544,6 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb){
 
 void agregarPcbAColaListos(PCB* pcb){
 
-	printf("Agregue a colaListos el id:%d\n", pcb->PID);
 	sem_wait(&semMutex_colaListos);
 	list_add(colaListos, pcb);
 	sem_post(&semMutex_colaListos);
@@ -555,7 +554,6 @@ void agregarPcbAColaListos(PCB* pcb){
 
 void agregarPcbAColaBlock(PCB* pcb){
 
-	printf("Agregue a colaBlock\n");
 	sem_wait(&semMutex_colaBlock);
 	list_add(colaBlock, pcb);
 	sem_post(&semMutex_colaBlock);
@@ -564,7 +562,6 @@ void agregarPcbAColaBlock(PCB* pcb){
 
 void agregarPcbAColaExec(PCB* pcb){
 
-	printf("Agregue a colaExec\n");
 	sem_wait(&semMutex_colaExec);
 	list_add(colaExec, pcb);
 	sem_post(&semMutex_colaExec);

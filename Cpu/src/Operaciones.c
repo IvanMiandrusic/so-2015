@@ -464,13 +464,13 @@ t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 
 	log_debug(loggerDebug, "Envie el id %d de finalizar",pcb->PID);
 
-	int32_t resultado;
-	int32_t resultado_Mensaje = _receive_bytes(&(socketMemoria[id]),&resultado, sizeof (int32_t)); //aca recibo un que?
+	header_t* respuestaMem=_create_empty_header();
+	int32_t resultado_Mensaje = _receive_header(&(socketMemoria[id]),respuestaMem);
 	if(resultado_Mensaje == ERROR_OPERATION) return NULL;
 
 	t_respuesta* response= malloc(sizeof(t_respuesta));
-
-	if (resultado_Mensaje ==OK){
+	log_debug(loggerDebug, "recibo cod ope: %d", get_operation_code(respuestaMem));
+	if (get_operation_code(respuestaMem) ==OK){
 
 	response->id=FINALIZAR;
 	response->texto=string_new();
