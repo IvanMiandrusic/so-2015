@@ -1,10 +1,3 @@
-/*
- * Operaciones.c
- *
- *  Created on: 28/8/2015
- *      Author: utnso
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <commons/log.h>
