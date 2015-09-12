@@ -254,10 +254,12 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 			recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
 			if(recibido == ERROR_OPERATION) return;
 
+			log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU tamanio: %d", tamanio_resultado_operaciones);
+
 			char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
 			recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
 			if(recibido == ERROR_OPERATION) return;
-			log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
+			log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU: %s", resultado_operaciones);
 
 			/** Loggeo resultado operaciones Todo **/
 

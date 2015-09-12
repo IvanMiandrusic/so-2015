@@ -153,7 +153,7 @@ void ejecutar(int32_t id, PCB* pcb){
 	FILE* prog = fopen(pcb->ruta_archivo, "r");
 	if (prog==NULL)
 	{
-		string_append(&log_acciones, "No se pudo encontrar la ruta del archivo del proceso con id: %d", pcb->PID);
+		string_append_with_format(&log_acciones, "No se pudo encontrar la ruta del archivo del proceso con id: %d", pcb->PID);
 		int32_t tamanio_texto=strlen(log_acciones);
 
 		log_error (loggerError, ANSI_COLOR_RED "Error al abrir la ruta del archivo del proceso:%d"ANSI_COLOR_RESET, pcb->PID);
@@ -215,7 +215,7 @@ void ejecutar(int32_t id, PCB* pcb){
 
 					int32_t envio_tamanio_texto = _send_bytes(socketPlanificador,&tamanio_texto,sizeof(int32_t));
 					int32_t envio_texto = _send_bytes(socketPlanificador,log_acciones,tamanio_texto);
-
+					log_debug(loggerDebug, "Envio texto tamanio:%d, string:%s", tamanio_texto, log_acciones);
 			return ;
 			}
 			if(respuesta->id==ERROR){
