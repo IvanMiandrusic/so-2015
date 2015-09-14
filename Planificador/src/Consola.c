@@ -176,11 +176,11 @@ void usoDeLasCpus() {
 void mostrarComandos() {
 
 	printf(ANSI_COLOR_BOLDYELLOW "Los comandos disponibles son: \n\n");
-	printf("correr PATH \t\t PATH es la ruta relativa al programa mCod \n");
+	printf("correr PATH \t\t PATH es la ruta al programa mCod \n");
 	printf("finalizar PID \t\t PID es el numero de proceso mProc \n");
 	printf("ps \t\t\t Lista los mProc y su estado actual \n");
-	printf("cpu \t\t\t Listar las cpus con su utilizacion \n");
+	printf("cpu \t\t\t Lista las cpus con su utilizacion \n");
 	printf("clear \t\t\t Limpia la consola \n");
-	printf("cerrar consola \t\t Cerrar la consola" ANSI_COLOR_RESET);
+	printf("cerrar consola \t\t Cierra la consola" ANSI_COLOR_RESET);
 }
 
