@@ -76,6 +76,6 @@ void reemplazar_pagina(t_pagina*);
 /** Utils **/
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char*);
 void pedidoPagina_Swap(t_pagina*);
-
+t_list* obtener_tabla_paginas_by_PID(int32_t PID);
 
 #endif /* ESTRUCTURAS_H_ */

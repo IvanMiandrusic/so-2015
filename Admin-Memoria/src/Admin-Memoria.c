@@ -43,7 +43,8 @@ ProcesoMemoria* crear_estructura_config(char* path) {
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie() {
 	log_info(loggerInfo, ANSI_COLOR_BLUE "Se dara de baja el proceso Memoria"ANSI_COLOR_RESET);
-	exit(1);
+	limpiar_estructuras_memoria();
+	exit(EXIT_FAILURE);
 }
 
 /** Señales **/

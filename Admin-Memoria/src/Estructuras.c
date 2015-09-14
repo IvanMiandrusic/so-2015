@@ -228,15 +228,17 @@ void pedidoPagina_Swap(t_pagina* pagina) {
 
 void reemplazar_pagina(t_pagina* pagina) {
 
-	//arch->algoritmo_reemplazo
-	t_algoritmo_reemplazo algoritmo_reemplazo=FIFO;
-	//t_algoritmo_reemplazo algoritmo_reemplazo = obtener_codigo_algoritmo(arch->algoritmo_reemplazo);
+//	t_algoritmo_reemplazo algoritmo_reemplazo=FIFO;
+	t_algoritmo_reemplazo algoritmo_reemplazo = obtener_codigo_algoritmo(arch->algoritmo_reemplazo);
+
 	switch(algoritmo_reemplazo) {
 	//** Todo *//
 	case FIFO : {
 
 		/** Obtener tabla de paginas del PID **/
+		t_list* paginas_PID = obtener_tabla_paginas_by_PID(pagina->PID);
 		/** Saco primer pagina teniendo en cuenta asignacion fija y presencia en 1 **/
+
 		/** Escribo pagina en swap **/
 		/** Colo pagina nueva en tabla paginas y pongo presencia en 1**/
 
@@ -270,4 +272,15 @@ t_algoritmo_reemplazo obtener_codigo_algoritmo(char* algoritmo) {
 	if(string_equals_ignore_case(algoritmo, "CLOCK_MODIFICADO")) return CLOCK_MODIFICADO;
 
 	return INDEFINIDO;
+}
+
+t_list* obtener_tabla_paginas_by_PID(int32_t PID) {
+
+	bool findByPID(void* parametro) {
+		t_paginas_proceso* entrada = (t_paginas_proceso*) parametro;
+		return entrada->PID == PID;
+	}
+
+	return list_find(tabla_Paginas, findByPID);
+
 }
