@@ -35,6 +35,7 @@ typedef struct estructura_configuracion			//estructura que contiene los datos de
   int32_t entradas_tlb;
   char* tlb_habilitada;
   int32_t retardo;
+  char* algoritmo_reemplazo;
 }ProcesoMemoria;
 
 /* VARIABLES GLOBALES */
@@ -51,12 +52,15 @@ extern sock_t* socketSwap;
 ProcesoMemoria* crear_estructura_config(char*);
 void inicializoSemaforos();
 void crearArchivoDeLog();
-void dump();
+void crear_estructuras_memoria();
+void limpiar_estructuras_memoria();
 
 /** Funciones de señales **/
 void ifProcessDie();
-void ifSigurs1();
-void ifSigurs2();
+void ifSigusr1();
+void ifSigusr2();
+void ifSigpoll();
+void dump();
 
 /** Funciones de operaciones con CPU **/
 void procesar_pedido(sock_t*, header_t* );

@@ -30,15 +30,13 @@ ProcesoMemoria* crear_estructura_config(char* path) {
 	config->puerto_escucha = config_get_int_value(archConfig, "PUERTO_ESCUCHA");
 	config->ip_swap = config_get_string_value(archConfig, "IP_SWAP");
 	config->puerto_swap = config_get_int_value(archConfig, "PUERTO_SWAP");
-	config->maximo_marcos = config_get_int_value(archConfig,
-			"MAXIMO_MARCOS_POR_PROCESO");
-	config->cantidad_marcos = config_get_int_value(archConfig,
-			"CANTIDAD_MARCOS");
+	config->maximo_marcos = config_get_int_value(archConfig, "MAXIMO_MARCOS_POR_PROCESO");
+	config->cantidad_marcos = config_get_int_value(archConfig, "CANTIDAD_MARCOS");
 	config->tamanio_marco = config_get_int_value(archConfig, "TAMANIO_MARCO");
 	config->entradas_tlb = config_get_int_value(archConfig, "ENTRADAS_TLB");
-	config->tlb_habilitada = config_get_string_value(archConfig,
-			"TLB_HABILITADA");
+	config->tlb_habilitada = config_get_string_value(archConfig, "TLB_HABILITADA");
 	config->retardo = config_get_int_value(archConfig, "RETARDO_MEMORIA");
+	config->algoritmo_reemplazo = config_get_string_value(archConfig, "ALGORITMO_REEMPLAZO");
 	return config;
 }
 
@@ -108,6 +106,20 @@ void crearArchivoDeLog() {
 	loggerDebug = log_create(pathLog, archLog, 1, LOG_LEVEL_DEBUG);
 }
 
+void crear_estructuras_memoria() {
+
+	TLB_create();
+	tabla_paginas_create();
+	MP_create();
+
+}
+
+void limpiar_estructuras_memoria(){
+
+	TLB_destroy();
+	tabla_paginas_destroy();
+	MP_destroy();
+}
 
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
 int main(void) {
@@ -132,14 +144,11 @@ int main(void) {
 	char* path = "../Admin-Memoria.config";
 	arch = crear_estructura_config(path);
 
-
-
 	/*Se inicializan todos los semaforos necesarios */
 	inicializoSemaforos();
 
-	TLB_crear();
-	tabla_paginas_crear();
-	MP_crear();
+	/** Se crearan todas las estructuras de la memoria **/
+	crear_estructuras_memoria();
 
 	socketSwap = create_client_socket(arch->ip_swap, arch->puerto_swap);
 	int32_t resultado = connect_to_server(socketSwap);
@@ -158,6 +167,9 @@ int main(void) {
 	}
 
 	connection_pool_server_listener(socketServidorCpus, procesar_pedido);
+
+	/** Se destruiran las estructuras de la memoria **/
+	limpiar_estructuras_memoria();
 
 	return EXIT_SUCCESS;
 }
@@ -236,7 +248,9 @@ void finalizarPid(sock_t* socketCpu){
 }
 
 int32_t limpiar_Informacion_PID(int32_t PID){
-	void limpiar(TLB* entrada){
+
+	void limpiar(void* parametro){
+		TLB* entrada = (TLB*) parametro;
 		if (entrada->PID==PID){
 			entrada->PID=0;
 			entrada->marco=0;
@@ -247,17 +261,18 @@ int32_t limpiar_Informacion_PID(int32_t PID){
 	}
 	list_iterate(TLB_tabla, limpiar);
 
-	bool obtenerTabPagina(t_paginas_proceso* entrada){
+	bool obtenerTabPagina(void* parametro){
+		t_paginas_proceso* entrada = (t_paginas_proceso*) parametro;
 		return entrada->PID==PID;
 	}
 
 	t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
+
 	if(tablaPagina!=NULL){
 		list_destroy_and_destroy_elements(tablaPagina->paginas, free);
 		list_remove_and_destroy_by_condition(tabla_Paginas, obtenerTabPagina, free);
 		return RESULTADO_OK	;
 	}else return RESULTADO_ERROR;
-
 
 }
 
@@ -389,8 +404,8 @@ t_resultado_busqueda buscar_y_escribir_pagina(t_pagina* pagina_pedida){
 
 t_resultado_busqueda TLB_buscar_pagina_escribir(t_pagina* pagina) {
 
-	bool find_by_PID_page(TLB* entrada) {
-
+	bool find_by_PID_page(void* parametro) {
+		TLB* entrada = (TLB*) parametro;
 		return (entrada->PID == pagina->PID) && (entrada->pagina == pagina->nro_pagina) && (entrada->presente==1);
 	}
 
@@ -416,16 +431,18 @@ t_resultado_busqueda TLB_buscar_pagina_escribir(t_pagina* pagina) {
 
 t_resultado_busqueda buscar_pagina_a_escribir_tabla_paginas(t_pagina* pagina){
 
-		bool obtenerTabPagina(t_paginas_proceso* entrada){
+		bool obtenerTabPagina(void* parametro){
+			t_paginas_proceso* entrada = (t_paginas_proceso*) parametro;
 			return entrada->PID == pagina->PID;
 		}
 
 		t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
 		if(tablaPagina!=NULL){
 
-			bool obtenerMarco_Pagina(TPagina* entradaBuscada){
-					return entradaBuscada->pagina== pagina->nro_pagina && entradaBuscada->presente==1;
-				}
+			bool obtenerMarco_Pagina(void* parametro){
+				TPagina* entradaBuscada = (TPagina*) parametro;
+				return entradaBuscada->pagina== pagina->nro_pagina && entradaBuscada->presente==1;
+			}
 
 			TPagina* entradaFound = list_find(tablaPagina->paginas, obtenerMarco_Pagina);
 			int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);

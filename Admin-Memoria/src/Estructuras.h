@@ -57,22 +57,25 @@ extern char* mem_principal;
 extern t_list* tabla_Paginas;
 
 /** TLB functions **/
-void TLB_crear();
-void tabla_paginas_crear();
+void TLB_create();
+void TLB_destroy();
 void TLB_init();
 void TLB_flush();
 bool TLB_habilitada();
 void TLB_buscar_pagina(t_pagina*);
-void pedidoPagina_Swap(t_pagina*);
 
 /** Funciones tabla_paginas y MP **/
-void MP_crear();
+void MP_create();
+void MP_destroy();
+void tabla_paginas_create();
+void tabla_paginas_destroy();
 void crear_tabla_pagina_PID(int32_t , int32_t);
 void buscar_pagina_tabla_paginas(t_pagina*);
 void reemplazar_pagina(t_pagina*);
 
 /** Utils **/
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char*);
+void pedidoPagina_Swap(t_pagina*);
 
 
 #endif /* ESTRUCTURAS_H_ */

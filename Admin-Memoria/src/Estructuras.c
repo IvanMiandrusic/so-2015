@@ -16,23 +16,23 @@ t_list* TLB_tabla;
 char* mem_principal;
 t_list* tabla_Paginas;
 
-void MP_crear() {
+/** FUNCIONES DE LA TLB **/
+void TLB_create() {
 
-	mem_principal = malloc((arch->cantidad_marcos) * (arch->tamanio_marco));
-}
-
-void TLB_crear() {
-
-	if (string_equals_ignore_case((arch->tlb_habilitada), "si")) {
+	if (TLB_habilitada()) {
 		TLB_tabla = list_create();
 		TLB_init();
 	}
 }
 
-void tabla_paginas_crear() {
+void TLB_destroy() {
 
-		tabla_Paginas = list_create();
+	if (TLB_habilitada()) {
+		TLB_flush();
+		list_destroy_and_destroy_elements(TLB_tabla, free);
+	}
 }
+
 void TLB_init() {
 
 	int i;
@@ -53,7 +53,8 @@ void TLB_init() {
 
 void TLB_flush() {
 
-	void limpiar_entradas(TLB* entrada) {
+	void limpiar_entradas(void* parametro) {
+		TLB* entrada = (TLB*) parametro;
 		//todo si modificada es 1, le mandas al swap escribir(PID, pagina, texto)
 		//o hacerlo con la tabla de paginas
 		entrada->PID = 0;
@@ -67,6 +68,65 @@ void TLB_flush() {
 	list_iterate(TLB_tabla, limpiar_entradas);
 	sem_post(&sem_mutex_tlb);
 	log_info(loggerInfo, ANSI_COLOR_GREEN "Se realizo correctamente el TLB Flush" ANSI_COLOR_RESET);
+}
+
+bool TLB_habilitada() {
+
+	return string_equals_ignore_case(arch->tlb_habilitada, "SI");
+}
+
+void TLB_buscar_pagina(t_pagina* pagina) {
+
+	bool find_by_PID_page(void* parametro) {
+		TLB* entrada = (TLB*) parametro;
+		return (entrada->PID == pagina->PID) && (entrada->pagina == pagina->nro_pagina) && (entrada->presente==1);
+	}
+
+	TLB* entrada_pagina=NULL;
+
+	if(TLB_habilitada()) {
+		sem_wait(&sem_mutex_tlb);
+		entrada_pagina = list_find(TLB_tabla, find_by_PID_page);
+		sem_post(&sem_mutex_tlb);
+	}
+
+	if(entrada_pagina == NULL) {
+		log_debug(loggerDebug, "No se encontro la pagina en la TLB, se busca en la tabla de paginas");
+		buscar_pagina_tabla_paginas(pagina);
+	}
+	else{
+		int32_t offset=entrada_pagina->marco*arch->tamanio_marco;
+		memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
+	}
+
+}
+
+/** FUNCIONES DE TABLA DE PAGINAS Y MP **/
+
+void MP_create() {
+
+	mem_principal = malloc((arch->cantidad_marcos) * (arch->tamanio_marco));
+}
+
+void MP_destroy() {
+
+	free(mem_principal);
+}
+
+void tabla_paginas_create() {
+
+	tabla_Paginas = list_create();
+}
+
+void tabla_paginas_destroy() {
+
+	void paginas_destroyer(void* parametro) {
+		t_paginas_proceso* entrada = (t_paginas_proceso*) parametro;
+		list_destroy_and_destroy_elements(entrada->paginas, free);
+	}
+
+	list_iterate(tabla_Paginas, paginas_destroyer);
+	list_destroy(tabla_Paginas);
 }
 
 void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
@@ -95,49 +155,21 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 
 }
 
-bool TLB_habilitada() {
-
-	return string_equals_ignore_case(arch->tlb_habilitada, "SI");
-}
-
-void TLB_buscar_pagina(t_pagina* pagina) {
-
-	bool find_by_PID_page(TLB* entrada) {
-
-		return (entrada->PID == pagina->PID) && (entrada->pagina == pagina->nro_pagina) && (entrada->presente==1);
-	}
-
-	TLB* entrada_pagina=NULL;
-
-	if(TLB_habilitada()) {
-		sem_wait(&sem_mutex_tlb);
-		entrada_pagina = list_find(TLB_tabla, find_by_PID_page);
-		sem_post(&sem_mutex_tlb);
-	}
-
-	if(entrada_pagina == NULL) {
-		log_debug(loggerDebug, "No se encontro la pagina en la TLB, se busca en la tabla de paginas");
-		buscar_pagina_tabla_paginas(pagina);
-	}
-	else{
-		int32_t offset=entrada_pagina->marco*arch->tamanio_marco;
-		memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
-	}
-
-}
-
 void buscar_pagina_tabla_paginas(t_pagina* pagina) {
 
-	bool obtenerTabPagina(t_paginas_proceso* entrada){
+	bool obtenerTabPagina(void* parametro){
+		t_paginas_proceso* entrada = (t_paginas_proceso*) parametro;
 		return entrada->PID == pagina->PID;
 	}
 
 	t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
 
 	if(tablaPagina!=NULL){
-		bool obtenerMarco_Pagina(TPagina* entradaBuscada){
-				return entradaBuscada->pagina== pagina->nro_pagina && (entradaBuscada->presente==1);
-			}
+
+		bool obtenerMarco_Pagina(void* parametro){
+			TPagina* entradaBuscada = (TPagina*) parametro;
+			return entradaBuscada->pagina== pagina->nro_pagina && (entradaBuscada->presente==1);
+		}
 
 		TPagina* entradaFound = list_find(tablaPagina->paginas, obtenerMarco_Pagina);
 		int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);
@@ -174,6 +206,7 @@ void pedidoPagina_Swap(t_pagina* pagina) {
 
 		header_t* header_resultado_swap = _create_empty_header();
 		recibido = _receive_header(socketSwap, header_resultado_swap);
+		if(recibido == ERROR_OPERATION) return;
 
 		if(get_operation_code(header_resultado_swap)==RESULTADO_OK) {
 
