@@ -12,7 +12,7 @@
 #define SOLICITUD_IO 3
 #define RESULTADO_OK 4
 #define RESULTADO_ERROR 5
-#define RESPUESTA_UTILIZACION_CPU 6
+#define UTILIZACION_CPU 6
 
 /** Codigos de operacion en las recepciones desde el planificador **/
 #define ENVIO_QUANTUM 1

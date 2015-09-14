@@ -14,10 +14,10 @@
 void consola_planificador(){
 
 		char comandoSeleccionado[COMANDO_SIZE];
-		bool finalizar;
+		bool finalizar = true;
 		int32_t operacionAsociada;
 
-		while(finalizar==false){
+		while(finalizar){
 		printf(ANSI_COLOR_BOLDCYAN "INGRESE EL COMANDO QUE DESE EJECUTAR: " ANSI_COLOR_RESET);
 		scanf("%[^\n]s", comandoSeleccionado);
 		printf("\n");
@@ -43,7 +43,7 @@ void consola_planificador(){
 			break; //fin uso de las Cpus
 		}
 		case CERRAR_CONSOLA:{
-			finalizar=true;
+			finalizar=false;
 			break;
 		}
 		case HELP: {
@@ -51,7 +51,7 @@ void consola_planificador(){
 			break;
 		}
 		case CLEAR: {
-			printf(ENTER ENTER ENTER ENTER ENTER ENTER);
+			system("clear");
 			break;
 		}
 		default: {
@@ -88,6 +88,11 @@ int32_t analizar_operacion_asociada(char* comandoSeleccionado) {
 
 void correrPath(char* comando) {
 
+	if(strstr(comando, " ") == NULL) {
+		printf(ANSI_COLOR_BOLDRED "Debera ingresar un path de un mCod valido" ANSI_COLOR_RESET);
+		return;
+	}
+
 	char* filePath = strstr(comando, " ") + 1;
 
 	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a iniciar un mProc nuevo con mCod %s" ANSI_COLOR_RESET "\n", filePath);
@@ -103,6 +108,11 @@ void correrPath(char* comando) {
 }
 
 void finalizarPID(char* comando) {
+
+	if(strstr(comando, " ") == NULL) {
+		printf(ANSI_COLOR_BOLDRED "Debera ingresar un PID de un mProc valido" ANSI_COLOR_RESET);
+		return;
+	}
 
 	char* pid_comando = strstr(comando, " ") + 1;
 	int32_t PID = atoi(pid_comando);
@@ -126,8 +136,9 @@ char* get_estado_proceso(int32_t estado) {
 
 void comandoPS() {
 
-	void mostrarEstadoProceso(PCB* unPcb) {
+	void mostrarEstadoProceso(void* parametro) {
 
+		PCB* unPcb = (PCB*) parametro;
 		char* proceso = string_new();
 		string_append_with_format(&proceso, "mProc %d: %s -> %s\n", unPcb->PID,
 				unPcb->ruta_archivo, get_estado_proceso(unPcb->estado));
@@ -145,7 +156,8 @@ void comandoPS() {
 
 void mostrarEstadoCpus() {
 
-	void mostrar_rendimiento(CPU_t* cpu) {
+	void mostrar_rendimiento(void* parametro) {
+		CPU_t* cpu = (CPU_t*) parametro;
 		char* cpu_a_mostrar = string_new();
 		string_append_with_format(&cpu_a_mostrar, "CPU %d: %d%%\n", cpu->ID, cpu->rendimiento);
 		printf(ANSI_COLOR_BOLDGREEN "%s \n" ANSI_COLOR_RESET, cpu_a_mostrar);

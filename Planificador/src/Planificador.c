@@ -306,7 +306,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	case RESULTADO_OK: {
 
 		/*
-		 * enviar algun mensaje por consola?? o algo por el estilo??
+		 *  Todo enviar algun mensaje por consola?? o algo por el estilo??
 		 */
 
 		/** tamaño pcb **/
@@ -316,36 +316,44 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 
 		/** recibo el PCB **/
-			char* pcb_serializado = malloc(tamanio_pcb);
-			recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
-			if(recibido == ERROR_OPERATION) return;
-			log_debug(loggerDebug, "Recibo un pcb desde la cpu, por un Error");
-			PCB* pcb = deserializarPCB(pcb_serializado);
+		char* pcb_serializado = malloc(tamanio_pcb);
+		recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
+		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo un pcb desde la cpu, por un Error");
+		PCB* pcb = deserializarPCB(pcb_serializado);
 
-			/** recibo el char* de resultados **/
-			int32_t tamanio_resultado_operaciones;
-			recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
-			if(recibido == ERROR_OPERATION) return;
-			char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
-			recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
-			if(recibido == ERROR_OPERATION) return;
-			log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
+		/** recibo el char* de resultados **/
+		int32_t tamanio_resultado_operaciones;
+		recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
+		if(recibido == ERROR_OPERATION) return;
+		char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
+		recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
+		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
 
 
-			finalizarPCB(pcb->PID, RESULTADO_OK);
-			liberarCPU(cpu_id);
-			asignarPCBaCPU();
+		finalizarPCB(pcb->PID, RESULTADO_OK);
+		liberarCPU(cpu_id);
+		asignarPCBaCPU();
 
 
 		break;
 	}
 
-	case RESPUESTA_UTILIZACION_CPU: {
+	case UTILIZACION_CPU: {
 		int32_t tiempo_uso_cpu;
 		recibido = _receive_bytes(socketCPU, &tiempo_uso_cpu, sizeof(int32_t));
 		if(recibido == ERROR_OPERATION) return;
 		log_debug(loggerDebug, "Recibi de la cpu con id: %d, el porcentaje: %d%%", tiempo_uso_cpu);
-		//todo obtener el struct de la cpu y actualizar valor
+
+		/** Actualizar rendimiento de la CPU **/
+		bool findCpu(void* parametro) {
+			CPU_t* unaCpu = (CPU_t*) parametro;
+			return unaCpu->socketCPU->fd == socketCPU->fd;
+		}
+		CPU_t* cpu = list_find(colaCPUs, findCpu);
+		cpu->rendimiento = tiempo_uso_cpu;
+
 		break;
 	}
 
@@ -375,8 +383,8 @@ void finalizarPCB(int32_t pcbID, int32_t tipo){
 	switch(tipo){
 
 	bool getPcbByID(PCB* unPCB){
-						return unPCB->PID == pcbID;
-			}
+		return unPCB->PID == pcbID;
+	}
 
 	case RESULTADO_OK:{
 
@@ -395,8 +403,6 @@ void finalizarPCB(int32_t pcbID, int32_t tipo){
 		pcb_found->estado= FINALIZADO_ERROR;
 		agregarPcbAColaFinalizados(pcb_found);
 		log_debug(loggerDebug, "Cambio de estado (finalizado_error) y de lista del pcb con id %d", pcbID);
-
-
 
 		return;
 	}
@@ -465,11 +471,13 @@ void procesar_IO(){
 
 		/** Simulo la IO del proceso **/
 		sleep(tiempo_retardo->retardo);
+
 		/** El proceso va a la cola de LISTOS **/
 		pcb_to_sleep->estado= LISTO;
 		agregarPcbAColaListos(pcb_to_sleep);
+
 		PCB* pcb=list_remove(colaBlock, 0);
-		//free(pcb); si hago el free se pierde el id...
+
 		/** Se asigna un nuevo PCB a la cpu q se libera **/
 		asignarPCBaCPU();
 
@@ -605,9 +613,6 @@ int main(void) {
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "../Planificador.config";
 	arch = crear_estructura_config(path);
-
-
-
 
 	/*Se inicializan todos los semaforos necesarios */
 	inicializoSemaforos();

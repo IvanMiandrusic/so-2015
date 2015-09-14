@@ -38,7 +38,7 @@ void* thread_Use(void* thread_id){
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"Valores- Inicial:%d, Final:%d, Acumulado:%d" ANSI_COLOR_RESET, tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
 
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"El porcentaje de uso es:%d" ANSI_COLOR_RESET, porcentaje);
-		header_t* header_uso_cpu = _create_header(RESPUESTA_UTILIZACION_CPU, 2*sizeof(int32_t));
+		header_t* header_uso_cpu = _create_header(UTILIZACION_CPU, 2*sizeof(int32_t));
 		int32_t enviado = _send_header (&(socketPlanificador[id]), header_uso_cpu);
 		int32_t envio_id = _send_bytes(&(socketPlanificador[id]),&id,sizeof(int32_t));
 		int32_t envio_uso = _send_bytes(&(socketPlanificador[id]),&porcentaje,sizeof(int32_t));
