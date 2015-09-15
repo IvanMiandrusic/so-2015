@@ -447,7 +447,7 @@ t_resultado_busqueda buscar_pagina_a_escribir_tabla_paginas(t_pagina* pagina){
 
 			TPagina* entradaFound = list_find(tablaPagina->paginas, obtenerMarco_Pagina);
 
-			/** Si es LRU me interesa saber en que instante se utiliza la pag en MP **/
+			/** Si es LRU me interesa saber en que instante se referencia la pag en MP **/
 			if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
 						entradaFound->tiempo_uso = get_actual_time_integer();
 
