@@ -29,7 +29,9 @@
 int32_t get_hours(char*);
 int32_t get_minutes(char* time);
 int32_t get_seconds(char* time);
-char* get_locale_time();
+int32_t get_milliseconds(char* time);
+char* get_actual_time();
+int32_t get_actual_time_integer();
 
 
 

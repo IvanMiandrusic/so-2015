@@ -446,6 +446,11 @@ t_resultado_busqueda buscar_pagina_a_escribir_tabla_paginas(t_pagina* pagina){
 			}
 
 			TPagina* entradaFound = list_find(tablaPagina->paginas, obtenerMarco_Pagina);
+
+			/** Si es LRU me interesa saber en que instante se utiliza la pag en MP **/
+			if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
+						entradaFound->tiempo_uso = get_actual_time_integer();
+
 			int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);
 			memcpy(mem_principal+offset,pagina->contenido,arch->tamanio_marco);
 			entradaFound->modificada=1;

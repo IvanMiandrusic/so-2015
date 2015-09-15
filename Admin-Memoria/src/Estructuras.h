@@ -30,7 +30,7 @@ typedef struct estructura_tabla_paginas			//estructura que contiene los datos de
   int32_t pagina;
   int32_t modificada; 		//1 si, 0 no
   int32_t presente;			//Presente en MP (1 si, 0 no)
-  int32_t contador_LRU;		//Contador para reemplazo LRU
+  int32_t tiempo_uso;   	//Para saber cual fue la primera en ingresar
 }TPagina;
 
 //Lista doblemente enlazada de procesos
@@ -77,5 +77,6 @@ void reemplazar_pagina(t_pagina*);
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char*);
 void pedidoPagina_Swap(t_pagina*);
 t_list* obtener_tabla_paginas_by_PID(int32_t PID);
+TPagina* obtener_pagina_a_reemplazar(t_list* paginas_del_proceso);
 
 #endif /* ESTRUCTURAS_H_ */
