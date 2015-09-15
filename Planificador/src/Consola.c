@@ -119,7 +119,7 @@ void finalizarPID(char* comando) {
 
 	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a finalizar un mProc con id %d" ANSI_COLOR_RESET "\n", PID);
 
-	/** Todo manda a finalizar proceso **/
+	notificarFinDePcbACpu(PID);
 
 }
 

@@ -58,6 +58,7 @@ typedef struct estructura_CPU      //estructura que contiene los datos que nos e
 	int32_t ID;
 	sock_t* socketCPU;
 	t_estado_cpu estado;
+	int32_t pcbID;
 	int32_t rendimiento;
 }CPU_t;
 
@@ -95,7 +96,7 @@ void procesarPedido(sock_t* socketCpu, header_t* header);
 CPU_t* generarCPU(int32_t ID, sock_t* socketCPU);
 void asignarPCBaCPU();
 int32_t obtener_tamanio_pcb(PCB* pcb);
-void enviarPCB(char* unPaquete, int32_t tamanio_pcb);
+void enviarPCB(char* unPaquete, int32_t tamanio_pcb, int32_t pcbID);
 CPU_t* obtener_cpu_libre();
 bool hay_cpu_libre();
 void operarIO(int32_t id, int32_t tiempo, PCB* pcb);
@@ -107,6 +108,7 @@ void agregarPcbAColaExec(PCB* pcb);
 void agregarColaCPUs(CPU_t* cpu);
 void finalizarPCB(int32_t pcbID, int32_t tipo);
 void liberarCPU(int32_t cpu_id);
+void notificarFinDePcbACpu(int32_t pcbID);
 
 
 
