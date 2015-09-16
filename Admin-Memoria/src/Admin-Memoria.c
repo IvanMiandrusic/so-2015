@@ -58,7 +58,6 @@ void ifSigusr1() {
 
 
 void ifSigusr2() {
-	//todo actualizar bit presencia en tabla de paginas
 	sem_wait(&sem_mutex_tabla_paginas);
 	limpiar_MP();
 	sem_post(&sem_mutex_tabla_paginas);
@@ -373,20 +372,29 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 /*Funciones referentes a leer pagina*/
 
 void leer_pagina(sock_t* socketCpu, header_t* header){
+
 	char* pedido_serializado = malloc(get_message_size(header));
+
 	int32_t recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
 	if(recibido == ERROR_OPERATION) return;
+
 	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
 	log_debug(loggerDebug, "Debo leer la pagina:%d, del proceso: %d", pagina_pedida->nro_pagina, pagina_pedida->PID);
+
+	/** Se procede a buscar la pagina en las estructuras de memoria **/
 	buscar_pagina(pagina_pedida);			//todo probar
+
 	int32_t enviado;
 	if (pagina_pedida->contenido==NULL) {
+
 		header_t* headerCpu = _create_header(ERROR, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
 		log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo leer la pagina" ANSI_COLOR_RESET);
 		return;
-	} else {
+	}
+	else {
+
 		header_t* headerCpu = _create_header(OK, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		int32_t tamanio=pagina_pedida->tamanio_contenido;
@@ -413,19 +421,26 @@ void buscar_pagina(t_pagina* pagina_solicitada) {
 void escribirPagina(sock_t* socketCpu, header_t* header){
 
 	char* pedido_serializado = malloc(get_message_size(header));
+
 	int32_t recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
 	if(recibido == ERROR_OPERATION) return;
+
 	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
 	log_debug(loggerDebug, "Se tiene que escribir del proceso:%d la pagina:%d con:%s", pagina_pedida->PID, pagina_pedida->nro_pagina, pagina_pedida->contenido);
+
 	t_resultado_busqueda resultado = buscar_y_escribir_pagina(pagina_pedida);  //todo probar
+
 	int32_t enviado;
 	if (resultado == NOT_FOUND) {
+
 		header_t* headerCpu = _create_header(ERROR, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
 		log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo escribir la pagina" ANSI_COLOR_RESET);
 		return;
-	} else if (resultado== FOUND) {
+	}
+	else if (resultado== FOUND) {
+
 		header_t* headerCpu = _create_header(OK, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);

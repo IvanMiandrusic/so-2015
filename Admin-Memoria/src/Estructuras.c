@@ -173,21 +173,16 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 
 void buscar_pagina_tabla_paginas(t_pagina* pagina) {
 
-	bool obtenerTabPagina(void* parametro){
-		t_paginas_proceso* entrada = (t_paginas_proceso*) parametro;
-		return entrada->PID == pagina->PID;
-	}
+	t_list* tabla_paginas_PID = obtener_tabla_paginas_by_PID(pagina->PID);
 
-	t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
-
-	if(tablaPagina!=NULL){
+	if(tabla_paginas_PID != NULL){
 
 		bool obtenerMarco_Pagina(void* parametro){
 			TPagina* entradaBuscada = (TPagina*) parametro;
-			return entradaBuscada->pagina== pagina->nro_pagina && (entradaBuscada->presente==1);
+			return entradaBuscada->pagina == pagina->nro_pagina && (entradaBuscada->presente == 1);
 		}
 
-		TPagina* entradaFound = list_find(tablaPagina->paginas, obtenerMarco_Pagina);
+		TPagina* entradaFound = list_find(tabla_paginas_PID, obtenerMarco_Pagina);
 
 		/** Si es LRU me interesa saber en que instante se referencia la pag en MP **/
 		if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
@@ -195,7 +190,7 @@ void buscar_pagina_tabla_paginas(t_pagina* pagina) {
 
 		int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);
 		memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
-		//Todo aca no falta devolver algo ?
+
 	}
 	else {
 		log_debug(loggerDebug, "No se encontro en la tabla de paginas, se pide al swap");
@@ -277,7 +272,7 @@ void asignar_pagina(t_pagina* pagina_recibida_swap) {
 	}
 	else {
 
-		marco_libre = reemplazar_pagina(paginas_PID);
+		marco_libre = reemplazar_pagina(pagina_recibida_swap->PID, paginas_PID);
 	}
 
 	/** Actualizo presencia de la pagina traida a memoria**/
@@ -304,7 +299,7 @@ int32_t obtener_frame_libre() {
 	return -1;
 }
 
-int32_t reemplazar_pagina(t_list* paginas_PID) {
+int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 
 	int32_t marco_a_devolver;
 
@@ -330,11 +325,14 @@ int32_t reemplazar_pagina(t_list* paginas_PID) {
 		if(pagina_a_ausentar->modificada == 1) {
 
 			t_pagina* pagina_a_escribir = malloc(sizeof(t_pagina));
-			//pagina_a_escribir->PID = PID;
+			pagina_a_escribir->PID = PID;
 			pagina_a_escribir->nro_pagina = pagina_a_ausentar->pagina;
-			/* Todo sacar contenido del marco
-			 *		pagina_a_escribir->tamanio_contenido;
-			 *	pagina_a_escribir->contenido;*/
+
+			char* contenido_marco = obtener_contenido_marco(pagina_a_ausentar);
+			pagina_a_escribir->tamanio_contenido = strlen(contenido_marco);
+			pagina_a_escribir->contenido = malloc(arch->tamanio_marco);
+			memcpy(pagina_a_escribir, contenido_marco, pagina_a_escribir->tamanio_contenido);
+
 			pedido_pagina_swap(pagina_a_escribir, ESCRIBIR_PAGINA);
 
 			/** Le saco el bit de modificada **/
@@ -370,7 +368,9 @@ t_list* obtener_tabla_paginas_by_PID(int32_t PID) {
 		return entrada->PID == PID;
 	}
 
-	return list_find(tabla_Paginas, findByPID);
+	t_paginas_proceso* paginas_PID = list_find(tabla_Paginas, findByPID);
+
+	return paginas_PID->paginas;
 
 }
 
@@ -395,5 +395,15 @@ TPagina* obtener_pagina_a_reemplazar(t_list* paginas_del_proceso) {
 	TPagina* pagina_a_reemplazar = list_get(paginas_en_MP, 0);
 
 	return pagina_a_reemplazar;
+
+}
+
+/** Obtiene el contenido de un marco de una pagina dada **/
+char* obtener_contenido_marco(TPagina* pagina) {
+
+	char* contenido_marco = malloc(arch->tamanio_marco);
+	int32_t offset = pagina->marco*arch->tamanio_marco;
+	memcpy(contenido_marco, mem_principal+offset, arch->tamanio_marco);
+	return contenido_marco;
 
 }
