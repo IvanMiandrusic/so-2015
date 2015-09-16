@@ -62,6 +62,7 @@ void ifSigusr1();
 void ifSigusr2();
 void ifSigpoll();
 void dump();
+void limpiar_MP();
 
 /** Funciones de operaciones con CPU **/
 void procesar_pedido(sock_t*, header_t* );

@@ -73,13 +73,13 @@ void frames_create();
 void frames_destroy();
 void crear_tabla_pagina_PID(int32_t , int32_t);
 void buscar_pagina_tabla_paginas(t_pagina*);
-int32_t reemplazar_pagina(t_pagina*);
+int32_t reemplazar_pagina(t_list*);
 int32_t obtener_frame_libre();
 void asignar_pagina(t_pagina*);
 
 /** Utils **/
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char*);
-void pedidoPagina_Swap(t_pagina*);
+void pedido_pagina_swap(t_pagina*, int32_t);
 t_list* obtener_tabla_paginas_by_PID(int32_t PID);
 TPagina* obtener_pagina_a_reemplazar(t_list* paginas_del_proceso);
 

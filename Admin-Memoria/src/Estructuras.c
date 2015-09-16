@@ -199,19 +199,19 @@ void buscar_pagina_tabla_paginas(t_pagina* pagina) {
 	}
 	else {
 		log_debug(loggerDebug, "No se encontro en la tabla de paginas, se pide al swap");
-		pedidoPagina_Swap(pagina);
+		pedido_pagina_swap(pagina, LEER_PAGINA);
 		//todo leer;
 	}
 
 }
 
-void pedidoPagina_Swap(t_pagina* pagina) {
+void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 
 		int32_t enviado;
 		int32_t recibido;
 
 		//Envio al swap para pedir la pagina
-		header_t* headerSwap = _create_header(LEER_PAGINA,3 * sizeof(int32_t));
+		header_t* headerSwap = _create_header(operacion_swap, 3 * sizeof(int32_t));
 		enviado = _send_header(socketSwap, headerSwap);
 		if (enviado == ERROR_OPERATION) return;
 		free(headerSwap);
@@ -232,20 +232,29 @@ void pedidoPagina_Swap(t_pagina* pagina) {
 
 		if(get_operation_code(header_resultado_swap)==RESULTADO_OK) {
 
-			recibido = _receive_bytes(socketSwap, &(pagina->tamanio_contenido), sizeof(int32_t));
-			if (enviado == ERROR_OPERATION) return;
+			if(operacion_swap == LEER_PAGINA) {
 
-			recibido = _receive_bytes(socketSwap, pagina->contenido, sizeof(int32_t));
-			if (enviado == ERROR_OPERATION) return;
+				recibido = _receive_bytes(socketSwap, &(pagina->tamanio_contenido), sizeof(int32_t));
+				if (enviado == ERROR_OPERATION) return;
 
-			log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Exito al leer pagina en el swap" ANSI_COLOR_RESET);
+				recibido = _receive_bytes(socketSwap, pagina->contenido, sizeof(int32_t));
+				if (enviado == ERROR_OPERATION) return;
 
-			/** Se reemplaza la pagina en MP **/
-			reemplazar_pagina(pagina);
-	}
-		else
-			log_error(loggerError, ANSI_COLOR_BOLDRED "Error al leer pagina en el swap" ANSI_COLOR_RESET);
+				log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Exito al leer pagina en el swap" ANSI_COLOR_RESET);
 
+				/** Se reemplaza la pagina en MP **/
+				asignar_pagina(pagina);
+
+			}
+			else if(operacion_swap == ESCRIBIR_PAGINA)
+				log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Exito al escribir pagina en el swap" ANSI_COLOR_RESET);
+		}
+		else {
+			if(operacion_swap == LEER_PAGINA)
+				log_error(loggerError, ANSI_COLOR_BOLDRED "Error al leer pagina en el swap" ANSI_COLOR_RESET);
+			else
+				log_error(loggerError, ANSI_COLOR_BOLDRED "Error al escribir pagina en el swap" ANSI_COLOR_RESET);
+		}
 }
 
 void asignar_pagina(t_pagina* pagina_recibida_swap) {
@@ -268,20 +277,20 @@ void asignar_pagina(t_pagina* pagina_recibida_swap) {
 	}
 	else {
 
-		marco_libre = reemplazar_pagina(pagina_recibida_swap, paginas_PID);
+		marco_libre = reemplazar_pagina(paginas_PID);
 	}
 
 	/** Actualizo presencia de la pagina traida a memoria**/
 	bool findByID(void* parametro) {
 		TPagina* entrada = (TPagina*) parametro;
-		return entrada->pagina = pagina_recibida_swap->nro_pagina;
+		return entrada->pagina == pagina_recibida_swap->nro_pagina;
 	}
 
 	TPagina* pagina_a_poner_presente = list_find(paginas_PID, findByID);
 	pagina_a_poner_presente->presente = 1;
 	pagina_a_poner_presente->marco = marco_libre;
 	pagina_a_poner_presente->tiempo_referencia = get_actual_time_integer();
-
+	pagina_a_poner_presente->modificada = 0;
 }
 
 int32_t obtener_frame_libre() {
@@ -295,7 +304,7 @@ int32_t obtener_frame_libre() {
 	return -1;
 }
 
-int32_t reemplazar_pagina(t_pagina* pagina_recibida_swap, t_list* paginas_PID) {
+int32_t reemplazar_pagina(t_list* paginas_PID) {
 
 	int32_t marco_a_devolver;
 
@@ -308,7 +317,7 @@ int32_t reemplazar_pagina(t_pagina* pagina_recibida_swap, t_list* paginas_PID) {
 
 		bool findByID(void* parametro) {
 			TPagina* entrada = (TPagina*) parametro;
-			return entrada->pagina = pagina_recibida_swap->nro_pagina;
+			return entrada->pagina == pagina_obtenida->pagina;
 		}
 
 		TPagina* pagina_a_ausentar = list_find(paginas_PID, findByID);
@@ -317,7 +326,20 @@ int32_t reemplazar_pagina(t_pagina* pagina_recibida_swap, t_list* paginas_PID) {
 		pagina_a_ausentar->marco = 0;
 		pagina_a_ausentar->tiempo_referencia = 0;
 
-		/** Todo Escribo pagina en swap (si esta modificada) **/
+		/** Escribo pagina en swap (si esta modificada) **/
+		if(pagina_a_ausentar->modificada == 1) {
+
+			t_pagina* pagina_a_escribir = malloc(sizeof(t_pagina));
+			//pagina_a_escribir->PID = PID;
+			pagina_a_escribir->nro_pagina = pagina_a_ausentar->pagina;
+			/* Todo sacar contenido del marco
+			 *		pagina_a_escribir->tamanio_contenido;
+			 *	pagina_a_escribir->contenido;*/
+			pedido_pagina_swap(pagina_a_escribir, ESCRIBIR_PAGINA);
+
+			/** Le saco el bit de modificada **/
+			pagina_a_ausentar->modificada = 0;
+		}
 
 		return marco_a_devolver;
 

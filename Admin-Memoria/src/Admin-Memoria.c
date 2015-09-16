@@ -59,6 +59,9 @@ void ifSigusr1() {
 
 void ifSigusr2() {
 	//todo actualizar bit presencia en tabla de paginas
+	sem_wait(&sem_mutex_tabla_paginas);
+	limpiar_MP();
+	sem_post(&sem_mutex_tabla_paginas);
 }
 
 void ifSigpoll() {
@@ -84,6 +87,36 @@ void dump(){
 		abort();
 	}
 	log_error(loggerError, ANSI_COLOR_GREEN "Dump realizado con exito" ANSI_COLOR_RESET);
+}
+
+void limpiar_MP() {
+
+	void clean_by_PID(void* parametro) {
+		t_paginas_proceso* paginas_PID = (t_paginas_proceso*) parametro;
+
+		void remove_from_MP(void* parametro) {
+
+			TPagina* entrada = (TPagina*) parametro;
+
+			/** Sacarle la presencia a la entrada de pagina**/
+			entrada->presente = 0;
+
+			/** Si esta modificada, escribir en swap **/
+			if(entrada->modificada == 1) {
+				//Todo obtener contenido del marco y escribir en swap
+
+			}
+
+			entrada->marco = 0;
+			entrada->modificada = 0;
+			entrada->tiempo_referencia = 0;
+		}
+
+		list_iterate(paginas_PID->paginas, remove_from_MP);
+	}
+
+
+	list_iterate(tabla_Paginas, clean_by_PID);
 }
 
 /*Función donde se inicializan los semaforos */
@@ -460,7 +493,7 @@ t_resultado_busqueda buscar_pagina_a_escribir_tabla_paginas(t_pagina* pagina){
 			return FOUND;
 		}else {
 			log_debug(loggerDebug, "No se encontro en la tabla de paginas, se pide al swap");
-			pedidoPagina_Swap(pagina);
+			pedido_pagina_swap(pagina, LEER_PAGINA);
 			//todo escribir
 			return FOUND;
 		}
