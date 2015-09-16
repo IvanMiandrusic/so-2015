@@ -36,7 +36,7 @@ void* thread_Use(void* thread_id){
 			porcentaje=tiempoAcumulado[id]*10/6;
 		}
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"Valores- Inicial:%d, Final:%d, Acumulado:%d" ANSI_COLOR_RESET, tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
-
+		porcentaje=80;
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"El porcentaje de uso es:%d" ANSI_COLOR_RESET, porcentaje);
 		header_t* header_uso_cpu = _create_header(UTILIZACION_CPU, 2*sizeof(int32_t));
 		int32_t enviado = _send_header (&(socketPlanificador[id]), header_uso_cpu);
@@ -66,7 +66,7 @@ void* thread_Cpu(void* id){
 
 	if (enviado !=SUCCESS_OPERATION)
 	{
-		log_error(loggerError, ANSI_COLOR_RED "Se perdio la conexion con el Planificador" ANSI_COLOR_RESET);
+		log_error(loggerError, ANSI_COLOR_RED "Se perdio la conexion con el Planificador de la cpu: %d" ANSI_COLOR_RESET, thread_id);
 		exit(EXIT_FAILURE);
 	}
 	enviado = _send_bytes(socket_Planificador, &thread_id,sizeof(int32_t));
@@ -75,21 +75,22 @@ void* thread_Cpu(void* id){
 		log_error(loggerError, ANSI_COLOR_RED "Se perdio la conexion con el Planificador" ANSI_COLOR_RESET);
 		exit(EXIT_FAILURE);
 	}
-	log_debug(loggerDebug, "Conectado con el planificador");
+	log_debug(loggerDebug, "Conectado con el planificador la cpu: %d", thread_id);
 	free(header_nueva_cpu);
-//	pthread_t CPUuse;
-//	int32_t resultado_uso = pthread_create(&CPUuse, NULL, thread_Use, (void*) id );
-//	if (resultado_uso != 0) {
-//		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de uso de CPU número: %d"ANSI_COLOR_RESET, id);
-//		abort();
-//	}
+
+	pthread_t CPUuse;
+	int32_t resultado_uso = pthread_create(&CPUuse, NULL, thread_Use, (void*) thread_id );
+	if (resultado_uso != 0) {
+		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de uso de CPU número: %d"ANSI_COLOR_RESET, id);
+		abort();
+	}
 
 	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
 	if(connect_to_server(socket_Memoria)!=SUCCESS_OPERATION){
 		log_error(loggerError, ANSI_COLOR_RED "No se puedo conectar con la memoria, se aborta el proceso" ANSI_COLOR_RESET);
 		exit(1);
 	}
-	log_debug(loggerDebug, "Conectado con la memoria");
+	log_debug(loggerDebug, "Conectado con la memoria cpu:", thread_id);
 
 	socketMemoria[thread_id] = *socket_Memoria;
 	int32_t finalizar = 1;
@@ -356,20 +357,6 @@ t_respuesta* mAnsisOp_IO(int32_t id, PCB* pcb,int32_t tiempo){
 	//solo ver si se envio al planificador
 
 	log_debug(loggerDebug, "Se procedera a enviar el proceso:%d a IO con retardo: %d", pcb->PID, tiempo);
-
-	//TODO aca mando la solicitud el tiempo el pcb y el id esta bien? falta chequear si se envio?
-	int32_t tamanio_pcb = obtener_tamanio_pcb(pcb);
-	header_t* header_A_Planificador = _create_header(SOLICITUD_IO,3*sizeof(int32_t)+tamanio_pcb);
-	int32_t enviado_Header = _send_header(&(socketPlanificador[id]),header_A_Planificador);
-	int32_t envio_tiempo = _send_bytes(&(socketPlanificador[id]),&tiempo,sizeof(int32_t));
-
-	//char* pcb_serializado = serializarPCB(pcb);
-	char* pcb_serializado = malloc(tamanio_pcb);
-	pcb_serializado=serializarPCB(pcb);
-
-	int32_t envio_tamanio_pcb = _send_bytes(&(socketPlanificador[id]),&tamanio_pcb,sizeof(int32_t));
-	int32_t envio_pcb = _send_bytes(&(socketPlanificador[id]),pcb_serializado,tamanio_pcb);
-	int32_t envio_id = _send_bytes(&(socketPlanificador[id]),&id,sizeof(int32_t));
 
 	t_respuesta* response= malloc(sizeof(t_respuesta));
 	response->id=ENTRADASALIDA;
