@@ -11,6 +11,8 @@
 
 #include "libsocket.h"
 #include "Colores.h"
+#include <semaphore.h>
+extern sem_t sem_mutex;
 
 typedef struct estructura_configuracion			//estructura que contiene los datos del archivo de configuracion
 {

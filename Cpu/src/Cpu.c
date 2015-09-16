@@ -37,7 +37,7 @@ sock_t* socketPlanificador;
 int32_t* tiempoInicial;
 int32_t* tiempoFinal;
 int32_t* tiempoAcumulado;
-
+sem_t sem_mutex;
 
 
 ProcesoCPU* crear_estructura_config(char* path)
@@ -63,9 +63,9 @@ void ifProcessDie(){
 
 void inicializoSemaforos(){
 
-	/* Abajo, una inicialización ejemplo, sem_init(&semaforo, flags, valor) con su validacion
+	//Abajo, una inicialización ejemplo, sem_init(&semaforo, flags, valor) con su validacion
 	int32_t semMutex = sem_init(&sem_mutex,0,1);
-	if(semMutex==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex"); */
+	if(semMutex==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex");
 }
 
 /*Se crea un archivo de log donde se registra to-do */
@@ -88,8 +88,8 @@ int main(void) {
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "../Cpu.config";
 	arch = crear_estructura_config(path);
-	socketMemoria=malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
-	socketPlanificador=malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
+	socketMemoria= malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
+	socketPlanificador=  malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
 	tiempoInicial=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 	tiempoFinal=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 	tiempoAcumulado=malloc(sizeof(int32_t)* (arch->cantidad_hilos));

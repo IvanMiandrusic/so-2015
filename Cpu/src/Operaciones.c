@@ -52,14 +52,15 @@ void* thread_Use(void* thread_id){
 void* thread_Cpu(void* id){
 
 	int32_t thread_id = (void*) id;
+	sem_wait(&sem_mutex);
 	sock_t* socket_Planificador=create_client_socket(arch->ip_planificador,arch->puerto_planificador);
 	int32_t resultado = connect_to_server(socket_Planificador);
+	sem_post(&sem_mutex);
 	if(resultado == ERROR_OPERATION) {
 		log_error(loggerError, ANSI_COLOR_RED "Error al conectar al planificador" ANSI_COLOR_RESET);
 		return NULL;
 	}
 	socketPlanificador[thread_id] = *socket_Planificador;
-
 	//enviarle al planificador NUEVA_CPU y su id;
 	header_t* header_nueva_cpu = _create_header(NUEVA_CPU, sizeof(int32_t));
 	int32_t enviado =_send_header (&(socket_Planificador[thread_id]), header_nueva_cpu);
