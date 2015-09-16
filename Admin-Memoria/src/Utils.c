@@ -47,8 +47,7 @@ int32_t get_milliseconds(char* time){
 	return atoi(milisegundos);
 }
 
-/** Retorna el tiempo actual del sistema en formato hhmmss **/
-
+/** Retorna el tiempo actual del sistema en formato hhmmssmmmm **/
 char* get_actual_time() {
 
 	char* time = temporal_get_string_time();
@@ -63,7 +62,7 @@ char* get_actual_time() {
 	return locale_time;
 }
 
-/** Retorna el tiempo actual del sistema como entero en formato hhmmss **/
+/** Retorna el tiempo actual del sistema como entero en formato hhmmssmmmm **/
 int32_t get_actual_time_integer() {
 
 	char* time = get_actual_time();

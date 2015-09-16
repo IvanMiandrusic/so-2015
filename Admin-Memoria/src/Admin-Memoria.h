@@ -47,6 +47,7 @@ extern sem_t sem_mutex_tlb;
 extern sem_t sem_mutex_tabla_paginas;
 extern sock_t* socketServidorCpus;
 extern sock_t* socketSwap;
+extern int32_t* frames;
 
 /** Funciones de configuracion inicial **/
 ProcesoMemoria* crear_estructura_config(char*);

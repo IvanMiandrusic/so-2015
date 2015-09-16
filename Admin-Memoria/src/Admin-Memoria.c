@@ -23,6 +23,7 @@ sem_t sem_mutex_tlb;
 sem_t sem_mutex_tabla_paginas;
 sock_t* socketServidorCpus;
 sock_t* socketSwap;
+int32_t* frames;
 
 ProcesoMemoria* crear_estructura_config(char* path) {
 	t_config* archConfig = config_create(path);
@@ -112,6 +113,7 @@ void crear_estructuras_memoria() {
 	TLB_create();
 	tabla_paginas_create();
 	MP_create();
+	frames_create();
 
 }
 
@@ -120,6 +122,7 @@ void limpiar_estructuras_memoria(){
 	TLB_destroy();
 	tabla_paginas_destroy();
 	MP_destroy();
+	frames_destroy();
 }
 
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
@@ -449,7 +452,7 @@ t_resultado_busqueda buscar_pagina_a_escribir_tabla_paginas(t_pagina* pagina){
 
 			/** Si es LRU me interesa saber en que instante se referencia la pag en MP **/
 			if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
-						entradaFound->tiempo_uso = get_actual_time_integer();
+						entradaFound->tiempo_referencia = get_actual_time_integer();
 
 			int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);
 			memcpy(mem_principal+offset,pagina->contenido,arch->tamanio_marco);
