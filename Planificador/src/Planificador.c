@@ -59,7 +59,8 @@ ProcesoPlanificador* crear_estructura_config(char* path)
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie(){
 		log_info(loggerInfo, ANSI_COLOR_BLUE"Se dio de baja el proceso Planificador"ANSI_COLOR_RESET);
-		exit(1);
+		cleanAll();
+		exit(EXIT_FAILURE);
 }
 
 /*Función donde se inicializan los semaforos */
