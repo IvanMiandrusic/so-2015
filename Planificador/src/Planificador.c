@@ -162,6 +162,7 @@ void servidor_conexiones() {
 
 void procesarPedido(sock_t* socketCPU, header_t* header){
 
+	log_debug(loggerDebug, "Recibo operacion:%d, tamanio:%d", header->cod_op, header->size_message);
 	int32_t recibido;
 	int32_t cpu_id;
 	int32_t pcb_id;
@@ -170,8 +171,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	/** Recibo el cpu_id desde la CPU **/
 	recibido = _receive_bytes(socketCPU, &(cpu_id), sizeof(int32_t));
 	if(recibido == ERROR_OPERATION) return;
-	log_debug(loggerDebug, "Recibo cpu_id");
-
+	log_debug(loggerDebug, "Recibo cpu_id:%d", cpu_id);
 
 	//todo: tratar los errores
 
@@ -219,7 +219,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 		if(recibido == ERROR_OPERATION){
 			log_error(loggerError, "Fallo al recibir PCB desde la CPU");
 			return;}
-		log_debug(loggerDebug, "Recibo un pcb desde la cpu, para una IO");
+		log_debug(loggerDebug, "Recibo un pcb desde la cpu, porque termino rafaga");
 		PCB* pcb = deserializarPCB(pcb_serializado);
 
 
@@ -402,7 +402,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 
 	default: { break;}
 	}
-
+	free(header);
 }
 
 void liberarCPU(int32_t cpu_id){
@@ -580,11 +580,9 @@ void asignarPCBaCPU(){
 	if(hay_cpu_libre()&& !list_is_empty(colaListos)) {
 		printf("Asigno un pcb para ejecutar\n");
 		PCB* pcbAEnviar = list_remove(colaListos, 0);
-		log_debug(loggerDebug, "Agarre el primer pcb: id= %d, arch= %s sigInt= %d", pcbAEnviar->PID, pcbAEnviar->ruta_archivo, pcbAEnviar->siguienteInstruccion);
 		char* paquete = serializarPCB(pcbAEnviar);
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
 		enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID);
-		log_debug(loggerDebug, "el size de PCBs es: %d", list_size(colaListos));
 		log_info(loggerInfo, "El PCB se envio satisfactoriamente");
 
 		/** Pongo el PCB en ejecucion **/

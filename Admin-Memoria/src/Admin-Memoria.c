@@ -382,8 +382,8 @@ void leer_pagina(sock_t* socketCpu, header_t* header){
 	log_debug(loggerDebug, "Debo leer la pagina:%d, del proceso: %d", pagina_pedida->nro_pagina, pagina_pedida->PID);
 
 	/** Se procede a buscar la pagina en las estructuras de memoria **/
-	buscar_pagina(pagina_pedida);			//todo probar
-
+	//buscar_pagina(pagina_pedida);			//todo probar
+	pagina_pedida->contenido="diegogfiorillo";
 	int32_t enviado;
 	if (pagina_pedida->contenido==NULL) {
 
@@ -428,8 +428,8 @@ void escribirPagina(sock_t* socketCpu, header_t* header){
 	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
 	log_debug(loggerDebug, "Se tiene que escribir del proceso:%d la pagina:%d con:%s", pagina_pedida->PID, pagina_pedida->nro_pagina, pagina_pedida->contenido);
 
-	t_resultado_busqueda resultado = buscar_y_escribir_pagina(pagina_pedida);  //todo probar
-
+	//t_resultado_busqueda resultado = buscar_y_escribir_pagina(pagina_pedida);  //todo probar
+	t_resultado_busqueda resultado=FOUND;
 	int32_t enviado;
 	if (resultado == NOT_FOUND) {
 
