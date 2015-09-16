@@ -169,11 +169,6 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 		break;
 	}
 
-	case FINALIZAR_PROCESO:{
-		log_info(loggerInfo,"CPU recibio de Planificador codOperacion %d Finalizar Proceso",get_operation_code(header));
-		break;
-	}
-
 	}
 }
 
@@ -330,7 +325,7 @@ void ejecutar(int32_t id, PCB* pcb){
 
 
 
-void enviar_Header_ID_Retardo_PCB_Texto (Cod_Operacion,socketEnvio,id,pcb,texto,retardo){
+void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion, sock_t* socketEnvio,int32_t id,PCB* pcb,char* texto, int32_t retardo){
 
 
 		int32_t tamanio_texto = strlen(texto);
