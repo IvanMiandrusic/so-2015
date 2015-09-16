@@ -119,7 +119,15 @@ void finalizarPID(char* comando) {
 
 	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a finalizar un mProc con id %d" ANSI_COLOR_RESET "\n", PID);
 
-	notificarFinDePcbACpu(PID);
+	/*Basicamente lo que habria que hacer aca es:
+	 * si PID > al pid actual (el de la variable global, o menor a CERO, el pid es incorrecto, osea,
+	 * se quiere finalizar un pid que no existe.
+	 * sino, se busca en la lista de finalizados y si esta, un log que ya esta finalizado
+	 * sino, se guarda en una lista de PIDS a finalizar, que cuando quiero asignar PCB a cpu,
+	 * me fijo... esta por terminar? entonces le actualizo el pcb->siguienteInstruccion.
+	 * Cualquier consulta avisarme a mi o a fede.
+	 */
+	notificarFinDePcbACpu(PID);				//todo, no haría falta
 
 }
 

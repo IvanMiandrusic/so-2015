@@ -475,7 +475,7 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 
 t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* texto){
 	//se debe escribir en memoria el texto en la pagina N
-	log_debug(loggerDebug, "Se procedera a esribir del proceso:%d, la pagina: %d, %d bytes",pcb->PID, numDePagina, strlen(texto));
+	log_debug(loggerDebug, "Se procedera a escribir del proceso:%d, la pagina: %d, %d bytes",pcb->PID, numDePagina, strlen(texto));
 	/** Envio header a la memoria con ESCRIBIR **/
 	int32_t tamanio = strlen(texto);
 	header_t* header_A_Memoria = _create_header(M_ESCRIBIR, 3 * sizeof(int32_t)+tamanio);
