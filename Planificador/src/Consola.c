@@ -11,6 +11,7 @@
 #include "Utils.h"
 #include "Planificador.h"
 
+
 void consola_planificador(){
 
 		char comandoSeleccionado[COMANDO_SIZE];
@@ -119,16 +120,10 @@ void finalizarPID(char* comando) {
 
 	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a finalizar un mProc con id %d" ANSI_COLOR_RESET "\n", PID);
 
-	/*Basicamente lo que habria que hacer aca es:
-	 * si PID > al pid actual (el de la variable global, o menor a CERO, el pid es incorrecto, osea,
-	 * se quiere finalizar un pid que no existe.
-	 * sino, se busca en la lista de finalizados y si esta, un log que ya esta finalizado
-	 * sino, se guarda en una lista de PIDS a finalizar, que cuando quiero asignar PCB a cpu,
-	 * me fijo... esta por terminar? entonces le actualizo el pcb->siguienteInstruccion.
-	 * Cualquier consulta avisarme a mi o a fede.
-	 */
-	notificarFinDePcbACpu(PID);				//todo, no haría falta
-
+	if((PID > idParaPCB )| PID <= 0){
+		printf(ANSI_COLOR_BOLDRED "Por favor ingrese un PID existente" ANSI_COLOR_RESET "\n");
+	}
+	agregarPidAColaAFinalizar(PID);
 }
 
 char* get_estado_proceso(int32_t estado) {
@@ -138,6 +133,7 @@ char* get_estado_proceso(int32_t estado) {
 	if(estado == BLOQUEADO) return "Bloqueado";
 	if(estado == FINALIZADO_OK) return "Finalizado_OK";
 	if(estado == FINALIZADO_ERROR) return "Finalizado_ERROR";
+	if(estado == FINALIZANDO) return "Finalizando";
 
 	return NULL;
 }

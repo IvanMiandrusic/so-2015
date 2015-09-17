@@ -31,6 +31,7 @@ t_list* colaBlock;
 t_list* colaExec;
 t_list* colaFinalizados;
 t_list* colaCPUs;
+t_list* colaAFinalizar;
 t_list* retardos_PCB;
 /** ID para los PCB **/
 int32_t idParaPCB = 0;
@@ -127,6 +128,7 @@ void creoEstructurasDeManejo(){
 	colaBlock=list_create();
 	colaExec=list_create();
 	colaFinalizados=list_create();
+	colaAFinalizar=list_create();
 	colaCPUs=list_create();
 	retardos_PCB = list_create();
 
@@ -370,38 +372,18 @@ void liberarCPU(int32_t cpu_id){
 
 }
 
-void notificarFinDePcbACpu(int32_t pcbID){				//Todo, borrar
 
-	bool getCpuByPcbID(CPU_t* unaCPU){
-				return unaCPU->pcbID == pcbID;
-		}
-
+void agregarPidAColaAFinalizar(int32_t pcbID){
 	bool getPcbByID(PCB* unPCB){
 			return unPCB->PID == pcbID;
 		}
 
-	if(list_any_satisfy(colaCPUs, getCpuByPcbID)){
-
-	CPU_t* cpu_encontrada = list_find(colaCPUs, getCpuByPcbID);
-	header_t* header_finalizar = _create_header(FINALIZAR_PROCESO, sizeof(int32_t));
-	int32_t enviado =_send_header (cpu_encontrada->socketCPU, header_finalizar);
-	if(enviado == ERROR_OPERATION){
-		log_error(loggerError, "Fallo la notificacion de Finalizar proceso hacia la CPU");
+	if(list_any_satisfy(colaFinalizados, getPcbByID)){
+			log_info(loggerInfo, "El PID indicado ya se encuentra Finalizado");
+			return;
+		} else{ list_add(colaAFinalizar, pcbID);
+				return;}
 		}
-	log_debug(loggerDebug, "Se envio Finalizar_Proceso al cpu de ID: %d", cpu_encontrada->ID);
-	finalizarPCB(pcbID, FINALIZADO_ERROR);
-	//todo: habria que esperar una respuesta de la CPU?? por ej: se termino de liberar memoria o algo asi??
-	return;
-
-	}else{
-		PCB* pcb_found = list_remove_by_condition(colaListos, getPcbByID);
-		pcb_found->estado= FINALIZADO_OK;
-		agregarPcbAColaFinalizados(pcb_found);
-		log_debug(loggerDebug, "Cambio de estado y de lista a finalizado del pcb con id %d (finalizarPID)", pcbID);
-
-		log_info(loggerInfo, "El PCB con ID: %d, no se encontraba en ninguna CPU y se finalizo", pcbID);
-		return;}
-}
 
 
 void finalizarPCB(int32_t pcbID, int32_t tipo){
@@ -523,15 +505,29 @@ void asignarPCBaCPU(){
 	if(hay_cpu_libre()&& !list_is_empty(colaListos)) {
 		printf("Asigno un pcb para ejecutar\n");
 		PCB* pcbAEnviar = list_remove(colaListos, 0);
-		char* paquete = serializarPCB(pcbAEnviar);
-		int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
-		enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID);
-		log_info(loggerInfo, "El PCB se envio satisfactoriamente");
 
-		/** Pongo el PCB en ejecucion **/
-		pcbAEnviar->estado = EJECUCION;
-		agregarPcbAColaExec(pcbAEnviar);
+		bool getPcbByID(PCB* unPCB){
+					return unPCB->PID == pcbAEnviar;
+				}
 
+		if(list_any_satisfy(colaAFinalizar, getPcbByID)){
+			//Enviar Finalizar Proceso a la CPU
+			char* paquete = serializarPCB(pcbAEnviar);  //se podria refactorizar el envio
+			int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
+			enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, FINALIZAR_PROCESO);
+			log_info(loggerInfo, "El PCB se envio satisfactoriamente para finalizar");
+			pcbAEnviar->estado = FINALIZANDO;
+			asignarPCBaCPU();
+			agregarPcbAColaExec(pcbAEnviar);
+		}else{
+			char* paquete = serializarPCB(pcbAEnviar);
+			int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
+			enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, ENVIO_PCB);
+			log_info(loggerInfo, "El PCB se envio satisfactoriamente");
+			/** Pongo el PCB en ejecucion **/
+			pcbAEnviar->estado = EJECUCION;
+			agregarPcbAColaExec(pcbAEnviar);
+		}
 	}else{
 		if(hay_cpu_libre())log_error(loggerError, "No hay un PCB disponible");
 		if(!list_is_empty(colaListos))log_error(loggerError, "No hay una CPU disponible");
@@ -551,7 +547,7 @@ CPU_t* obtener_cpu_libre() {
 	return cpu_encontrada;
 }
 
-void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb, int32_t pcbID){
+void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb, int32_t pcbID, int32_t tipo){
 
 	CPU_t* CPU = obtener_cpu_libre();
 	log_debug(loggerDebug, "Cpu libre: %d socket %d y tamanio pcb %d", CPU->ID, CPU->socketCPU->fd, tamanio_pcb);
@@ -562,8 +558,8 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb, int32_t pcbID){
 	// Asigno el pcbID a la CPU_t
 	CPU->pcbID = pcbID;
 
-	int32_t enviado = send_msg(CPU->socketCPU, ENVIO_PCB, paquete_serializado, tamanio_pcb);
-	if(enviado == ERROR_OPERATION){
+	int32_t enviado = send_msg(CPU->socketCPU, tipo, paquete_serializado, tamanio_pcb); //le envia el tipo de Envio
+	if(enviado == ERROR_OPERATION){														//FINALIZAR_PROCESO o ENVIO_PCB
 		log_error(loggerError, "Fallo en el envio de PCB");
 		return;
 	}
@@ -638,7 +634,7 @@ int main(void) {
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "../Planificador.config";
+	char* path = "Planificador.config";
 	arch = crear_estructura_config(path);
 
 	/*Se inicializan todos los semaforos necesarios */

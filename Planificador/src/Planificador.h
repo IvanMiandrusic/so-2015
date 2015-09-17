@@ -22,12 +22,15 @@
 #include <commons/collections/list.h>
 #include "libsocket.h"
 
+
+
 typedef enum estados_pcb {
        LISTO=1,
        EJECUCION=2,
        BLOQUEADO=3,
        FINALIZADO_OK=4,
-       FINALIZADO_ERROR=5
+       FINALIZADO_ERROR=5,
+	   FINALIZANDO=6 //agregue este estado, que representa que al pcb lo esta finalizando la cpu
 }estados_pcb_t;
 
 
@@ -96,7 +99,7 @@ void procesarPedido(sock_t* socketCpu, header_t* header);
 CPU_t* generarCPU(int32_t ID, sock_t* socketCPU);
 void asignarPCBaCPU();
 int32_t obtener_tamanio_pcb(PCB* pcb);
-void enviarPCB(char* unPaquete, int32_t tamanio_pcb, int32_t pcbID);
+void enviarPCB(char* unPaquete, int32_t tamanio_pcb, int32_t pcbID, int32_t tipo);
 CPU_t* obtener_cpu_libre();
 bool hay_cpu_libre();
 void operarIO(int32_t id, int32_t tiempo, PCB* pcb);
@@ -108,7 +111,7 @@ void agregarPcbAColaExec(PCB* pcb);
 void agregarColaCPUs(CPU_t* cpu);
 void finalizarPCB(int32_t pcbID, int32_t tipo);
 void liberarCPU(int32_t cpu_id);
-void notificarFinDePcbACpu(int32_t pcbID);
+void agregarPidAColaAFinalizar(int32_t pcbID);
 
 
 

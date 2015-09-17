@@ -15,6 +15,8 @@
 #include <commons/string.h>
 #include "Planificador.h"
 
+extern int32_t idParaPCB;
+
 #define COMANDO_SIZE 50
 
 typedef enum comandos {
