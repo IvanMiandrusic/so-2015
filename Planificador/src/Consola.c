@@ -120,7 +120,7 @@ void finalizarPID(char* comando) {
 
 	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a finalizar un mProc con id %d" ANSI_COLOR_RESET "\n", PID);
 
-	if((PID > idParaPCB )| PID <= 0){
+	if((PID > idParaPCB) || PID <= 0){
 		printf(ANSI_COLOR_BOLDRED "Por favor ingrese un PID existente" ANSI_COLOR_RESET "\n");
 	}
 	agregarPidAColaAFinalizar(PID);

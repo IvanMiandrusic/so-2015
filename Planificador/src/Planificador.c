@@ -634,7 +634,7 @@ int main(void) {
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "Planificador.config";
+	char* path = "../Planificador.config";
 	arch = crear_estructura_config(path);
 
 	/*Se inicializan todos los semaforos necesarios */
