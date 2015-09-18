@@ -200,6 +200,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 				return;
 			}
 			log_debug(loggerDebug, "Quantum enviado exitosamente a la CPU");
+			asignarPCBaCPU();
 			break;
 	}
 	case TERMINO_RAFAGA: {
@@ -524,7 +525,6 @@ void cambiarAUltimaInstruccion(PCB* pcb){
 
 void asignarPCBaCPU(){
 	if(hay_cpu_libre()&& !list_is_empty(colaListos)) {
-		printf("Asigno un pcb para ejecutar\n");
 		PCB* pcbAEnviar = list_remove(colaListos, 0);
 
 		bool getPcbByID(PCB* unPCB){
@@ -533,28 +533,20 @@ void asignarPCBaCPU(){
 
 		if(list_any_satisfy(colaAFinalizar, getPcbByID)){
 			cambiarAUltimaInstruccion(pcbAEnviar);
-			char* paquete = serializarPCB(pcbAEnviar);
-			int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
-			enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, ENVIO_PCB);
-			log_info(loggerInfo, "El PCB se envio satisfactoriamente");
 			pcbAEnviar->estado = FINALIZANDO;
 			sem_wait(&semMutex_colaAFinalizar);
 			list_remove_by_condition(colaAFinalizar, getPcbByID);
 			sem_post(&semMutex_colaAFinalizar);
 			agregarPcbAColaExec(pcbAEnviar);
 		}else{
-			char* paquete = serializarPCB(pcbAEnviar);
-			int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
-			enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, ENVIO_PCB);
-			log_info(loggerInfo, "El PCB se envio satisfactoriamente");
-			/** Pongo el PCB en ejecucion **/
 			pcbAEnviar->estado = EJECUCION;
-			agregarPcbAColaExec(pcbAEnviar);
 		}
-	}else{
-		if(hay_cpu_libre())log_error(loggerError, "No hay un PCB disponible");
-		if(!list_is_empty(colaListos))log_error(loggerError, "No hay una CPU disponible");
-		return;
+		char* paquete = serializarPCB(pcbAEnviar);
+		int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
+		enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, ENVIO_PCB);
+		log_info(loggerInfo, "El PCB se envio satisfactoriamente");
+		/** Pongo el PCB en ejecucion **/
+		agregarPcbAColaExec(pcbAEnviar);
 	}
 
 }
@@ -582,7 +574,7 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb, int32_t pcbID, in
 	CPU->pcbID = pcbID;
 
 	int32_t enviado = send_msg(CPU->socketCPU, tipo, paquete_serializado, tamanio_pcb); //le envia el tipo de Envio
-	if(enviado == ERROR_OPERATION){														//FINALIZAR_PROCESO o ENVIO_PCB
+	if(enviado == ERROR_OPERATION){
 		log_error(loggerError, "Fallo en el envio de PCB");
 		return;
 	}
