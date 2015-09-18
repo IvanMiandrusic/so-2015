@@ -191,158 +191,27 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 			/** Envio el quantum a la CPU **/
 			header_t* header_quantum = _create_header(ENVIO_QUANTUM, sizeof(int32_t));
 			int32_t enviado = _send_header(socketCPU, header_quantum);
-			if(enviado == ERROR_OPERATION){
-				log_error(loggerError, "Fallo al enviar Quantum");
-				return;}
+			if(enviado == ERROR_OPERATION)return;
 			enviado = _send_bytes(socketCPU, &(arch->quantum), sizeof(int32_t));
-			if(enviado == ERROR_OPERATION) {
-				log_error(loggerError, "Fallo al enviar Quantum");
-				return;
-			}
+			if(enviado == ERROR_OPERATION) return;
 			log_debug(loggerDebug, "Quantum enviado exitosamente a la CPU");
 			asignarPCBaCPU();
 			break;
 	}
 	case TERMINO_RAFAGA: {
-		int32_t tamanio_pcb;
-		recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
-		if(recibido == ERROR_OPERATION){
-			log_error(loggerError, "Fallo al recibir tamanio_pcb desde la CPU");
-			return;}
-		log_debug(loggerDebug, "Recibo tamanio:%d", tamanio_pcb);
-		/** recibo el PCB **/
-		char* pcb_serializado = malloc(tamanio_pcb);
-		recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
-		if(recibido == ERROR_OPERATION){
-			log_error(loggerError, "Fallo al recibir PCB desde la CPU");
-			return;}
-		log_debug(loggerDebug, "Recibo un pcb desde la cpu, porque termino rafaga");
-		PCB* pcb = deserializarPCB(pcb_serializado);
-		/** recibo el char* de resultados **/
-		int32_t tamanio_resultado_operaciones;
-		recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
-		if(recibido == ERROR_OPERATION) {
-			log_error(loggerError, "Fallo al recibir tamaño_resultado desde la CPU");
-			return;}
-		char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
-		recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
-		if(recibido == ERROR_OPERATION) {
-			log_error(loggerError, "Fallo al recibir resultado de Op desde la CPU");
-			return;}
-		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
-		log_debug(loggerDebug, "Recibo el proceso con id: %d, ejecuto:%s", pcb->PID, resultado_operaciones);
-
+		recibirOperacion(socketCPU,cpu_id, TERMINO_RAFAGA);
 		break;
 	}
 	case INSTRUCCION_IO: {
-			//recibe el tiempo de I/O
-			int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo), sizeof(int32_t));
-			if(recibido_tiempo == ERROR_OPERATION){
-				log_error(loggerError, "Fallo al recibir tiempo para I/O");
-				return;}
-			log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO: %d", tiempo);
-			/** tamaño pcb **/
-			int32_t tamanio_pcb;
-			recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
-			if(recibido == ERROR_OPERATION){
-				log_error(loggerError, "Fallo al recibir tamanio_pcb para IO");
-				return;}
-			log_debug(loggerDebug, "Recibo tamanio:%d", tamanio_pcb);
-			char* pcb_serializado = malloc(tamanio_pcb);
-			recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
-			if(recibido == ERROR_OPERATION){
-				log_error(loggerError, "Fallo al recibir PCB para IO");
-				return;}
-			log_debug(loggerDebug, "Recibo un pcb desde la cpu, para una IO");
-			PCB* pcb = deserializarPCB(pcb_serializado);
-			/** recibo el char* de resultados **/
-			int32_t tamanio_resultado_operaciones;
-			recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
-			if(recibido == ERROR_OPERATION){
-				log_error(loggerError, "Fallo al recibir tamanio resultado para IO");
-				return;}
-			log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU tamanio: %d", tamanio_resultado_operaciones);
-			char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
-			recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
-			if(recibido == ERROR_OPERATION){
-				log_error(loggerError, "Fallo al recibir resultado para IO");
-				return;}
-			log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU: %s", resultado_operaciones);
-			/** Loggeo resultado operaciones Todo **/
-			log_info(loggerInfo, "Recibido el proceso id: %d, ejecuto: %s",pcb->PID, resultado_operaciones);
-
-			/** operar la IO **/
-			operarIO(cpu_id, tiempo, pcb);
-			log_debug(loggerDebug, "Finalizo la I/O");
+		recibirOperacion(socketCPU, cpu_id, INSTRUCCION_IO);
 		break;
 	}
 	case RESULTADO_ERROR :{
-		log_debug(loggerDebug, "Recibo un pid con error de la cpu:%d", cpu_id);
-		/** tamaño pcb **/
-		int32_t tamanio_pcb;
-		recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
-		if(recibido == ERROR_OPERATION){
-			log_error(loggerError, "Fallo al recibir tamanio_pcb (Result_Error)");
-			return;}
-		log_debug(loggerDebug, "Recibo un tamanio pcb:%d", tamanio_pcb);
-		/** recibo el PCB **/
-		char* pcb_serializado = malloc(tamanio_pcb);
-		recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
-		if(recibido == ERROR_OPERATION){
-			log_error(loggerError, "Fallo al recibir PCB (Result_Error)");
-			return;}
-		log_debug(loggerDebug, "Recibo un pcb desde la cpu, por un Error");
-		PCB* pcb = deserializarPCB(pcb_serializado);
-		/** recibo el char* de resultados **/
-		int32_t tamanio_resultado_operaciones;
-		recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
-		if(recibido == ERROR_OPERATION){
-			log_error(loggerError, "Fallo al recibir tamanio_resultado Op (Result_Error)");
-			return;}
-		char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
-		recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
-		if(recibido == ERROR_OPERATION){
-			log_error(loggerError, "Fallo al recibir resultado Op (Result_Error)");
-			return;}
-		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
-		log_info(loggerInfo, "Recibido el proceso id: %d, ejecuto: %s",pcb->PID, resultado_operaciones);
-
-		finalizarPCB(pcb->PID, RESULTADO_ERROR);
-		liberarCPU(cpu_id);
-		asignarPCBaCPU();
+		recibirOperacion(socketCPU, cpu_id, RESULTADO_ERROR);
 		break;
 	}
 	case RESULTADO_OK: {
-		/** tamaño pcb **/
-		int32_t tamanio_pcb;
-		recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
-		if(recibido == ERROR_OPERATION){
-			log_error(loggerError, "Fallo al recibir tamanio_pcb (Result_OK)");
-			return;}
-		/** recibo el PCB **/
-		char* pcb_serializado = malloc(tamanio_pcb);
-		recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
-		if(recibido == ERROR_OPERATION){
-			log_error(loggerError, "Fallo al recibir PCB (Result_OK)");
-			return;}
-		log_debug(loggerDebug, "Recibo un pcb desde la cpu, Result_OK");
-		PCB* pcb = deserializarPCB(pcb_serializado);
-		/** recibo el char* de resultados **/
-		int32_t tamanio_resultado_operaciones;
-		recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
-		if(recibido == ERROR_OPERATION){
-			log_error(loggerError, "Fallo al recibir tamanio_resultado op (Result_OK)");
-			return;}
-		char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
-		recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
-		if(recibido == ERROR_OPERATION){
-			log_error(loggerError, "Fallo al recibir resultado OP (Result_OK)");
-			return;}
-		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU (Result_OK)");
-		log_info(loggerInfo, "Finaliza el proceso id: %d, ejecuto: %s",pcb->PID, resultado_operaciones);
-		finalizarPCB(pcb->PID, RESULTADO_OK);
-		liberarCPU(cpu_id);
-		asignarPCBaCPU();
+		recibirOperacion(socketCPU, cpu_id, RESULTADO_OK);
 		break;
 	}
 	case UTILIZACION_CPU: {
@@ -364,6 +233,53 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	default: { break;}
 	}
 	free(header);
+}
+
+void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion){
+		int32_t tiempo;
+		if(cod_Operacion==INSTRUCCION_IO){
+			//recibe el tiempo de I/O
+			int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo), sizeof(int32_t));
+			if(recibido_tiempo == ERROR_OPERATION)return;
+			log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO: %d", tiempo);
+		}
+
+		/** tamaño pcb **/
+		int32_t tamanio_pcb;
+		int32_t recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
+		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo tamanio:%d", tamanio_pcb);
+		char* pcb_serializado = malloc(tamanio_pcb);
+		recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
+		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo un pcb desde la cpu, para una IO");
+		PCB* pcb = deserializarPCB(pcb_serializado);
+		/** recibo el char* de resultados **/
+		int32_t tamanio_resultado_operaciones;
+		recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
+		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU tamanio: %d", tamanio_resultado_operaciones);
+		char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
+		recibido = _receive_bytes(socketCPU, resultado_operaciones, tamanio_resultado_operaciones);
+		if(recibido == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU: %s", resultado_operaciones);
+		/** Loggeo resultado operaciones Todo **/
+		log_info(loggerInfo, "Recibido el proceso id: %d, ejecuto: %s",pcb->PID, resultado_operaciones);
+
+		/** operar la respuesta **/
+		if(cod_Operacion==INSTRUCCION_IO) operarIO(cpu_id, tiempo, pcb);
+		if(cod_Operacion==TERMINO_RAFAGA) ;//todo
+		if(cod_Operacion==RESULTADO_ERROR){
+			finalizarPCB(pcb->PID, RESULTADO_ERROR);
+			liberarCPU(cpu_id);
+			asignarPCBaCPU();
+		}
+		if(cod_Operacion==RESULTADO_OK){
+			finalizarPCB(pcb->PID, RESULTADO_OK);
+			liberarCPU(cpu_id);
+			asignarPCBaCPU();
+		}
+
 }
 
 void liberarCPU(int32_t cpu_id){

@@ -113,6 +113,7 @@ void finalizarPCB(int32_t pcbID, int32_t tipo);
 void liberarCPU(int32_t cpu_id);
 void agregarPidAColaAFinalizar(int32_t pcbID);
 void cambiarAUltimaInstruccion(PCB* pcb);
+void recibirOperacion(sock_t*, int32_t, int32_t);
 
 
 /** Closures **/
