@@ -19,6 +19,8 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#define TAM_FINALIZAR -10
+
 /** TAD para PLANIFICADOR **/
 ProcesoPlanificador* arch;
 /** Loggers **/
@@ -43,6 +45,7 @@ sem_t semMutex_colaExec;
 sem_t semMutex_colaFinalizados;
 sem_t semMutex_colaListos;
 sem_t semMutex_colaCPUs;
+sem_t semMutex_colaAFinalizar;
 sem_t sem_list_retardos;
 sem_t sem_io;
 
@@ -82,6 +85,9 @@ void inicializoSemaforos(){
 
 	int32_t semMutexCpu = sem_init(&semMutex_colaCPUs,0,1);
 	if(semMutexCpu==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas CPU");
+
+	int32_t semMutexAFinalizar = sem_init(&semMutex_colaAFinalizar,0,1);
+	if(semMutexAFinalizar==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas AFinalizar");
 
 	int32_t semMutexRetardos = sem_init(&sem_list_retardos,0,1);
 	if(semMutexRetardos==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de lista retardos");
@@ -174,8 +180,6 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	if(recibido == ERROR_OPERATION) return;
 	log_debug(loggerDebug, "Recibo cpu_id:%d", cpu_id);
 
-	//todo: tratar los errores
-
 
 	switch(get_operation_code(header)){
 	case NUEVA_CPU: {
@@ -226,7 +230,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 			return;}
 		log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU");
 		log_debug(loggerDebug, "Recibo el proceso con id: %d, ejecuto:%s", pcb->PID, resultado_operaciones);
-		//todo: terminar
+
 		break;
 	}
 	case INSTRUCCION_IO: {
@@ -478,7 +482,7 @@ void procesar_IO(){
 		pcb_to_sleep->estado= LISTO;
 		agregarPcbAColaListos(pcb_to_sleep);
 
-		PCB* pcb=list_remove(colaBlock, 0);
+		PCB* pcb=list_remove(colaBlock, 0); //se guarda en la var inecesariamente??
 
 		/** Se asigna un nuevo PCB a la cpu q se libera **/
 		asignarPCBaCPU();
@@ -501,6 +505,23 @@ bool hay_cpu_libre() {
 	return list_any_satisfy(colaCPUs, estaLibre);
 }
 
+void cambiarAUltimaInstruccion(PCB* pcb){
+
+	FILE* programa = fopen(pcb->ruta_archivo, "r");
+	if(programa == NULL){
+		log_error(loggerError, "Error al intentar abrir la ruta_archivo del pcb con id: %d", pcb->PID);
+		return;
+	}
+	fseek(programa, TAM_FINALIZAR, SEEK_END);
+	int32_t posicion = ftell(programa);
+	if(posicion < 0){
+		log_error(loggerError, "Error en la posicion devuelta por ftell para cambiar la instruccion");
+	}
+	pcb->siguienteInstruccion= posicion;
+	fclose(programa);
+	return;
+}
+
 void asignarPCBaCPU(){
 	if(hay_cpu_libre()&& !list_is_empty(colaListos)) {
 		printf("Asigno un pcb para ejecutar\n");
@@ -511,13 +532,15 @@ void asignarPCBaCPU(){
 				}
 
 		if(list_any_satisfy(colaAFinalizar, getPcbByID)){
-			//Enviar Finalizar Proceso a la CPU
-			char* paquete = serializarPCB(pcbAEnviar);  //se podria refactorizar el envio
+			cambiarAUltimaInstruccion(pcbAEnviar);
+			char* paquete = serializarPCB(pcbAEnviar);
 			int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
-			enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, FINALIZAR_PROCESO);
-			log_info(loggerInfo, "El PCB se envio satisfactoriamente para finalizar");
+			enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, ENVIO_PCB);
+			log_info(loggerInfo, "El PCB se envio satisfactoriamente");
 			pcbAEnviar->estado = FINALIZANDO;
-			asignarPCBaCPU();
+			sem_wait(&semMutex_colaAFinalizar);
+			list_remove_by_condition(colaAFinalizar, getPcbByID);
+			sem_post(&semMutex_colaAFinalizar);
 			agregarPcbAColaExec(pcbAEnviar);
 		}else{
 			char* paquete = serializarPCB(pcbAEnviar);
