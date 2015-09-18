@@ -83,3 +83,6 @@ int32_t obtengoSegundos(){
 	free(segundos);
 	return valor;
 }
+
+
+

@@ -23,7 +23,6 @@
 #include <semaphore.h>
 #include <commons/collections/list.h>
 #include "libsocket.h"
-#include "Colores.h"
 #include "Cpu.h"
 #include "Operaciones.h"
 
@@ -32,8 +31,7 @@ ProcesoCPU* arch;
 t_log* loggerInfo;
 t_log* loggerError;
 t_log* loggerDebug;
-sock_t* socketMemoria;
-sock_t* socketPlanificador;
+t_list* socketsCPU;
 int32_t* tiempoInicial;
 int32_t* tiempoFinal;
 int32_t* tiempoAcumulado;
@@ -88,8 +86,7 @@ int main(void) {
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "../Cpu.config";
 	arch = crear_estructura_config(path);
-	socketMemoria= malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
-	socketPlanificador=  malloc(sizeof(sock_t*)*(arch->cantidad_hilos));
+	socketsCPU=list_create();
 	tiempoInicial=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 	tiempoFinal=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 	tiempoAcumulado=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
@@ -110,7 +107,10 @@ int main(void) {
     pthread_t CPUthreads[cantidad_hilos];
 
     for(i=0;i<cantidad_hilos;i++){
-
+    	t_sockets* sockets=malloc(sizeof(t_sockets));
+    	sockets->socketPlanificador= malloc(sizeof(sock_t));
+    	sockets->socketMemoria= malloc(sizeof(sock_t));
+    	list_add_in_index(socketsCPU, i, sockets);
     	int resultado = pthread_create(&CPUthreads[i], NULL, thread_Cpu, (void*) i );
     	if (resultado != 0) {
     		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de ejecucion CPU número: %d"ANSI_COLOR_RESET, i);
@@ -121,8 +121,7 @@ int main(void) {
 	for(i=0;i<cantidad_hilos;i++){ // espera a que terminen los hilos para terminar el proceso
 		pthread_join(CPUthreads[i],NULL);
 	}
-	free(socketMemoria);
-	free(socketPlanificador);
+	list_destroy_and_destroy_elements(socketsCPU,free);
 	free(tiempoAcumulado);
 	free(tiempoFinal);
 	free(tiempoInicial);

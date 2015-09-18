@@ -35,5 +35,4 @@ PCB* deserializarPCB(char*);
 char* serializarPCB(PCB*);
 int32_t obtener_tamanio_pcb(PCB*);
 int32_t obtengoSegundos();
-
 #endif /* COMUNICACION_H_ */

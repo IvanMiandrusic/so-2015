@@ -10,7 +10,7 @@
 #define CPU_H_
 
 #include "libsocket.h"
-#include "Colores.h"
+#include "Utils.h"
 #include <semaphore.h>
 extern sem_t sem_mutex;
 

@@ -8,8 +8,7 @@ extern ProcesoCPU* arch;
 extern t_log* loggerInfo;
 extern t_log* loggerError;
 extern t_log* loggerDebug;
-extern sock_t* socketPlanificador;
-extern sock_t* socketMemoria;
+extern t_list* socketsCPU;
 extern int32_t* tiempoInicial;
 extern int32_t* tiempoFinal;
 extern int32_t* tiempoAcumulado;
@@ -26,6 +25,7 @@ void* thread_Use(void* thread_id){
 	int32_t toAnterior;
 	int32_t tfAnterior;
 	int32_t porcentaje;
+	sock_t* socketPlanificador=getSocketPlanificador(id);
 	while(TRUE){
 		sleep(60);
 		if(tiempoFinal[id]==toAnterior && tiempoInicial[id]==tfAnterior){
@@ -39,9 +39,9 @@ void* thread_Use(void* thread_id){
 		porcentaje=80;
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"El porcentaje de uso es:%d" ANSI_COLOR_RESET, porcentaje);
 		header_t* header_uso_cpu = _create_header(UTILIZACION_CPU, 2*sizeof(int32_t));
-		int32_t enviado = _send_header (&(socketPlanificador[id]), header_uso_cpu);
-		int32_t envio_id = _send_bytes(&(socketPlanificador[id]),&id,sizeof(int32_t));
-		int32_t envio_uso = _send_bytes(&(socketPlanificador[id]),&porcentaje,sizeof(int32_t));
+		int32_t enviado = _send_header (socketPlanificador, header_uso_cpu);
+		int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
+		int32_t envio_uso = _send_bytes(socketPlanificador,&porcentaje,sizeof(int32_t));
 		tiempoAcumulado[id]=0;
 		toAnterior=tiempoInicial[id];
 		tfAnterior=tiempoFinal[id];
@@ -60,10 +60,10 @@ void* thread_Cpu(void* id){
 		log_error(loggerError, ANSI_COLOR_RED "Error al conectar al planificador" ANSI_COLOR_RESET);
 		return NULL;
 	}
-	socketPlanificador[thread_id] = *socket_Planificador;
+
 	//enviarle al planificador NUEVA_CPU y su id;
 	header_t* header_nueva_cpu = _create_header(NUEVA_CPU, sizeof(int32_t));
-	int32_t enviado =_send_header (&(socket_Planificador[thread_id]), header_nueva_cpu);
+	int32_t enviado =_send_header (socket_Planificador, header_nueva_cpu);
 
 	if (enviado !=SUCCESS_OPERATION)
 	{
@@ -93,13 +93,17 @@ void* thread_Cpu(void* id){
 	}
 	log_debug(loggerDebug, "Conectado con la memoria cpu:", thread_id);
 
-	socketMemoria[thread_id] = *socket_Memoria;
+	/*Me guardo en mi list de sockets los fd*/
+	t_sockets* sockets=list_get(socketsCPU, thread_id);
+	sockets->socketPlanificador->fd = socket_Planificador->fd;
+	sockets->socketMemoria->fd = socket_Memoria->fd;
+
 	int32_t finalizar = 1;
 	int32_t resul_Mensaje_Recibido;
 	header_t* header_planificador = _create_empty_header() ;
 	while (finalizar == 1)
 	{
-		resul_Mensaje_Recibido = _receive_header(&(socket_Planificador[thread_id]), header_planificador);
+		resul_Mensaje_Recibido = _receive_header(socket_Planificador, header_planificador);
 		if (resul_Mensaje_Recibido !=SUCCESS_OPERATION )
 		{
 			log_error(loggerError, ANSI_COLOR_RED "Se perdio la conexion con el Planificador" ANSI_COLOR_RESET);
@@ -113,10 +117,12 @@ void* thread_Cpu(void* id){
 }
 
 void tipo_Cod_Operacion (int32_t id, header_t* header){
+
+	sock_t* socketPlanificador=getSocketPlanificador(id);
 	switch (get_operation_code(header))
 	{
 	case ENVIO_QUANTUM:{
-		int32_t recibido = _receive_bytes(&(socketPlanificador[id]), &quantum, sizeof(int32_t));
+		int32_t recibido = _receive_bytes(socketPlanificador, &quantum, sizeof(int32_t));
 		log_debug(loggerDebug,"CPU recibio de Planificador codOperacion %d QUANTUM: %d",get_operation_code(header), quantum);
 		if (recibido == ERROR_OPERATION)return;
 		break;
@@ -124,7 +130,7 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 	case ENVIO_PCB:{
 		log_debug(loggerDebug,"CPU recibio de Planificador codOperacion %d PCB",get_operation_code(header));
 		char* pedido_serializado = malloc(get_message_size(header));
-		int32_t recibido = _receive_bytes(&(socketPlanificador[id]), pedido_serializado, get_message_size(header));
+		int32_t recibido = _receive_bytes(socketPlanificador, pedido_serializado, get_message_size(header));
 		if(recibido == ERROR_OPERATION) {
 			log_debug(loggerDebug, "Error al recibir el PCB del planificador");
 			return;
@@ -198,7 +204,7 @@ void ejecutar(int32_t id, PCB* pcb){
 
 void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion,int32_t id,PCB* pcb,char* texto, int32_t retardo){
 
-
+		sock_t* socketPlanificador=getSocketPlanificador(id);
 		int32_t tamanio_texto = strlen(texto);
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcb);
 		header_t* header;
@@ -207,24 +213,24 @@ void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion,int32_t id,PCB* p
 		}else{
 		header = _create_header(Cod_Operacion, 3* sizeof(int32_t)+ tamanio_pcb+tamanio_texto);
 		}
-		int32_t enviado_header = _send_header(&(socketPlanificador[id]), header);
+		int32_t enviado_header = _send_header(socketPlanificador, header);
 		log_debug(loggerDebug, "Envio el header de OP :%d con tamanio:%d",header->cod_op, header->size_message);
-		int32_t envio_id = _send_bytes(&(socketPlanificador[id]),&id,sizeof(int32_t));
+		int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
 		log_debug(loggerDebug, "Envio id: %d", id);
 
 		if (Cod_Operacion == SOLICITUD_IO){
-			int32_t envio_retardo = _send_bytes(&(socketPlanificador[id]),&retardo,sizeof(int32_t));
+			int32_t envio_retardo = _send_bytes(socketPlanificador,&retardo,sizeof(int32_t));
 			log_debug(loggerDebug, "Envio retardo: %d", retardo);
 		}
 
 		char* pcb_serializado=serializarPCB(pcb);
 
-		int32_t envio_tamanio_pcb = _send_bytes(&(socketPlanificador[id]),&tamanio_pcb,sizeof(int32_t));
-		int32_t envio_pcb = _send_bytes(&(socketPlanificador[id]),pcb_serializado,tamanio_pcb);
+		int32_t envio_tamanio_pcb = _send_bytes(socketPlanificador,&tamanio_pcb,sizeof(int32_t));
+		int32_t envio_pcb = _send_bytes(socketPlanificador,pcb_serializado,tamanio_pcb);
 		log_debug(loggerDebug, "Envio pcb:%d", tamanio_pcb);
 
-		int32_t envio_tamanio_texto = _send_bytes(&(socketPlanificador[id]),&tamanio_texto,sizeof(int32_t));
-		int32_t envio_texto = _send_bytes(&(socketPlanificador[id]),texto,tamanio_texto);
+		int32_t envio_tamanio_texto = _send_bytes(socketPlanificador,&tamanio_texto,sizeof(int32_t));
+		int32_t envio_texto = _send_bytes(socketPlanificador,texto,tamanio_texto);
 		log_debug(loggerDebug, "Envio texto: %d", tamanio_texto);
 		log_debug(loggerDebug, "Envio texto tamanio:%d, string:%s", tamanio_texto, texto);
 
@@ -232,6 +238,7 @@ void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion,int32_t id,PCB* p
 
 t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 
+	sock_t* socketMemoria=getSocketMemoria(id);
 	log_debug(loggerDebug, "Se procedera a iniciar el proceso:%d", pcb->PID);
 
 	/** Envio header a la memoria con INICIAR **/
@@ -239,11 +246,11 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 
 	log_debug(loggerDebug, "Envie el header INICIAR con %d bytes",header_A_Memoria->size_message);
 
-	int32_t enviado = _send_header(&(socketMemoria[id]), header_A_Memoria);
+	int32_t enviado = _send_header(socketMemoria, header_A_Memoria);
 	if(enviado == ERROR_OPERATION) return NULL;
-	enviado = _send_bytes(&(socketMemoria[id]),&pcb->PID, sizeof (int32_t));
+	enviado = _send_bytes(socketMemoria,&pcb->PID, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
-	enviado = _send_bytes(&(socketMemoria[id]),&cantDePaginas, sizeof (int32_t));
+	enviado = _send_bytes(socketMemoria,&cantDePaginas, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
 	log_debug(loggerDebug, "Envie el id %d, con %d paginas",pcb->PID, cantDePaginas);
 	free(header_A_Memoria);
@@ -251,7 +258,7 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 	/** Recibo header de la memoria con el resultado (OK o ERROR) **/
 	header_t* header_de_memoria = _create_empty_header();
 
-	int32_t recibido = _receive_header(&(socketMemoria[id]), header_de_memoria);
+	int32_t recibido = _receive_header(socketMemoria, header_de_memoria);
 	t_respuesta* response= malloc(sizeof(t_respuesta));
 	if(get_operation_code(header_de_memoria) == ERROR_OPERATION) {
 		response->id=ERROR;
@@ -272,32 +279,35 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 }
 
 t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
+
+	sock_t* socketMemoria=getSocketMemoria(id);
+
 	//se debe leer de la memoria la pagina N
 	log_debug(loggerDebug, "Se procedera a leer del proceso:%d, la pagina:%d", pcb->PID, numDePagina);
 
 	/** Envio header a la memoria con LEER **/
 	header_t* header_A_Memoria = _create_header(M_LEER, 3 * sizeof(int32_t));
 
-	int32_t enviado = _send_header(&(socketMemoria[id]), header_A_Memoria);
+	int32_t enviado = _send_header(socketMemoria, header_A_Memoria);
 	if(enviado == ERROR_OPERATION) return NULL;
-	enviado = _send_bytes(&(socketMemoria[id]),&pcb->PID, sizeof (int32_t));
+	enviado = _send_bytes(socketMemoria,&pcb->PID, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
-	enviado = _send_bytes(&(socketMemoria[id]),&numDePagina, sizeof (int32_t));
+	enviado = _send_bytes(socketMemoria,&numDePagina, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
 	int32_t tamanio=0;
-	enviado = _send_bytes(&(socketMemoria[id]),&tamanio, sizeof (int32_t));
+	enviado = _send_bytes(socketMemoria,&tamanio, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
 	log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d",pcb->PID, numDePagina);
 
 	/** Recibo header de la memoria con el codigo CONTENIDO_PAGINA o NULL **/
 	header_t* header_de_memoria = _create_empty_header();
-	int32_t recibido = _receive_header(&(socketMemoria[id]), header_de_memoria);
+	int32_t recibido = _receive_header(socketMemoria, header_de_memoria);
 	int32_t longPagina;
-	int32_t recibi_longPagina = _receive_bytes(&(socketMemoria[id]), &longPagina, sizeof(int32_t));
+	int32_t recibi_longPagina = _receive_bytes(socketMemoria, &longPagina, sizeof(int32_t));
 	if(recibi_longPagina == ERROR_OPERATION) return NULL;
 
 	char* contenido_pagina = malloc(longPagina);
-	recibido = _receive_bytes(&(socketMemoria[id]), contenido_pagina, longPagina);
+	recibido = _receive_bytes(socketMemoria, contenido_pagina, longPagina);
 	contenido_pagina[longPagina]='\0';
 
 	if(recibido == ERROR_OPERATION) return NULL;
@@ -320,21 +330,22 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 }
 
 t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* texto){
+	sock_t* socketMemoria=getSocketMemoria(id);
 	//se debe escribir en memoria el texto en la pagina N
 	log_debug(loggerDebug, "Se procedera a escribir del proceso:%d, la pagina: %d, %d bytes",pcb->PID, numDePagina, strlen(texto));
 	/** Envio header a la memoria con ESCRIBIR **/
 	int32_t tamanio = strlen(texto);
 	header_t* header_A_Memoria = _create_header(M_ESCRIBIR, 3 * sizeof(int32_t)+tamanio);
 
-	int32_t enviado_Header = _send_header(&(socketMemoria[id]), header_A_Memoria);
-	int32_t enviado_Id_Proceso = _send_bytes(&(socketMemoria[id]),&pcb->PID, sizeof (int32_t));
-	int32_t enviado_numDePagina = _send_bytes(&(socketMemoria[id]),&numDePagina, sizeof (int32_t));
-	int32_t enviado_tamanio_texto = _send_bytes(&(socketMemoria[id]),&tamanio, sizeof (int32_t));
-	int32_t enviado_texto = _send_bytes(&(socketMemoria[id]),texto, tamanio);
+	int32_t enviado_Header = _send_header(socketMemoria, header_A_Memoria);
+	int32_t enviado_Id_Proceso = _send_bytes(socketMemoria,&pcb->PID, sizeof (int32_t));
+	int32_t enviado_numDePagina = _send_bytes(socketMemoria,&numDePagina, sizeof (int32_t));
+	int32_t enviado_tamanio_texto = _send_bytes(socketMemoria,&tamanio, sizeof (int32_t));
+	int32_t enviado_texto = _send_bytes(socketMemoria,texto, tamanio);
 	log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d,y el texto %s",pcb->PID, numDePagina, texto);
 	/** Recibo header de la memoria con el resultado (OK o ERROR) **/
 	header_t* header_de_memoria = _create_empty_header();
-	int32_t recibido = _receive_header(&(socketMemoria[id]), header_de_memoria);
+	int32_t recibido = _receive_header(socketMemoria, header_de_memoria);
 	//todo sacar el error o el ok y de ahi cambiar a error o nada
 	t_respuesta* response= malloc(sizeof(t_respuesta));
 	if (header_de_memoria->cod_op == OK){
@@ -369,16 +380,18 @@ t_respuesta* mAnsisOp_IO(int32_t id, PCB* pcb,int32_t tiempo){
 }
 
 t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
+
+	sock_t* socketMemoria=getSocketMemoria(id);
 		//decirle a la memoria que se elimine la tabla asociada
 	log_debug(loggerDebug, "Se procedera a finalizar el proceso:%d", pcb->PID);
 
 	header_t* header_A_Memoria = _create_header(M_FINALIZAR, sizeof(int32_t));
 
-	int32_t enviado_Header = _send_header(&(socketMemoria[id]),header_A_Memoria);
-	int32_t enviado_Id_Proceso = _send_bytes(&(socketMemoria[id]),&pcb->PID, sizeof (int32_t));
+	int32_t enviado_Header = _send_header(socketMemoria,header_A_Memoria);
+	int32_t enviado_Id_Proceso = _send_bytes(socketMemoria,&pcb->PID, sizeof (int32_t));
 	log_debug(loggerDebug, "Envie el id %d de finalizar",pcb->PID);
 	header_t* respuestaMem=_create_empty_header();
-	int32_t resultado_Mensaje = _receive_header(&(socketMemoria[id]),respuestaMem);
+	int32_t resultado_Mensaje = _receive_header(socketMemoria,respuestaMem);
 	if(resultado_Mensaje == ERROR_OPERATION) return NULL;
 
 	t_respuesta* response= malloc(sizeof(t_respuesta));
@@ -441,3 +454,13 @@ t_respuesta* analizadorLinea(int32_t id,PCB* pcb, char* const instruccion){
 	}
 	return NULL;
 }
+sock_t* getSocketPlanificador(int32_t id){
+	t_sockets* sock= list_get(socketsCPU, id);
+	return sock->socketPlanificador;
+}
+
+sock_t* getSocketMemoria(int32_t id){
+	t_sockets* sock= list_get(socketsCPU, id);
+	return sock->socketMemoria;
+}
+
