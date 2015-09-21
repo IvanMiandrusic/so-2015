@@ -268,7 +268,12 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion){
 
 		/** operar la respuesta **/
 		if(cod_Operacion==INSTRUCCION_IO) operarIO(cpu_id, tiempo, pcb);
-		if(cod_Operacion==TERMINO_RAFAGA) ;//todo
+		if(cod_Operacion==TERMINO_RAFAGA){
+			liberarCPU(cpu_id);
+			sacarDeExec(pcb->PID);
+			agregarPcbAColaListos(pcb);
+			asignarPCBaCPU();
+		}
 		if(cod_Operacion==RESULTADO_ERROR){
 			finalizarPCB(pcb->PID, RESULTADO_ERROR);
 			liberarCPU(cpu_id);
@@ -545,9 +550,14 @@ void agregarColaCPUs(CPU_t* cpu){
 }
 
 
-void comunicarBajaACpu(int32_t pcbID){
+void sacarDeExec(int32_t pcbID){
 
-
+	bool getPcbByID(PCB* unPCB){
+		return unPCB->PID == pcbID;
+					}
+sem_wait(&semMutex_colaExec);
+list_remove_and_destroy_by_condition(colaExec, getPcbByID, free);
+sem_post(&semMutex_colaExec);
 
 }
 
