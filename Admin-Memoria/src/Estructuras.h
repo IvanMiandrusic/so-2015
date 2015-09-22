@@ -31,6 +31,7 @@ typedef struct estructura_tabla_paginas			//estructura que contiene los datos de
   int32_t modificada; 		//1 si, 0 no
   int32_t presente;			//Presente en MP (1 si, 0 no)
   int32_t tiempo_referencia;   	//Para saber cual fue la primera en ingresar
+  int32_t bitUso;
 }TPagina;
 
 //Lista doblemente enlazada de procesos
@@ -76,6 +77,12 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t, t_pagina*);
 int32_t reemplazar_pagina(int32_t, t_list*);
 int32_t obtener_frame_libre();
 void asignar_pagina(t_pagina*);
+
+bool esClase0(TPagina* );
+bool esClase1(TPagina* );
+bool esClase2(TPagina* );
+bool esClase3(TPagina* );
+bool esClaseInicial(TPagina* );
 
 /** Utils **/
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char*);

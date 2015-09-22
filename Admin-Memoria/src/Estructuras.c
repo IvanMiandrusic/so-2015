@@ -361,12 +361,80 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 	}
 	else if(algoritmo_reemplazo == CLOCK_MODIFICADO) {
 
-		/*VER TODO*/
+		//ordenas la pagina por FIFO
+
+		int i=0;
+		bool encontre_pagina_a_ausentar=false;
+		TPagina* mejorPagina;
+		mejorPagina->modificada=2; //high value
+		mejorPagina->bitUso=2; //high value
+		while(encontre_pagina_a_ausentar==false){
+			TPagina* paginaObtenida=list_get(paginas_PID,i);
+			if(esClase0(paginaObtenida)){
+				mejorPagina=paginaObtenida;
+				encontre_pagina_a_ausentar=true;
+			}else if (esClase1(paginaObtenida)){
+				if(esClase2(paginaObtenida) || esClase3(paginaObtenida) || esClaseInicial(paginaObtenida)) mejorPagina=paginaObtenida;
+			}else if(esClase2(paginaObtenida)){
+				if(esClase3(paginaObtenida) || esClaseInicial(paginaObtenida)) mejorPagina=paginaObtenida;
+				//paginaObtenida->BitUso=0;
+				//paginaObtenedia->paginaObtenida->tiempo_referencia=actual;
+				//cambiarlo en la lista
+			}else if(esClase3(paginaObtenida)){
+				if (esClaseInicial(paginaObtenida)) mejorPagina=paginaObtenida;
+				//paginaObtenida->BitUso=0;
+				//paginaObtenedia->paginaObtenida->tiempo_referencia=actual;
+				//cambiarlo en la lista
+			}
+
+			i++;
+			if (list_size(paginas_PID)==i) encontre_pagina_a_ausentar=true;
+		}
+
+		/** Escribo pagina en swap (si esta modificada) **/
+		if(mejorPagina->modificada == 1) {
+
+			t_pagina* pagina_a_escribir = malloc(sizeof(t_pagina));
+			pagina_a_escribir->PID = PID;
+			pagina_a_escribir->nro_pagina = mejorPagina->pagina;
+
+			char* contenido_marco = obtener_contenido_marco(mejorPagina);
+			pagina_a_escribir->tamanio_contenido = strlen(contenido_marco);
+			pagina_a_escribir->contenido = malloc(arch->tamanio_marco);
+			memcpy(pagina_a_escribir, contenido_marco, pagina_a_escribir->tamanio_contenido);
+
+			pedido_pagina_swap(pagina_a_escribir, ESCRIBIR_PAGINA);
+
+			/** Le saco el bit de modificada **/
+			mejorPagina->modificada = 0;
+		} //copy-paste del de arriba
+
+		return mejorPagina->marco;
 
 	}
 
 	return -1;
 
+}
+
+bool esClase0(TPagina* pagina){
+	return pagina->bitUso==0 && pagina->modificada==0;
+}
+
+bool esClase1(TPagina* pagina){
+	return pagina->bitUso==0 && pagina->modificada==1;
+}
+
+bool esClase2(TPagina* pagina){
+	return pagina->bitUso==1 && pagina->modificada==0;
+}
+
+bool esClase3(TPagina* pagina){
+	return pagina->bitUso==1 && pagina->modificada==1;
+}
+
+bool esClaseInicial(TPagina* pagina){
+	return pagina->bitUso==2 && pagina->modificada==2;
 }
 
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char* algoritmo) {
