@@ -31,6 +31,7 @@ typedef struct estructura_configuracion			//estructura que contiene los datos de
   int32_t cantidad_paginas;
   int32_t tamanio_pagina;
   int32_t retardo;
+  int32_t retardo_comp;
 }ProcesoSwap;
 
 typedef struct estructura_nodo_libre			//estructura que contiene los datos de un hueco

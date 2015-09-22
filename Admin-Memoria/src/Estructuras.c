@@ -181,21 +181,21 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 
 	t_list* tabla_paginas_PID = obtener_tabla_paginas_by_PID(pagina->PID);
 
-	if(tabla_paginas_PID != NULL){
+	bool obtenerMarco_Pagina(void* parametro){
+		TPagina* entradaBuscada = (TPagina*) parametro;
+		return entradaBuscada->pagina == pagina->nro_pagina && (entradaBuscada->presente == 1);
+	}
 
-		bool obtenerMarco_Pagina(void* parametro){
-			TPagina* entradaBuscada = (TPagina*) parametro;
-			return entradaBuscada->pagina == pagina->nro_pagina && (entradaBuscada->presente == 1);
-		}
+	TPagina* entradaFound = list_find(tabla_paginas_PID, obtenerMarco_Pagina);
 
-		TPagina* entradaFound = list_find(tabla_paginas_PID, obtenerMarco_Pagina);
+	if(entradaFound != NULL){
 
 		/** Si es LRU me interesa saber en que instante se referencia la pag en MP **/
 		if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
 			entradaFound->tiempo_referencia = get_actual_time_integer();
 
 		int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);
-		if(codOperacion==LEER)memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
+		if(codOperacion==LEER) memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
 		if(codOperacion==ESCRIBIR){
 			memcpy(mem_principal+offset, pagina->contenido, arch->tamanio_marco);
 			entradaFound->modificada=1;
@@ -214,7 +214,7 @@ void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 
 		int32_t enviado;
 		int32_t recibido;
-
+		//TODO cambiar, si es escribir, va otro tamanio en el header
 		//Envio al swap para pedir la pagina
 		header_t* headerSwap = _create_header(operacion_swap, 3 * sizeof(int32_t));
 		enviado = _send_header(socketSwap, headerSwap);
@@ -227,7 +227,7 @@ void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 		enviado = _send_bytes(socketSwap, &(pagina->nro_pagina), sizeof(int32_t));
 		if (enviado == ERROR_OPERATION) return;
 
-		pagina->tamanio_contenido = 0;
+
 		enviado = _send_bytes(socketSwap, &(pagina->tamanio_contenido), sizeof(int32_t));
 		if (enviado == ERROR_OPERATION) return;
 
@@ -273,7 +273,7 @@ void asignar_pagina(t_pagina* pagina_recibida_swap) {
 
 		/** Obtengo frame libre para asignar pagina **/
 		marco_libre = obtener_frame_libre();
-
+		//todo, si no hay marcos libres, reemplazar pagina existente
 	}
 	else {
 

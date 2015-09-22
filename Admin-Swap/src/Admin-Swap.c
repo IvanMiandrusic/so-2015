@@ -36,7 +36,8 @@ ProcesoSwap* crear_estructura_config(char* path)
     config->nombre_swap = config_get_string_value(archConfig, "NOMBRE_SWAP");
     config->cantidad_paginas = config_get_int_value(archConfig, "CANTIDAD_PAGINAS");
     config->tamanio_pagina= config_get_int_value(archConfig, "TAMANIO_PAGINA");
-    config->retardo= config_get_int_value(archConfig, "RETARDO_COMPACTACION");
+    config->retardo= config_get_int_value(archConfig, "RETARDO_SWAP");
+    config->retardo_comp= config_get_int_value(archConfig, "RETARDO_COMPACTACION");
     return config;
 }
 
