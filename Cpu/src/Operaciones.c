@@ -289,7 +289,7 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 	int32_t tamanio=0;
 	enviado = _send_bytes(socketMemoria,&tamanio, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
-	log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d",pcb->PID, numDePagina);
+	log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d, tamanio:%d",pcb->PID, numDePagina, tamanio);
 
 	/** Recibo header de la memoria con el codigo CONTENIDO_PAGINA o NULL **/
 	header_t* header_de_memoria = _create_empty_header();

@@ -214,9 +214,16 @@ void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 
 		int32_t enviado;
 		int32_t recibido;
-		//TODO cambiar, si es escribir, va otro tamanio en el header
+		int32_t tamanio;
 		//Envio al swap para pedir la pagina
-		header_t* headerSwap = _create_header(operacion_swap, 3 * sizeof(int32_t));
+		header_t* headerSwap;
+		if(operacion_swap==LEER_PAGINA){
+			headerSwap= _create_header(operacion_swap, 3 * sizeof(int32_t));
+			tamanio=0;
+		}else{
+			headerSwap= _create_header(operacion_swap, 3 * sizeof(int32_t)+pagina->tamanio_contenido);
+			tamanio=pagina->tamanio_contenido;
+		}
 		enviado = _send_header(socketSwap, headerSwap);
 		if (enviado == ERROR_OPERATION) return;
 		free(headerSwap);
@@ -227,10 +234,14 @@ void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 		enviado = _send_bytes(socketSwap, &(pagina->nro_pagina), sizeof(int32_t));
 		if (enviado == ERROR_OPERATION) return;
 
-
-		enviado = _send_bytes(socketSwap, &(pagina->tamanio_contenido), sizeof(int32_t));
+		enviado = _send_bytes(socketSwap, &tamanio, sizeof(int32_t));
 		if (enviado == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "se envia a leer del pid:%d, la pag:%d, tam:%d", pagina->PID, pagina->nro_pagina, tamanio);
 
+		if(operacion_swap==ESCRIBIR_PAGINA){
+			enviado = _send_bytes(socketSwap, pagina->contenido, pagina->tamanio_contenido);
+			if (enviado == ERROR_OPERATION) return;
+		}
 		header_t* header_resultado_swap = _create_empty_header();
 		recibido = _receive_header(socketSwap, header_resultado_swap);
 		if(recibido == ERROR_OPERATION) return;
@@ -244,7 +255,7 @@ void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 				recibido = _receive_bytes(socketSwap, &(pagina_Nueva->tamanio_contenido), sizeof(int32_t));
 				if (enviado == ERROR_OPERATION) return;
 
-				recibido = _receive_bytes(socketSwap, pagina_Nueva->contenido, sizeof(int32_t));
+				recibido = _receive_bytes(socketSwap, pagina_Nueva->contenido, pagina_Nueva->tamanio_contenido);
 				if (enviado == ERROR_OPERATION) return;
 
 				log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Exito al leer pagina en el swap" ANSI_COLOR_RESET);

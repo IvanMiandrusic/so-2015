@@ -266,7 +266,14 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			if(recibido == ERROR_OPERATION) return;
 			t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
 			char* serializado= serializarTexto(leer_pagina(pagina_pedida));
-			//TODO enviar serializado
+			int32_t longitud=strlen(serializado);
+			header_t* headerMemoria = _create_header(RESULTADO_OK, sizeof(int32_t)+longitud);
+			int32_t enviado = _send_header(socketMemoria, headerMemoria);
+			enviado=_send_bytes(socketMemoria, &longitud, sizeof(int32_t));
+			enviado=_send_bytes(socketMemoria, serializado, longitud);
+			log_debug("Se leyeron :%d bytes", longitud);
+			if(enviado == ERROR_OPERATION) return;
+			free(headerMemoria);
 			break;
 		}
 
@@ -451,24 +458,24 @@ FILE* abrirArchivoConTPagina(t_pagina* pagina_pedida){
 		log_error(loggerError, ANSI_COLOR_RED "No se puede abrir el archivo de Swap para escribir"ANSI_COLOR_RESET);
 		return ERROR_OPERATION;
 	}
-	int32_t bloque= nodoProceso->comienzo+pagina_pedida->nro_pagina;
+	int32_t bloque= nodoProceso->comienzo+pagina_pedida->nro_pagina-1;
 	if(fseek(espacioDeDatos, bloque*arch->tamanio_pagina,SEEK_SET)!=0){
 		log_error(loggerError, ANSI_COLOR_RED "No se puede ubicar la pagina a escribir"ANSI_COLOR_RESET);
 		return ERROR_OPERATION;
 	}
-
+	return espacioDeDatos;
 }
 
 char* leer_pagina(t_pagina* pagina_pedida){
-
+	log_debug(loggerDebug, "leer pid:%d, pag:%d", pagina_pedida->PID, pagina_pedida->nro_pagina);
 	char* texto=malloc(arch->tamanio_pagina);
 	FILE* espacioDeDatos=abrirArchivoConTPagina(pagina_pedida);
+	log_debug(loggerDebug, "Se abre el espacio de datos");
 	int32_t posicion=ftell(espacioDeDatos);
-
+	log_debug(loggerDebug, "La posicion es:%d", posicion);
 	int32_t resultado=fread(texto, sizeof(char),arch->tamanio_pagina, espacioDeDatos);
-
+	log_debug(loggerDebug, "Se lee el espacio de datos");
 	fclose(espacioDeDatos);
-
 	if (resultado==arch->tamanio_pagina){
 		log_info(loggerInfo, ANSI_COLOR_GREEN"Lectura: PID: %d byte inicial: %d tamaño: %d contenido: %s"ANSI_COLOR_RESET,pagina_pedida->PID,
 				posicion, strlen(texto),texto);
