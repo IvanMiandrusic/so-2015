@@ -284,7 +284,8 @@ void asignar_pagina(t_pagina* pagina_recibida_swap) {
 
 		/** Obtengo frame libre para asignar pagina **/
 		marco_libre = obtener_frame_libre();
-		//todo, si no hay marcos libres, reemplazar pagina existente
+		if(marco_libre==-1) marco_libre = reemplazar_pagina(pagina_recibida_swap->PID, paginas_PID);
+
 	}
 	else {
 
