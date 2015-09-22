@@ -279,18 +279,19 @@ void asignar_pagina(t_pagina* pagina_recibida_swap) {
 		TPagina* entrada = (TPagina*) parametro;
 		return entrada->presente;
 	}
-
-	if(list_count_satisfying(paginas_PID, isPresent) < arch->maximo_marcos) {
-
+	int32_t presentes=list_count_satisfying(paginas_PID, isPresent);
+	if( presentes < arch->maximo_marcos) {
 		/** Obtengo frame libre para asignar pagina **/
 		marco_libre = obtener_frame_libre();
-		if(marco_libre==-1) marco_libre = reemplazar_pagina(pagina_recibida_swap->PID, paginas_PID);
-
+		if(marco_libre==-1 && presentes > 0) marco_libre = reemplazar_pagina(pagina_recibida_swap->PID, paginas_PID);
 	}
 	else {
-
 		marco_libre = reemplazar_pagina(pagina_recibida_swap->PID, paginas_PID);
 	}
+
+	if(marco_libre==-1)	return;		//todo
+	/* si por esas casualidades no me queda espacio ni tengo chance de reemplazar otra pagina del proceso
+	 * porque no tengo ninguna cargada en memoria, deberia finalizar el proceso con error */
 
 	/** Actualizo presencia de la pagina traida a memoria**/
 	bool findByID(void* parametro) {
@@ -322,10 +323,12 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 
 	t_algoritmo_reemplazo algoritmo_reemplazo = obtener_codigo_algoritmo(arch->algoritmo_reemplazo);
 
+	t_list* paginasConPresencia=obtengoPaginasConPresencia(paginas_PID);
+
 	if((algoritmo_reemplazo == FIFO) || (algoritmo_reemplazo == LRU)) {
 
 		/** Saco primer pagina de la memoria **/
-		TPagina* pagina_obtenida = obtener_pagina_a_reemplazar(paginas_PID);
+		TPagina* pagina_obtenida = obtener_pagina_a_reemplazar(paginasConPresencia);
 
 		bool findByID(void* parametro) {
 			TPagina* entrada = (TPagina*) parametro;
@@ -355,40 +358,33 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 			/** Le saco el bit de modificada **/
 			pagina_a_ausentar->modificada = 0;
 		}
-
 		return marco_a_devolver;
-
 	}
 	else if(algoritmo_reemplazo == CLOCK_MODIFICADO) {
 
-		//ordenas la pagina por FIFO
-
 		int i=0;
 		bool encontre_pagina_a_ausentar=false;
-		TPagina* mejorPagina;
-		mejorPagina->modificada=2; //high value
-		mejorPagina->bitUso=2; //high value
+		TPagina* mejorPagina=list_get(paginasConPresencia,i);
+		if(esClase0(mejorPagina)){
+			encontre_pagina_a_ausentar=true;
+		}
 		while(encontre_pagina_a_ausentar==false){
-			TPagina* paginaObtenida=list_get(paginas_PID,i);
+			i++;
+			TPagina* paginaObtenida=list_get(paginasConPresencia,i);
 			if(esClase0(paginaObtenida)){
 				mejorPagina=paginaObtenida;
 				encontre_pagina_a_ausentar=true;
 			}else if (esClase1(paginaObtenida)){
-				if(esClase2(paginaObtenida) || esClase3(paginaObtenida) || esClaseInicial(paginaObtenida)) mejorPagina=paginaObtenida;
+				if(esClase2(mejorPagina) || esClase3(mejorPagina) ) mejorPagina=paginaObtenida;
 			}else if(esClase2(paginaObtenida)){
-				if(esClase3(paginaObtenida) || esClaseInicial(paginaObtenida)) mejorPagina=paginaObtenida;
-				//paginaObtenida->BitUso=0;
-				//paginaObtenedia->paginaObtenida->tiempo_referencia=actual;
-				//cambiarlo en la lista
+				if(esClase3(mejorPagina)) mejorPagina=paginaObtenida;
+				paginaObtenida->bitUso=0;
+				paginaObtenida->tiempo_referencia=get_actual_time_integer();
 			}else if(esClase3(paginaObtenida)){
-				if (esClaseInicial(paginaObtenida)) mejorPagina=paginaObtenida;
-				//paginaObtenida->BitUso=0;
-				//paginaObtenedia->paginaObtenida->tiempo_referencia=actual;
-				//cambiarlo en la lista
+				paginaObtenida->bitUso=0;
+				paginaObtenida->tiempo_referencia=get_actual_time_integer();
 			}
-
-			i++;
-			if (list_size(paginas_PID)==i) encontre_pagina_a_ausentar=true;
+				if (list_size(paginasConPresencia)==i) encontre_pagina_a_ausentar=true;
 		}
 
 		/** Escribo pagina en swap (si esta modificada) **/
@@ -407,12 +403,9 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 
 			/** Le saco el bit de modificada **/
 			mejorPagina->modificada = 0;
-		} //copy-paste del de arriba
-
+		}
 		return mejorPagina->marco;
-
 	}
-
 	return -1;
 
 }
@@ -431,10 +424,6 @@ bool esClase2(TPagina* pagina){
 
 bool esClase3(TPagina* pagina){
 	return pagina->bitUso==1 && pagina->modificada==1;
-}
-
-bool esClaseInicial(TPagina* pagina){
-	return pagina->bitUso==2 && pagina->modificada==2;
 }
 
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char* algoritmo) {
@@ -459,26 +448,30 @@ t_list* obtener_tabla_paginas_by_PID(int32_t PID) {
 
 }
 
-TPagina* obtener_pagina_a_reemplazar(t_list* paginas_del_proceso) {
+t_list* obtengoPaginasConPresencia(t_list* paginas_del_proceso){
 
 	bool isPresent(void* parametro) {
-		TPagina* entrada = (TPagina*) parametro;
-		return entrada->presente;
-	}
+			TPagina* entrada = (TPagina*) parametro;
+			return entrada->presente;
+		}
 
-	t_list* paginas_en_MP = list_filter(paginas_del_proceso, isPresent);
+		t_list* paginas_en_MP = list_filter(paginas_del_proceso, isPresent);
 
-	/** Comparator **/
-	bool page_use_comparator(void* param1, void* param2) {
-		TPagina* unaPag = (TPagina*) param1;
-		TPagina* otraPag = (TPagina*) param2;
-		return unaPag->tiempo_referencia < otraPag->tiempo_referencia;
-	}
+		/** Comparator **/
+		bool page_use_comparator(void* param1, void* param2) {
+			TPagina* unaPag = (TPagina*) param1;
+			TPagina* otraPag = (TPagina*) param2;
+			return unaPag->tiempo_referencia < otraPag->tiempo_referencia;
+		}
 
-	list_sort(paginas_en_MP, page_use_comparator);
+		list_sort(paginas_en_MP, page_use_comparator);
+		return paginas_en_MP;
+
+}
+
+TPagina* obtener_pagina_a_reemplazar(t_list* paginas_en_MP) {
 
 	TPagina* pagina_a_reemplazar = list_get(paginas_en_MP, 0);
-
 	return pagina_a_reemplazar;
 
 }

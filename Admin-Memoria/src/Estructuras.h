@@ -82,13 +82,13 @@ bool esClase0(TPagina* );
 bool esClase1(TPagina* );
 bool esClase2(TPagina* );
 bool esClase3(TPagina* );
-bool esClaseInicial(TPagina* );
+t_list* obtengoPaginasConPresencia(t_list* );
 
 /** Utils **/
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char*);
 void pedido_pagina_swap(t_pagina*, int32_t);
-t_list* obtener_tabla_paginas_by_PID(int32_t PID);
-TPagina* obtener_pagina_a_reemplazar(t_list* paginas_del_proceso);
+t_list* obtener_tabla_paginas_by_PID(int32_t );
+TPagina* obtener_pagina_a_reemplazar(t_list* );
 char* obtener_contenido_marco(TPagina*);
 
 #endif /* ESTRUCTURAS_H_ */
