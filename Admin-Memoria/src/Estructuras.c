@@ -55,8 +55,6 @@ void TLB_flush() {
 
 	void limpiar_entradas(void* parametro) {
 		TLB* entrada = (TLB*) parametro;
-		//todo si modificada es 1, le mandas al swap escribir(PID, pagina, texto)
-		//o hacerlo con la tabla de paginas
 		entrada->PID = 0;
 		entrada->marco = 0;
 		entrada->modificada = 0;
@@ -158,7 +156,7 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 	nueva_entrada_proceso->paginas = list_create();
 
 	int i;
-	for (i = 0; i < cantidad_paginas; i++) {
+	for (i = 1; i <= cantidad_paginas; i++) {
 
 		TPagina* nuevaEntrada = malloc(sizeof(TPagina));
 		nuevaEntrada->marco = 0;
@@ -166,7 +164,6 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 		nuevaEntrada->modificada = 0;
 		nuevaEntrada->presente = 0;
 		nuevaEntrada->tiempo_referencia = 0;
-
 		list_add(nueva_entrada_proceso->paginas, nuevaEntrada);
 	}
 	sem_wait(&sem_mutex_tabla_paginas);
@@ -205,6 +202,7 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 	else {
 		log_debug(loggerDebug, "No se encontro en la tabla de paginas, se pide al swap");
 		pedido_pagina_swap(pagina, LEER_PAGINA);
+		log_debug(loggerDebug, "cargue pagina del swap");
 		return buscar_pagina(codOperacion, pagina);
 	}
 
@@ -271,7 +269,7 @@ void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 void asignar_pagina(t_pagina* pagina_recibida_swap) {
 
 	int32_t marco_libre;
-
+	log_debug(loggerDebug, "Debo buscar pagina a asignar");
 	/** Obtener tabla de paginas del PID **/
 	t_list* paginas_PID = obtener_tabla_paginas_by_PID(pagina_recibida_swap->PID);
 
@@ -280,9 +278,14 @@ void asignar_pagina(t_pagina* pagina_recibida_swap) {
 		return entrada->presente;
 	}
 	int32_t presentes=list_count_satisfying(paginas_PID, isPresent);
+	log_debug(loggerDebug, "Tengo con presencia:%d, en una lista con :%d paginas", presentes, list_size(paginas_PID));
 	if( presentes < arch->maximo_marcos) {
 		/** Obtengo frame libre para asignar pagina **/
+
+		log_debug(loggerDebug, "Debo obtener frame libre");
 		marco_libre = obtener_frame_libre();
+
+		log_debug(loggerDebug, "Frame libre:%d", marco_libre);
 		if(marco_libre==-1 && presentes > 0) marco_libre = reemplazar_pagina(pagina_recibida_swap->PID, paginas_PID);
 	}
 	else {
@@ -292,17 +295,27 @@ void asignar_pagina(t_pagina* pagina_recibida_swap) {
 	if(marco_libre==-1)	return;		//todo
 	/* si por esas casualidades no me queda espacio ni tengo chance de reemplazar otra pagina del proceso
 	 * porque no tengo ninguna cargada en memoria, deberia finalizar el proceso con error */
-
+	log_debug(loggerDebug, "Busco la pagina: %d", pagina_recibida_swap->nro_pagina);
 	/** Actualizo presencia de la pagina traida a memoria**/
 	bool findByID(void* parametro) {
 		TPagina* entrada = (TPagina*) parametro;
 		return entrada->pagina == pagina_recibida_swap->nro_pagina;
 	}
 
+	void mostrar(void* parametro) {
+			TPagina* entrada = (TPagina*) parametro;
+			log_debug(loggerDebug, "Pagina numero:%d, tiempo:%d", entrada->pagina, entrada->tiempo_referencia);
+		}
+
+	list_iterate(paginas_PID, mostrar);
 	TPagina* pagina_a_poner_presente = list_find(paginas_PID, findByID);
+	log_debug(loggerDebug, "Tengo pagina para cambiar:%d", pagina_a_poner_presente->pagina);
 	pagina_a_poner_presente->presente = 1;
+	log_debug(loggerDebug, "Tengo presente");
 	pagina_a_poner_presente->marco = marco_libre;
+	log_debug(loggerDebug, "Tengo marco");
 	pagina_a_poner_presente->tiempo_referencia = get_actual_time_integer();
+	log_debug(loggerDebug, "Tengo tiempo");
 	pagina_a_poner_presente->modificada = 0;
 }
 

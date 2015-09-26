@@ -85,7 +85,7 @@ void dump(){
 		}
 		abort();
 	}
-	log_error(loggerError, ANSI_COLOR_GREEN "Dump realizado con exito" ANSI_COLOR_RESET);
+	log_info(loggerInfo, ANSI_COLOR_GREEN "Dump realizado con exito" ANSI_COLOR_RESET);
 }
 
 void limpiar_MP() {
@@ -116,6 +116,8 @@ void limpiar_MP() {
 
 
 	list_iterate(tabla_Paginas, clean_by_PID);
+	log_info(loggerInfo, ANSI_COLOR_GREEN "Memoria limpiada con exito" ANSI_COLOR_RESET);
+
 }
 
 /*Función donde se inicializan los semaforos */
