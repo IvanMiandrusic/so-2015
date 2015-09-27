@@ -236,8 +236,6 @@ int main(void) {
 
 	recibir_operaciones_memoria(socketCliente);
 
-	//Todo ver que sigue
-
 	return EXIT_SUCCESS;
 }
 
@@ -267,6 +265,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
 			char* serializado= serializarTexto(leer_pagina(pagina_pedida));
 			int32_t longitud=strlen(serializado);
+			sleep(arch->retardo);
 			header_t* headerMemoria = _create_header(RESULTADO_OK, sizeof(int32_t)+longitud);
 			int32_t enviado = _send_header(socketMemoria, headerMemoria);
 			enviado=_send_bytes(socketMemoria, &longitud, sizeof(int32_t));
@@ -283,7 +282,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			if(recibido == ERROR_OPERATION) return;
 			t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
 			int32_t resultado= escribir_pagina(pagina_pedida);
-
+			sleep(arch->retardo);
 			if (resultado == RESULTADO_ERROR) {
 				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
 				int32_t enviado = _send_header(socketMemoria, headerMemoria);
@@ -312,6 +311,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 
 			int32_t operacionValida= reservarEspacio(pedido_memoria);
 			log_debug (loggerDebug, "Reservo espacio con resultado: %d", operacionValida);
+			sleep(arch->retardo);
 			if (operacionValida == RESULTADO_ERROR) {
 				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
 				int32_t enviado = _send_header(socketMemoria, headerMemoria);
@@ -334,7 +334,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			recibido = _receive_bytes(socketMemoria, &(PID), sizeof(int32_t));
 			if (recibido == ERROR_OPERATION)return;
 			int32_t operacionValida= borrarEspacio(PID);
-
+			sleep(arch->retardo);
 			if (operacionValida == RESULTADO_ERROR) {
 				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
 				int32_t enviado = _send_header(socketMemoria, headerMemoria);

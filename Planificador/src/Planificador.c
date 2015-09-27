@@ -157,7 +157,7 @@ void administrarPath(char* filePath){
 	idParaPCB++;
 	PCB* unPCB = generarPCB(idParaPCB, filePath);
 	agregarPcbAColaListos(unPCB);
-	log_debug(loggerDebug, "El PCB se genero con id %d, estado %d y mCod %s", unPCB->PID, unPCB->estado, unPCB->ruta_archivo);
+	log_info(loggerInfo, "Comienza el proceso con id %d y mCod %s", unPCB->PID, unPCB->ruta_archivo);
 	return;
 
 }
@@ -185,7 +185,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header){
 	case NUEVA_CPU: {
 			/** Genero un nuevo cpu_t **/
 			CPU_t* nuevaCPU = generarCPU(cpu_id ,socketCPU);
-			log_debug(loggerDebug, "Cpu generada correctamente");
+			log_info(loggerDebug, "Se conecto una Cpu con id: %d", cpu_id);
 			agregarColaCPUs(nuevaCPU);
 			log_debug(loggerDebug, "Recibi una CPU nueva con id %d y socket %d", nuevaCPU->ID, nuevaCPU->socketCPU->fd);
 			/** Envio el quantum a la CPU **/
@@ -269,6 +269,7 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion){
 		/** operar la respuesta **/
 		if(cod_Operacion==INSTRUCCION_IO) operarIO(cpu_id, tiempo, pcb);
 		if(cod_Operacion==TERMINO_RAFAGA){
+			log_info(loggerInfo, "Termina rafaga del proceso: %d con respuesta:%s", pcb->PID, resultado_operaciones);
 			liberarCPU(cpu_id);
 			sacarDeExec(pcb->PID);
 			agregarPcbAColaListos(pcb);
@@ -326,8 +327,7 @@ void finalizarPCB(int32_t pcbID, int32_t tipo){
 		PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
 		pcb_found->estado= FINALIZADO_OK;
 		agregarPcbAColaFinalizados(pcb_found);
-		log_debug(loggerDebug, "Cambio de estado (finalizado_ok) y de lista del pcb con id %d", pcbID);
-
+		log_info(loggerInfo, "Finaliza correctamente el PID:%d y ruta:%s", pcbID, pcb_found->ruta_archivo);
 		return;
 	}
 
@@ -337,7 +337,7 @@ void finalizarPCB(int32_t pcbID, int32_t tipo){
 		pcb_found->estado= FINALIZADO_ERROR;
 		agregarPcbAColaFinalizados(pcb_found);
 		log_debug(loggerDebug, "Cambio de estado (finalizado_error) y de lista del pcb con id %d", pcbID);
-		log_info(loggerInfo, "Se Finalizo el PCB con ID: %d", pcbID);
+		log_info(loggerInfo, "Se Finalizo con error el PID: %d y ruta: %s", pcbID, pcb_found->ruta_archivo);
 		return;
 	}
   }
@@ -499,7 +499,8 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb, int32_t pcbID, in
 		log_error(loggerError, "Fallo en el envio de PCB");
 		return;
 	}
-
+	//todo, si se cerro la conexión de la cpu, tengo que borrar la cpu de la lista, o cambiarle el estado para que
+	//no se la tenga que mandar y mandarle el pcb a otra.
 	/** La cpu ahora esta en estado ocupado **/
 	CPU->estado = OCUPADO;
 }
