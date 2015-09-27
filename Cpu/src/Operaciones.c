@@ -36,7 +36,6 @@ void* thread_Use(void* thread_id){
 			porcentaje=tiempoAcumulado[id]*10/6;
 		}
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"Valores- Inicial:%d, Final:%d, Acumulado:%d" ANSI_COLOR_RESET, tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
-		porcentaje=80;
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"El porcentaje de uso es:%d" ANSI_COLOR_RESET, porcentaje);
 		header_t* header_uso_cpu = _create_header(UTILIZACION_CPU, 2*sizeof(int32_t));
 		int32_t enviado = _send_header (socketPlanificador, header_uso_cpu);
@@ -175,6 +174,7 @@ void ejecutar(int32_t id, PCB* pcb){
 		if(fgets(cadena, 100, prog) != NULL)
 		{
 			t_respuesta* respuesta=analizadorLinea(id,pcb,cadena);
+			sleep(arch->retardo);
 			string_append(&log_acciones, respuesta->texto);
 			pcb->siguienteInstruccion=ftell(prog);
 			log_debug(loggerDebug, "Analice y ejecute una linea, la proxima tiene PC en:%d", pcb->siguienteInstruccion);
