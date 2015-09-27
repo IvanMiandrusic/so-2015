@@ -108,8 +108,13 @@ void limpiar_MP() {
 
 			/** Si esta modificada, escribir en swap **/
 			if(entrada->modificada == 1) {
-				//Todo obtener contenido del marco y escribir en swap
-
+				t_pagina* pagina=malloc(sizeof(t_pagina));
+				pagina->PID=paginas_PID->PID;
+				pagina->nro_pagina=entrada->pagina;
+				pagina->contenido= malloc(arch->tamanio_marco);
+				int32_t offset=(entrada->marco)*(arch->tamanio_marco);
+				memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
+				pedido_pagina_swap(pagina, ESCRIBIR_PAGINA);
 			}
 
 			entrada->marco = 0;
@@ -272,7 +277,7 @@ void finalizarPid(sock_t* socketCpu){
 			int32_t resultado_operacion=get_operation_code(headerNuevo);
 			if (recibido == ERROR_OPERATION) return;
 
-			log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion); //todo, porque recibo 0???
+			log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion);
 			if (resultado_operacion == RESULTADO_ERROR) {
 				log_debug(loggerDebug, "El swap informa que no pudo eliminar el pid:%d", PID);
 

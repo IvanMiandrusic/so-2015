@@ -65,7 +65,6 @@ void TLB_flush() {
 	sem_wait(&sem_mutex_tlb);
 	list_iterate(TLB_tabla, limpiar_entradas);
 	sem_post(&sem_mutex_tlb);
-	log_info(loggerInfo, ANSI_COLOR_GREEN "Se realizo correctamente el TLB Flush" ANSI_COLOR_RESET);
 }
 
 bool TLB_habilitada() {
@@ -247,6 +246,8 @@ void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 		t_pagina* pagina_Nueva = malloc(sizeof(t_pagina));
 		pagina_Nueva->PID=pagina->PID;
 		pagina_Nueva->nro_pagina=pagina->nro_pagina;
+		if(operacion_swap==LEER_PAGINA){
+
 
 		if(get_operation_code(header_resultado_swap)==RESULTADO_OK) {
 
@@ -263,7 +264,7 @@ void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 
 			}
 		else {log_error(loggerError, ANSI_COLOR_BOLDRED "Error al leer pagina en el swap" ANSI_COLOR_RESET);}
-
+		}
 }
 
 void asignar_pagina(t_pagina* pagina_recibida_swap) {
