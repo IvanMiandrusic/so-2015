@@ -78,9 +78,9 @@ void creoEstructuraSwap(){
 	char* comando=string_new();
 	string_append_with_format(&comando, "dd if=/dev/zero of=%s bs=%d count=%d", arch->nombre_swap, arch->tamanio_pagina, arch->cantidad_paginas);
 
-	system(comando);
+	execv(NULL,comando);
 	free(comando);
-
+	log_info(loggerInfo, ANSI_COLOR_BOLDGREEN"Archivo de Swap creado con exito" ANSI_COLOR_RESET);
 	NodoLibre* nodo= malloc(sizeof(NodoLibre));
 	nodo->comienzo=0;
 	nodo->paginas=arch->cantidad_paginas;
