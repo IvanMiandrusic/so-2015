@@ -51,20 +51,26 @@ void ifProcessDie() {
 /** Señales **/
 
 void ifSigusr1() {
+	log_info(loggerInfo, ANSI_COLOR_BLUE "Sigusr1: Señal de TLB Flush recibida"ANSI_COLOR_RESET);
 	sem_wait(&sem_mutex_tlb);
 	TLB_flush();
 	sem_post(&sem_mutex_tlb);
+	log_info(loggerInfo, ANSI_COLOR_BLUE "TLB Flush realizado"ANSI_COLOR_RESET);
 }
 
 
 void ifSigusr2() {
+	log_info(loggerInfo, ANSI_COLOR_BLUE "Sigurs2: Señal de limpieza de memoria recibida"ANSI_COLOR_RESET);
 	sem_wait(&sem_mutex_tabla_paginas);
 	limpiar_MP();
 	sem_post(&sem_mutex_tabla_paginas);
+	log_info(loggerInfo, ANSI_COLOR_BLUE "Limpieza de memoria realizada"ANSI_COLOR_RESET);
 }
 
 void ifSigpoll() {
+	log_info(loggerInfo, ANSI_COLOR_BLUE "Sigpoll: Señal de Dump recibida"ANSI_COLOR_RESET);
 	dump();
+	log_info(loggerInfo, ANSI_COLOR_BLUE "Dump Realizado"ANSI_COLOR_RESET);
 }
 
 void dump(){
@@ -215,7 +221,6 @@ int main(void) {
 void procesar_pedido(sock_t* socketCpu, header_t* header) {
 
 	t_pedido_cpu* pedido_cpu = malloc(sizeof(t_pedido_cpu));
-	//Todo casos de envios
 	switch (get_operation_code(header)) {
 	case INICIAR: {
 		iniciar_proceso(socketCpu, pedido_cpu);
@@ -356,6 +361,7 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
 		log_debug(loggerDebug,ANSI_COLOR_RED"El swap informa que no se pudo asignar" ANSI_COLOR_RESET);
+		log_error(loggerError, "Error de creacion del mProc: %d", pedido_cpu->pid);
 		return;
 	} else if (resultado_operacion == RESULTADO_OK) {
 		//Creo la tabla de paginas del PID dado
@@ -365,6 +371,7 @@ void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
 		log_debug(loggerDebug,ANSI_COLOR_GREEN "En la memoria tambien se asigna" ANSI_COLOR_RESET);
+		log_info(loggerInfo, "mProc: %d creado, con :%d paginas", pedido_cpu->pid, pedido_cpu->cantidad_paginas);
 	}
 
 	free(pedido_cpu);
