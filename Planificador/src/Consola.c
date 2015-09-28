@@ -77,24 +77,29 @@ void limpiarBuffer() {
 
 int32_t analizar_operacion_asociada(char* comandoSeleccionado) {
 
-	if(string_starts_with(comandoSeleccionado, "correr")) return 1;
-	if(string_starts_with(comandoSeleccionado, "finalizar")) return 2;
-	if(string_starts_with(comandoSeleccionado, "ps")) return 3;
-	if(string_starts_with(comandoSeleccionado, "cpu")) return 4;
-	if(string_starts_with(comandoSeleccionado, "cerrar")) return 5;
-	if(string_starts_with(comandoSeleccionado, "help")) return 6;
-	if(string_starts_with(comandoSeleccionado, "clear")) return 7;
+	if(validarComandoConParametro(comandoSeleccionado, "correr")) return 1;
+	if(validarComandoConParametro(comandoSeleccionado, "finalizar")) return 2;
+	if(validarComando(comandoSeleccionado, "ps")) return 3;
+	if(validarComando(comandoSeleccionado, "cpu")) return 4;
+	if(validarComando(comandoSeleccionado, "cerrar consola")) return 5;
+	if(validarComando(comandoSeleccionado, "help")) return 6;
+	if(validarComando(comandoSeleccionado, "clear")) return 7;
 	return 8;
 }
 
 void correrPath(char* comando) {
 
-	if(strstr(comando, " ") == NULL) {
+	/** Separo el comando de su parametro **/
+	char** comando_parametro = string_split(comando, " ");
+
+	if(comando_parametro[1] == NULL) {
 		printf(ANSI_COLOR_BOLDRED "Debera ingresar un path de un mCod valido" ANSI_COLOR_RESET);
 		return;
 	}
 
-	char* filePath = strstr(comando, " ") + 1;
+	/** Obtengo el parametro del comando **/
+	char* filePath = string_new();
+	strcpy(filePath, comando_parametro[1]);
 
 	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a iniciar un mProc nuevo con mCod %s" ANSI_COLOR_RESET "\n", filePath);
 
@@ -110,13 +115,19 @@ void correrPath(char* comando) {
 
 void finalizarPID(char* comando) {
 
-	if(strstr(comando, " ") == NULL) {
+	/** Separo el comando de su parametro **/
+	char** comando_parametro = string_split(comando, " ");
+
+	if(comando_parametro[1] == NULL) {
 		printf(ANSI_COLOR_BOLDRED "Debera ingresar un PID de un mProc valido" ANSI_COLOR_RESET);
 		return;
 	}
 
-	char* pid_comando = strstr(comando, " ") + 1;
-	int32_t PID = atoi(pid_comando);
+	/** Obtengo el parametro del comando **/
+	char* pid_parametro = string_new();
+	strcpy(pid_parametro, comando_parametro[1]);
+
+	int32_t PID = atoi(pid_parametro);
 
 	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a finalizar un mProc con id %d" ANSI_COLOR_RESET "\n", PID);
 
@@ -186,5 +197,22 @@ void mostrarComandos() {
 	printf("cpu \t\t\t Lista las cpus con su utilizacion \n");
 	printf("clear \t\t\t Limpia la consola \n");
 	printf("cerrar consola \t\t Cierra la consola" ANSI_COLOR_RESET);
+}
+
+bool validarComando(char* actual, char* expected) {
+
+	return (string_starts_with(actual, expected)) &&
+			(string_length(actual) == string_length(expected));
+
+}
+
+bool validarComandoConParametro(char* actual, char* expected){
+
+	/** Separo el comando de su parametro **/
+	char** comando_parametro = string_split(actual, " ");
+
+	return (string_starts_with(actual, expected)) &&
+			(string_length(comando_parametro[0]) == string_length(expected));
+
 }
 

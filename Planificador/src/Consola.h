@@ -38,6 +38,8 @@ void comandoPS();
 void usoDeLasCpus();
 void mostrarComandos();
 char* get_estado_proceso(int32_t);
+bool validarComando(char*, char*);
+bool validarComandoConParametro(char*, char*);
 
 /** Closures **/
 void mostrarEstadoProceso(PCB*);
