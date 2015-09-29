@@ -107,7 +107,7 @@ void limpiar_MP() {
 			entrada->presente = 0;
 
 			/** Coloco el marco como vacio de la entrada de pagina **/
-			frames_clean(entrada->marco);
+			frames[entrada->marco] = 0;
 
 			/** Si esta modificada, escribir en swap **/
 			if(entrada->modificada == 1)

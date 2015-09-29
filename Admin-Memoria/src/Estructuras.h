@@ -79,7 +79,6 @@ int32_t tabla_paginas_clean(int32_t);
 void frames_create();
 void frames_init();
 void frames_destroy();
-void frames_clean(int32_t);
 void crear_tabla_pagina_PID(int32_t , int32_t);
 t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t, t_pagina*);
 int32_t reemplazar_pagina(int32_t, t_list*);

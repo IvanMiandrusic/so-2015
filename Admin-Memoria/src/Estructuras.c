@@ -95,10 +95,6 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 	}
 	else{
 
-		/** Si es LRU me interesa saber en que instante se referencia la pag en MP **/
-		if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
-			entrada_pagina->tiempo_referencia = get_actual_time_integer();
-
 		int32_t offset=entrada_pagina->marco*arch->tamanio_marco;
 		if(cod_Operacion==LEER)	memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
 		if(cod_Operacion==ESCRIBIR){
@@ -128,22 +124,8 @@ void TLB_refresh(int32_t PID, TPagina* pagina_a_actualizar) {
 	nueva_entrada->tiempo_referencia = pagina_a_actualizar->tiempo_referencia;
 
 	sem_wait(&sem_mutex_tlb);
-	TLB* entrada_removida = list_replace(TLB_tabla, 0, nueva_entrada);
+	list_replace_and_destroy_element(TLB_tabla, 0, nueva_entrada, free);
 	sem_post(&sem_mutex_tlb);
-
-	if(entrada_removida->modificada == 1) {
-
-		/** Si esta modificada, escribir en SWAP **/
-		TPagina* pagina = malloc(sizeof(TPagina));
-		pagina->pagina = entrada_removida->pagina;
-		pagina->marco = entrada_removida->marco;
-		pagina->presente = entrada_removida->presente;
-		pagina->modificada = entrada_removida->modificada;
-		pagina->bitUso = 0;
-		pagina->tiempo_referencia = entrada_removida->tiempo_referencia;
-
-		escribir_pagina_modificada_en_swap(PID, pagina);
-	}
 
 }
 
@@ -217,7 +199,10 @@ void tabla_paginas_refresh(TLB* entrada_tlb) {
 	/** Actualizo la pagina en la tabla de paginas **/
 	TPagina* pagina_a_modificar = list_find(paginas_PID, find_by_ID);
 	pagina_a_modificar->modificada = entrada_tlb->modificada;
-	pagina_a_modificar->tiempo_referencia = entrada_tlb->tiempo_referencia;
+
+	/** Si es LRU, me interesa el tiempo de referencia **/
+	if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
+		pagina_a_modificar->tiempo_referencia = get_actual_time_integer();
 
 }
 
@@ -256,14 +241,6 @@ void frames_destroy() {
 	free(frames);
 }
 
-void frames_clean(int32_t frame_id) {
-
-	int32_t i;
-	for(i=0;i<arch->cantidad_marcos;i++) {
-		if(frames[i] == frame_id) frames[i] = 0;
-	}
-
-}
 
 void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 
@@ -531,6 +508,10 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		marco_a_devolver = pagina_a_ausentar->marco;
 		pagina_a_ausentar->marco = 0;
 		pagina_a_ausentar->tiempo_referencia = 0;
+
+		/** Puede que este en la TLB esa pagina que se ausente **/ //Todo
+		if(TLB_exist(pagina_a_ausentar))
+			TLB_remove(pagina_a_ausentar);
 
 		/** Escribo pagina en swap (si esta modificada) **/
 		if(pagina_a_ausentar->modificada == 1) {
