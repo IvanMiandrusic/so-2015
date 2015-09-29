@@ -510,8 +510,8 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		pagina_a_ausentar->tiempo_referencia = 0;
 
 		/** Puede que este en la TLB esa pagina que se ausente **/ //Todo
-		if(TLB_exist(pagina_a_ausentar))
-			TLB_remove(pagina_a_ausentar);
+//		if(TLB_exist(pagina_a_ausentar))
+//			TLB_remove(pagina_a_ausentar);
 
 		/** Escribo pagina en swap (si esta modificada) **/
 		if(pagina_a_ausentar->modificada == 1) {
