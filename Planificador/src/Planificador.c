@@ -111,9 +111,8 @@ PCB* generarPCB(int32_t PID, char* rutaArchivo){
 	PCB* unPCB= malloc(sizeof(PCB));
 	unPCB->PID=PID;
 	unPCB->estado=LISTO;
-	unPCB->ruta_archivo = malloc(string_length(rutaArchivo));
+	unPCB->ruta_archivo = string_duplicate(rutaArchivo);
 	unPCB->siguienteInstruccion = 0;
-	strcpy(unPCB->ruta_archivo, rutaArchivo);
 	return unPCB;
 
 }
