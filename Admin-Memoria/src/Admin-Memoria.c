@@ -99,30 +99,26 @@ void limpiar_MP() {
 	void clean_by_PID(void* parametro) {
 		t_paginas_proceso* paginas_PID = (t_paginas_proceso*) parametro;
 
-		void remove_from_MP(void* parametro) {
+		void clean_from_MP(void* parametro) {
 
 			TPagina* entrada = (TPagina*) parametro;
 
 			/** Sacarle la presencia a la entrada de pagina**/
 			entrada->presente = 0;
 
+			/** Coloco el marco como vacio de la entrada de pagina **/
+			frames_clean(entrada->marco);
+
 			/** Si esta modificada, escribir en swap **/
-			if(entrada->modificada == 1) {
-				t_pagina* pagina=malloc(sizeof(t_pagina));
-				pagina->PID=paginas_PID->PID;
-				pagina->nro_pagina=entrada->pagina;
-				pagina->contenido= malloc(arch->tamanio_marco);
-				int32_t offset=(entrada->marco)*(arch->tamanio_marco);
-				memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
-				pedido_pagina_swap(pagina, ESCRIBIR_PAGINA);
-			}
+			if(entrada->modificada == 1)
+				escribir_pagina_modificada_en_swap(paginas_PID->PID, entrada);
 
 			entrada->marco = 0;
 			entrada->modificada = 0;
 			entrada->tiempo_referencia = 0;
 		}
 
-		list_iterate(paginas_PID->paginas, remove_from_MP);
+		list_iterate(paginas_PID->paginas, clean_from_MP);
 	}
 
 
@@ -256,77 +252,56 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 /*Funciones referentes a finalizar proceso */
 void finalizarPid(sock_t* socketCpu){
 
-			int32_t PID;
+	int32_t PID;
 
-			int32_t recibido = _receive_bytes(socketCpu, &(PID), sizeof(int32_t));
-			if (recibido == ERROR_OPERATION) return;
+	int32_t recibido = _receive_bytes(socketCpu, &(PID), sizeof(int32_t));
+	if (recibido == ERROR_OPERATION) return;
 
-			header_t* headerSwap = _create_header(BORRAR_ESPACIO, 1 * sizeof(int32_t));
-			int32_t enviado = _send_header(socketSwap, headerSwap);
-			if (enviado == ERROR_OPERATION) return;
+	header_t* headerSwap = _create_header(BORRAR_ESPACIO, 1 * sizeof(int32_t));
+	int32_t enviado = _send_header(socketSwap, headerSwap);
+	if (enviado == ERROR_OPERATION) return;
 
-			free(headerSwap);
+	free(headerSwap);
 
-			enviado = _send_bytes(socketSwap, &(PID), sizeof(int32_t));
-			if (enviado == ERROR_OPERATION)	return;
+	enviado = _send_bytes(socketSwap, &(PID), sizeof(int32_t));
+	if (enviado == ERROR_OPERATION)	return;
 
-			log_debug(loggerDebug, "Envie al swap para finalizar el proceso:%d", PID);
+	log_debug(loggerDebug, "Envie al swap para finalizar el proceso:%d", PID);
 
-			header_t* headerNuevo=_create_empty_header();
-			recibido=_receive_header(socketSwap,headerNuevo);
-			int32_t resultado_operacion=get_operation_code(headerNuevo);
-			if (recibido == ERROR_OPERATION) return;
+	header_t* headerNuevo=_create_empty_header();
+	recibido=_receive_header(socketSwap,headerNuevo);
+	int32_t resultado_operacion=get_operation_code(headerNuevo);
+	if (recibido == ERROR_OPERATION) return;
 
-			log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion);
-			if (resultado_operacion == RESULTADO_ERROR) {
+	log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion);
+	if (resultado_operacion == RESULTADO_ERROR) {
 
-				log_debug(loggerDebug, "El swap informa que no pudo eliminar el pid:%d", PID);
+		log_debug(loggerDebug, "El swap informa que no pudo eliminar el pid:%d", PID);
 
-				header_t* headerMemoria = _create_header(ERROR, 0);
-				int32_t enviado = _send_header(socketCpu, headerMemoria);
-				if(enviado == ERROR_OPERATION) return;
-				free(headerMemoria);
+		header_t* headerMemoria = _create_header(ERROR, 0);
+		int32_t enviado = _send_header(socketCpu, headerMemoria);
+		if(enviado == ERROR_OPERATION) return;
+		free(headerMemoria);
 
-			} else if (resultado_operacion == RESULTADO_OK) {
+	} else if (resultado_operacion == RESULTADO_OK) {
 
-				log_debug(loggerDebug, "El swap informa que pudo eliminar el pid:%d", PID);
-				limpiar_Informacion_PID(PID);
-				header_t* headerMemoria = _create_header(OK, 0);
-				int32_t enviado = _send_header(socketCpu, headerMemoria);
-				if(enviado == ERROR_OPERATION) return;
-				free(headerMemoria);
-				log_info(loggerInfo, "Se ha borrado de memoria el proceso: %d op:%d", PID, OK);
+		log_debug(loggerDebug, "El swap informa que pudo eliminar el pid:%d", PID);
+		limpiar_Informacion_PID(PID);
+		header_t* headerMemoria = _create_header(OK, 0);
+		int32_t enviado = _send_header(socketCpu, headerMemoria);
+		if(enviado == ERROR_OPERATION) return;
+		free(headerMemoria);
+		log_info(loggerInfo, "Se ha borrado de memoria el proceso: %d op:%d", PID, OK);
 
-			}
+	}
 
 }
 
 int32_t limpiar_Informacion_PID(int32_t PID){
 
-	void limpiar(void* parametro){
-		TLB* entrada = (TLB*) parametro;
-		if (entrada->PID==PID){
-			entrada->PID=0;
-			entrada->marco=0;
-			entrada->modificada=0;
-			entrada->pagina=0;
-			entrada->presente=0;
-		}
-	}
-	list_iterate(TLB_tabla, limpiar);
+	TLB_clean(PID);
 
-	bool obtenerTabPagina(void* parametro){
-		t_paginas_proceso* entrada = (t_paginas_proceso*) parametro;
-		return entrada->PID==PID;
-	}
-
-	t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
-
-	if(tablaPagina!=NULL){
-		list_destroy_and_destroy_elements(tablaPagina->paginas, free);
-		list_remove_and_destroy_by_condition(tabla_Paginas, obtenerTabPagina, free);
-		return RESULTADO_OK	;
-	}else return RESULTADO_ERROR;
+	return tabla_paginas_clean(PID);
 
 }
 

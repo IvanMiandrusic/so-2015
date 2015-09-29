@@ -161,6 +161,22 @@ void TLB_sort() {
 	sem_post(&sem_mutex_tlb);
 }
 
+void TLB_clean(int32_t PID) {
+
+	void limpiar(void* parametro){
+		TLB* entrada = (TLB*) parametro;
+		if (entrada->PID==PID){
+			entrada->PID=0;
+			entrada->marco=0;
+			entrada->modificada=0;
+			entrada->pagina=0;
+			entrada->presente=0;
+			entrada->tiempo_referencia = 0;
+		}
+	}
+	list_iterate(TLB_tabla, limpiar);
+}
+
 /** FUNCIONES DE TABLA DE PAGINAS Y MP **/
 
 void MP_create() {
@@ -205,9 +221,29 @@ void tabla_paginas_refresh(TLB* entrada_tlb) {
 
 }
 
+int32_t tabla_paginas_clean(int32_t PID) {
+
+	bool obtenerTabPagina(void* parametro){
+		t_paginas_proceso* entrada = (t_paginas_proceso*) parametro;
+		return entrada->PID==PID;
+	}
+
+	t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
+
+	if(tablaPagina!=NULL){
+		list_destroy_and_destroy_elements(tablaPagina->paginas, free);
+		list_remove_and_destroy_by_condition(tabla_Paginas, obtenerTabPagina, free);
+		return RESULTADO_OK	;
+	}else return RESULTADO_ERROR;
+}
+
 void frames_create() {
 
 	frames = malloc(sizeof(int32_t)*arch->cantidad_marcos);
+	frames_init();
+}
+
+void frames_init() {
 
 	int32_t i;
 	for(i=0;i<arch->cantidad_marcos;i++) {
@@ -218,6 +254,15 @@ void frames_create() {
 void frames_destroy() {
 
 	free(frames);
+}
+
+void frames_clean(int32_t frame_id) {
+
+	int32_t i;
+	for(i=0;i<arch->cantidad_marcos;i++) {
+		if(frames[i] == frame_id) frames[i] = 0;
+	}
+
 }
 
 void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {

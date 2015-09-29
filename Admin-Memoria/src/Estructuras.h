@@ -67,6 +67,7 @@ bool TLB_habilitada();
 t_resultado_busqueda TLB_buscar_pagina(int32_t, t_pagina*);
 void TLB_refresh(int32_t, TPagina*);
 void TLB_sort();
+void TLB_clean(int32_t);
 
 /** Funciones tabla_paginas y MP **/
 void MP_create();
@@ -74,8 +75,11 @@ void MP_destroy();
 void tabla_paginas_create();
 void tabla_paginas_destroy();
 void tabla_paginas_refresh(TLB*);
+int32_t tabla_paginas_clean(int32_t);
 void frames_create();
+void frames_init();
 void frames_destroy();
+void frames_clean(int32_t);
 void crear_tabla_pagina_PID(int32_t , int32_t);
 t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t, t_pagina*);
 int32_t reemplazar_pagina(int32_t, t_list*);
