@@ -22,6 +22,7 @@ typedef struct estructura_TLB			//estructura que contiene los datos de la tlb
   int32_t presente;			//Presente en MP (1 si, 0 no)
   int32_t pagina;
   int32_t PID;
+  int32_t tiempo_referencia;   	//Para saber cual fue la primera en ingresar
 }TLB;
 
 typedef struct estructura_tabla_paginas			//estructura que contiene los datos de la tabla de paginas
@@ -64,12 +65,15 @@ void TLB_init();
 void TLB_flush();
 bool TLB_habilitada();
 t_resultado_busqueda TLB_buscar_pagina(int32_t, t_pagina*);
+void TLB_refresh(int32_t, TPagina*);
+void TLB_sort();
 
 /** Funciones tabla_paginas y MP **/
 void MP_create();
 void MP_destroy();
 void tabla_paginas_create();
 void tabla_paginas_destroy();
+void tabla_paginas_refresh(TLB*);
 void frames_create();
 void frames_destroy();
 void crear_tabla_pagina_PID(int32_t , int32_t);
@@ -86,6 +90,7 @@ t_list* obtengoPaginasConPresencia(t_list* );
 
 /** Utils **/
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char*);
+void escribir_pagina_modificada_en_swap(int32_t, TPagina*);
 void pedido_pagina_swap(t_pagina*, int32_t);
 t_list* obtener_tabla_paginas_by_PID(int32_t );
 TPagina* obtener_pagina_a_reemplazar(t_list* );

@@ -279,18 +279,24 @@ void finalizarPid(sock_t* socketCpu){
 
 			log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion);
 			if (resultado_operacion == RESULTADO_ERROR) {
+
 				log_debug(loggerDebug, "El swap informa que no pudo eliminar el pid:%d", PID);
 
 				header_t* headerMemoria = _create_header(ERROR, 0);
 				int32_t enviado = _send_header(socketCpu, headerMemoria);
+				if(enviado == ERROR_OPERATION) return;
 				free(headerMemoria);
+
 			} else if (resultado_operacion == RESULTADO_OK) {
+
 				log_debug(loggerDebug, "El swap informa que pudo eliminar el pid:%d", PID);
 				limpiar_Informacion_PID(PID);
 				header_t* headerMemoria = _create_header(OK, 0);
 				int32_t enviado = _send_header(socketCpu, headerMemoria);
+				if(enviado == ERROR_OPERATION) return;
 				free(headerMemoria);
 				log_info(loggerInfo, "Se ha borrado de memoria el proceso: %d op:%d", PID, OK);
+
 			}
 
 }
@@ -402,6 +408,7 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 	if (resultado==NOT_FOUND) {
 		header_t* headerCpu = _create_header(ERROR, 0);
 		enviado = _send_header(socketCpu, headerCpu);
+		if(enviado == ERROR_OPERATION) return;
 		free(headerCpu);
 		if(cod_Operacion==LEER)log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo leer la pagina" ANSI_COLOR_RESET);
 		if(cod_Operacion==ESCRIBIR)log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo escribir la pagina" ANSI_COLOR_RESET);

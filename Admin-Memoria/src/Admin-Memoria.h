@@ -68,7 +68,7 @@ void limpiar_MP();
 void procesar_pedido(sock_t*, header_t* );
 void iniciar_proceso(sock_t*, t_pedido_cpu*);
 t_resultado_busqueda buscar_pagina(int32_t, t_pagina*);
-void finalizarPid(sock_t* );
+void finalizarPid(sock_t*);
 int32_t limpiar_Informacion_PID(int32_t );
 void readOrWrite(int32_t, sock_t*, header_t* );
 #endif /* ADMIN_MEMORIA_H_ */
