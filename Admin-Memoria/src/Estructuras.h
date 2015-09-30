@@ -43,7 +43,8 @@ typedef struct estructura_proceso_paginas {
 
 typedef enum resultado_operacion_busqueda_pagina {
 	FOUND=1,
-	NOT_FOUND=0
+	NOT_FOUND=0,
+	SEARCH_ERROR=-1
 }t_resultado_busqueda;
 
 typedef enum algoritmo_reemplazo {
@@ -83,7 +84,7 @@ void crear_tabla_pagina_PID(int32_t , int32_t);
 t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t, t_pagina*);
 int32_t reemplazar_pagina(int32_t, t_list*);
 int32_t obtener_frame_libre();
-void asignar_pagina(t_pagina*);
+t_resultado_busqueda asignar_pagina(t_pagina*);
 
 bool esClase0(TPagina* );
 bool esClase1(TPagina* );
@@ -94,7 +95,7 @@ t_list* obtengoPaginasConPresencia(t_list* );
 /** Utils **/
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char*);
 void escribir_pagina_modificada_en_swap(int32_t, TPagina*);
-void pedido_pagina_swap(t_pagina*, int32_t);
+t_resultado_busqueda pedido_pagina_swap(t_pagina*, int32_t);
 t_list* obtener_tabla_paginas_by_PID(int32_t );
 TPagina* obtener_pagina_a_reemplazar(t_list* );
 char* obtener_contenido_marco(TPagina*);

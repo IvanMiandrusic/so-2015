@@ -70,6 +70,6 @@ void iniciar_proceso(sock_t*, t_pedido_cpu*);
 t_resultado_busqueda buscar_pagina(int32_t, t_pagina*);
 void finalizarPid(sock_t*);
 int32_t limpiar_Informacion_PID(int32_t);
-void finalizar_proceso_error(int32_t);
+t_resultado_busqueda finalizar_proceso_error(int32_t);
 void readOrWrite(int32_t, sock_t*, header_t* );
 #endif /* ADMIN_MEMORIA_H_ */

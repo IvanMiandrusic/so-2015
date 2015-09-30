@@ -295,14 +295,19 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 	}
 	else {
 		log_debug(loggerDebug, "No se encontro en la tabla de paginas, se pide al swap");
-		pedido_pagina_swap(pagina, LEER_PAGINA);
-		log_debug(loggerDebug, "cargue pagina del swap");
-		return buscar_pagina(codOperacion, pagina);
+		t_resultado_busqueda resultado = pedido_pagina_swap(pagina, LEER_PAGINA);
+
+		if(resultado == FOUND) {
+			log_debug(loggerDebug, "cargue pagina del swap");
+			return buscar_pagina(codOperacion, pagina);
+		}
+
+		return NOT_FOUND;
 	}
 
 }
 
-void escribir_pagina_modificada_en_swap(int32_t PID, TPagina* pagina) {
+t_resultado_busqueda escribir_pagina_modificada_en_swap(int32_t PID, TPagina* pagina) {
 
 	t_pagina* pagina_a_escribir = malloc(sizeof(t_pagina));
 	pagina_a_escribir->PID = PID;
@@ -313,10 +318,10 @@ void escribir_pagina_modificada_en_swap(int32_t PID, TPagina* pagina) {
 	pagina_a_escribir->contenido = malloc(arch->tamanio_marco);
 	memcpy(pagina_a_escribir, contenido_marco, pagina_a_escribir->tamanio_contenido);
 
-	pedido_pagina_swap(pagina_a_escribir, ESCRIBIR_PAGINA);
+	return pedido_pagina_swap(pagina_a_escribir, ESCRIBIR_PAGINA);
 }
 
-void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
+t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 
 		int32_t enviado;
 		int32_t recibido;
@@ -332,26 +337,26 @@ void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 			tamanio=pagina->tamanio_contenido;
 		}
 		enviado = _send_header(socketSwap, headerSwap);
-		if (enviado == ERROR_OPERATION) return;
+		if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
 		free(headerSwap);
 
 		enviado = _send_bytes(socketSwap, &(pagina->PID), sizeof(int32_t));
-		if (enviado == ERROR_OPERATION) return;
+		if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
 
 		enviado = _send_bytes(socketSwap, &(pagina->nro_pagina), sizeof(int32_t));
-		if (enviado == ERROR_OPERATION) return;
+		if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
 
 		enviado = _send_bytes(socketSwap, &tamanio, sizeof(int32_t));
-		if (enviado == ERROR_OPERATION) return;
+		if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
 		log_debug(loggerDebug, "se envia a leer del pid:%d, la pag:%d, tam:%d", pagina->PID, pagina->nro_pagina, tamanio);
 
 		if(operacion_swap==ESCRIBIR_PAGINA){
 			enviado = _send_bytes(socketSwap, pagina->contenido, pagina->tamanio_contenido);
-			if (enviado == ERROR_OPERATION) return;
+			if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
 		}
 		header_t* header_resultado_swap = _create_empty_header();
 		recibido = _receive_header(socketSwap, header_resultado_swap);
-		if(recibido == ERROR_OPERATION) return;
+		if(recibido == ERROR_OPERATION) return SEARCH_ERROR;
 
 		t_pagina* pagina_Nueva = malloc(sizeof(t_pagina));
 		pagina_Nueva->PID=pagina->PID;
@@ -362,24 +367,28 @@ void pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap) {
 			if(get_operation_code(header_resultado_swap)==RESULTADO_OK) {
 
 				recibido = _receive_bytes(socketSwap, &(pagina_Nueva->tamanio_contenido), sizeof(int32_t));
-				if (enviado == ERROR_OPERATION) return;
+				if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
 
 				recibido = _receive_bytes(socketSwap, pagina_Nueva->contenido, pagina_Nueva->tamanio_contenido);
-				if (enviado == ERROR_OPERATION) return;
+				if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
 
 				log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Exito al leer pagina en el swap" ANSI_COLOR_RESET);
 
 				/** Se reemplaza la pagina en MP **/
-				asignar_pagina(pagina_Nueva);
+				return asignar_pagina(pagina_Nueva);
 
 			}
 
 			else
 				log_error(loggerError, ANSI_COLOR_BOLDRED "Error al leer pagina en el swap" ANSI_COLOR_RESET);
+
+			return NOT_FOUND;
 		}
+
+		return FOUND;
 }
 
-void asignar_pagina(t_pagina* pagina_recibida_swap) {
+t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 
 	int32_t marco_libre;
 	log_debug(loggerDebug, "Debo buscar pagina a asignar");
@@ -413,10 +422,8 @@ void asignar_pagina(t_pagina* pagina_recibida_swap) {
 	 *  porque no tengo ninguna cargada en memoria, deberia finalizar el proceso con error
 	 */
 
-	if(marco_libre==-1 && presentes == 0) {
-		finalizar_proceso_error(pagina_recibida_swap->PID);
-		return;
-	}
+	if(marco_libre==-1 && presentes == 0)
+		return finalizar_proceso_error(pagina_recibida_swap->PID);
 
 	log_debug(loggerDebug, "Busco la pagina: %d", pagina_recibida_swap->nro_pagina);
 
@@ -444,31 +451,37 @@ void asignar_pagina(t_pagina* pagina_recibida_swap) {
 
 	/** Actualizo contenido en la TLB **/
 	TLB_refresh(pagina_recibida_swap->PID, pagina_a_poner_presente);
+
+	return FOUND;
 }
 
-void finalizar_proceso_error(int32_t PID) {
+t_resultado_busqueda finalizar_proceso_error(int32_t PID) {
 
 	int32_t recibido;
 
 	header_t* headerSwap = _create_header(BORRAR_ESPACIO, 1 * sizeof(int32_t));
 	int32_t enviado = _send_header(socketSwap, headerSwap);
-	if (enviado == ERROR_OPERATION) return;
+	if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
 
 	free(headerSwap);
 
 	enviado = _send_bytes(socketSwap, &(PID), sizeof(int32_t));
-	if (enviado == ERROR_OPERATION)	return;
+	if (enviado == ERROR_OPERATION)	return SEARCH_ERROR;
 
 	log_debug(loggerDebug, "Envie al swap para finalizar el proceso:%d", PID);
 
 	header_t* headerNuevo=_create_empty_header();
 	recibido = _receive_header(socketSwap,headerNuevo);
 	int32_t resultado_operacion=get_operation_code(headerNuevo);
-	if (recibido == ERROR_OPERATION) return;
+	if (recibido == ERROR_OPERATION) return SEARCH_ERROR;
 
 	log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion);
 
+	/** Libero el espacio ocupado en memoria por el pid finalizado **/
+	limpiar_Informacion_PID(PID);
+
 	/** Todo de alguna forma avisarle a la CPU que finalize, aca no tengo forma de conocer el socket **/
+	return FOUND;
 }
 
 int32_t obtener_frame_libre() {
@@ -516,10 +529,11 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		/** Escribo pagina en swap (si esta modificada) **/
 		if(pagina_a_ausentar->modificada == 1) {
 
-			escribir_pagina_modificada_en_swap(PID, pagina_a_ausentar);
+			t_resultado_busqueda resultado = escribir_pagina_modificada_en_swap(PID, pagina_a_ausentar);
 
 			/** Le saco el bit de modificada **/
-			pagina_a_ausentar->modificada = 0;
+			if(resultado == FOUND)
+				pagina_a_ausentar->modificada = 0;
 		}
 
 		return marco_a_devolver;
@@ -563,14 +577,15 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 			pagina_a_escribir->contenido = malloc(arch->tamanio_marco);
 			memcpy(pagina_a_escribir, contenido_marco, pagina_a_escribir->tamanio_contenido);
 
-			pedido_pagina_swap(pagina_a_escribir, ESCRIBIR_PAGINA);
+			t_resultado_busqueda resultado = pedido_pagina_swap(pagina_a_escribir, ESCRIBIR_PAGINA);
 
 			/** Le saco el bit de modificada **/
-			mejorPagina->modificada = 0;
+			if(resultado == FOUND)
+				mejorPagina->modificada = 0;
 		}
 		return mejorPagina->marco;
 	}
-	return -1;
+	return ERROR_OPERATION;
 
 }
 
