@@ -94,7 +94,7 @@ t_list* obtengoPaginasConPresencia(t_list* );
 
 /** Utils **/
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char*);
-void escribir_pagina_modificada_en_swap(int32_t, TPagina*);
+t_resultado_busqueda escribir_pagina_modificada_en_swap(int32_t, TPagina*);
 t_resultado_busqueda pedido_pagina_swap(t_pagina*, int32_t);
 t_list* obtener_tabla_paginas_by_PID(int32_t );
 TPagina* obtener_pagina_a_reemplazar(t_list* );
