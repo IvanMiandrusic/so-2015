@@ -95,6 +95,9 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 	}
 	else{
 
+		/** Hago el retardo que encontro la pagina **/
+		sleep(arch->retardo);
+
 		int32_t offset=entrada_pagina->marco*arch->tamanio_marco;
 		if(cod_Operacion==LEER)	memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
 		if(cod_Operacion==ESCRIBIR){
@@ -284,6 +287,9 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 		/** Si es LRU me interesa saber en que instante se referencia la pag en MP **/
 		if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
 			entradaFound->tiempo_referencia = get_actual_time_integer();
+
+		/** Hago el retardo si encuentra la pagina en la tabla de paginas **/
+		sleep(arch->retardo);
 
 		int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);
 		if(codOperacion==LEER) memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);

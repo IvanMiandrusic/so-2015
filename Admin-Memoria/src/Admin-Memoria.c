@@ -412,6 +412,9 @@ t_resultado_busqueda buscar_pagina(int32_t codOperacion, t_pagina* pagina_solici
 	/** Las paginas tienen el mismo tamaño del marco (como maximo) **/
 	if(codOperacion==LEER)pagina_solicitada->contenido = malloc(arch->tamanio_marco);
 
+	/** Realizo el retardo antes de buscar en estructuras administrativas **/
+	sleep(arch->retardo);
+
 	return TLB_buscar_pagina(codOperacion, pagina_solicitada);
 
 }
