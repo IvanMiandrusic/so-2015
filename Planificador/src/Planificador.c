@@ -113,6 +113,7 @@ PCB* generarPCB(int32_t PID, char* rutaArchivo){
 	unPCB->estado=LISTO;
 	unPCB->ruta_archivo = string_duplicate(rutaArchivo);
 	unPCB->siguienteInstruccion = 0;
+	unPCB->horaInicial = get_actual_time_integer();
 	return unPCB;
 
 }
@@ -303,9 +304,13 @@ void agregarPidAColaAFinalizar(int32_t pcbID){
 	bool getPcbByID(PCB* unPCB){
 			return unPCB->PID == pcbID;
 		}
+	bool getID(int32_t unPID){
+				return unPID == pcbID;
+			}
 
-	if(list_any_satisfy(colaFinalizados, getPcbByID)){
-			log_info(loggerInfo, "El PID indicado ya se encuentra Finalizado");
+	if(list_any_satisfy(colaFinalizados, getPcbByID) || list_any_satisfy(colaAFinalizar, getID)){
+			log_info(loggerInfo, "El PID indicado ya se esta finalizando o ya Finalizo");
+			printf(ANSI_COLOR_BOLDRED "El PID indicado ya se esta finalizando o ya Finalizo" ANSI_COLOR_RESET "\n");
 			return;
 		} else{ list_add(colaAFinalizar, pcbID);
 				return;}
@@ -575,7 +580,7 @@ int main(void) {
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "../Planificador.config";
+	char* path = "Planificador.config";
 	arch = crear_estructura_config(path);
 
 	/*Se inicializan todos los semaforos necesarios */

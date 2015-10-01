@@ -20,6 +20,7 @@
 #include <commons/config.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
+#include <commons/temporal.h>
 #include "libsocket.h"
 
 
@@ -54,6 +55,7 @@ typedef struct estructura_PCB			//estructura que contiene los datos del pcb
   char* ruta_archivo;
   int32_t estado;
   int32_t siguienteInstruccion;
+  int32_t horaInicial;
 }PCB;
 
 typedef struct estructura_CPU      //estructura que contiene los datos que nos envia cada cpu
@@ -115,6 +117,7 @@ void agregarPidAColaAFinalizar(int32_t );
 void cambiarAUltimaInstruccion(PCB* );
 void recibirOperacion(sock_t*, int32_t, int32_t);
 void sacarDeExec(int32_t );
+int32_t obtenerHora();
 
 
 /** Closures **/
