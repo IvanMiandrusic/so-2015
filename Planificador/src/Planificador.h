@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <errno.h>
+#include <commons/string.h>
 #include <semaphore.h>
 #include <sys/wait.h>
 #include <commons/config.h>
