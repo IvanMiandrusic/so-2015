@@ -41,6 +41,15 @@ typedef enum estados_cpu {
 	OCUPADO=2
 }t_estado_cpu;
 
+typedef struct estructura_metricas{
+
+	int32_t PID;
+	int32_t finalizado;
+	int32_t hora_de_Creacion;
+	int32_t hora_ejecucion;
+
+}Metricas;
+
 typedef struct estructura_configuracion			//estructura que contiene los datos del archivo de configuracion
 {
   int32_t puerto_escucha;
@@ -113,11 +122,11 @@ void agregarPcbAColaExec(PCB*);
 void agregarColaCPUs(CPU_t*);
 void finalizarPCB(int32_t , int32_t );
 void liberarCPU(int32_t );
-void agregarPidAColaAFinalizar(int32_t );
+void agregarPidParaFinalizar(int32_t );
 void cambiarAUltimaInstruccion(PCB* );
 void recibirOperacion(sock_t*, int32_t, int32_t);
 void sacarDeExec(int32_t );
-int32_t obtenerHora();
+Metricas* iniciarMetricas(int32_t PID);
 
 
 /** Closures **/

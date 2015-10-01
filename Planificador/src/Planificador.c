@@ -33,7 +33,7 @@ t_list* colaBlock;
 t_list* colaExec;
 t_list* colaFinalizados;
 t_list* colaCPUs;
-t_list* colaAFinalizar;
+t_list* colaMetricas;
 t_list* retardos_PCB;
 /** ID para los PCB **/
 int32_t idParaPCB = 0;
@@ -45,7 +45,7 @@ sem_t semMutex_colaExec;
 sem_t semMutex_colaFinalizados;
 sem_t semMutex_colaListos;
 sem_t semMutex_colaCPUs;
-sem_t semMutex_colaAFinalizar;
+sem_t semMutex_colaMetricas;
 sem_t sem_list_retardos;
 sem_t sem_io;
 
@@ -86,7 +86,7 @@ void inicializoSemaforos(){
 	int32_t semMutexCpu = sem_init(&semMutex_colaCPUs,0,1);
 	if(semMutexCpu==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas CPU");
 
-	int32_t semMutexAFinalizar = sem_init(&semMutex_colaAFinalizar,0,1);
+	int32_t semMutexAFinalizar = sem_init(&semMutex_colaMetricas,0,1);
 	if(semMutexAFinalizar==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex de Colas AFinalizar");
 
 	int32_t semMutexRetardos = sem_init(&sem_list_retardos,0,1);
@@ -113,7 +113,6 @@ PCB* generarPCB(int32_t PID, char* rutaArchivo){
 	unPCB->estado=LISTO;
 	unPCB->ruta_archivo = string_duplicate(rutaArchivo);
 	unPCB->siguienteInstruccion = 0;
-	unPCB->horaInicial = get_actual_time_integer();
 	return unPCB;
 
 }
@@ -134,7 +133,7 @@ void creoEstructurasDeManejo(){
 	colaBlock=list_create();
 	colaExec=list_create();
 	colaFinalizados=list_create();
-	colaAFinalizar=list_create();
+	colaMetricas=list_create();
 	colaCPUs=list_create();
 	retardos_PCB = list_create();
 
@@ -156,10 +155,24 @@ void administrarPath(char* filePath){
 
 	idParaPCB++;
 	PCB* unPCB = generarPCB(idParaPCB, filePath);
+	Metricas* metricas = iniciarMetricas(unPCB->PID);
+	sem_wait(&semMutex_colaMetricas);
+	list_add(colaMetricas, metricas);
+	sem_post(&semMutex_colaMetricas);
 	agregarPcbAColaListos(unPCB);
 	log_info(loggerInfo, "Comienza el proceso con id %d y mCod %s", unPCB->PID, unPCB->ruta_archivo);
 	return;
 
+}
+
+Metricas* iniciarMetricas(int32_t PID){
+
+	Metricas* misMetricas = malloc(sizeof(Metricas));
+	misMetricas->PID = PID;
+	misMetricas->finalizado = 0;
+	misMetricas->hora_de_Creacion = get_actual_time_integer();
+	misMetricas->hora_ejecucion = 0;
+	return misMetricas;
 }
 
 //Funcion del hilo servidor de conexiones
@@ -300,19 +313,21 @@ void liberarCPU(int32_t cpu_id){
 }
 
 
-void agregarPidAColaAFinalizar(int32_t pcbID){
+void agregarPidParaFinalizar(int32_t pcbID){
 	bool getPcbByID(PCB* unPCB){
 			return unPCB->PID == pcbID;
 		}
-	bool getID(int32_t unPID){
-				return unPID == pcbID;
+	bool getIDMetricas(Metricas* metrica){
+				return metrica->PID == pcbID;
 			}
 
-	if(list_any_satisfy(colaFinalizados, getPcbByID) || list_any_satisfy(colaAFinalizar, getID)){
+	if(list_any_satisfy(colaFinalizados, getPcbByID) || list_any_satisfy(colaMetricas, getIDMetricas)){
 			log_info(loggerInfo, "El PID indicado ya se esta finalizando o ya Finalizo");
 			printf(ANSI_COLOR_BOLDRED "El PID indicado ya se esta finalizando o ya Finalizo" ANSI_COLOR_RESET "\n");
 			return;
-		} else{ list_add(colaAFinalizar, pcbID);
+		} else{ Metricas* unaMetrica = list_find(colaMetricas, getIDMetricas); //todo
+				unaMetrica->finalizado = 1;
+
 				return;}
 		}
 
@@ -448,20 +463,20 @@ void cambiarAUltimaInstruccion(PCB* pcb){
 	return;
 }
 
-void asignarPCBaCPU(){
+void asignarPCBaCPU(){ //todo: probar nuevo cambio
 	if(hay_cpu_libre()&& !list_is_empty(colaListos)) {
 		PCB* pcbAEnviar = list_remove(colaListos, 0);
 
-		bool getPcbByID(PCB* unPCB){
-					return unPCB->PID == pcbAEnviar;
+		bool getPcbByID(Metricas* unaMetrica){
+					return (unaMetrica->PID == pcbAEnviar->PID && unaMetrica->finalizado == 1);
 				}
 
-		if(list_any_satisfy(colaAFinalizar, getPcbByID)){
+		if(list_any_satisfy(colaMetricas, getPcbByID)){
 			cambiarAUltimaInstruccion(pcbAEnviar);
 			pcbAEnviar->estado = FINALIZANDO;
-			sem_wait(&semMutex_colaAFinalizar);
-			list_remove_by_condition(colaAFinalizar, getPcbByID);
-			sem_post(&semMutex_colaAFinalizar);
+			sem_wait(&semMutex_colaMetricas);
+			list_remove_by_condition(colaMetricas, getPcbByID);
+			sem_post(&semMutex_colaMetricas);
 			agregarPcbAColaExec(pcbAEnviar);
 		}else{
 			pcbAEnviar->estado = EJECUCION;

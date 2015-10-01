@@ -102,16 +102,8 @@ void correrPath(char* comando) {
 
 	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a iniciar un mProc nuevo con mCod %s" ANSI_COLOR_RESET "\n", filePath);
 	log_info(loggerInfo, "Se procede a iniciar un mProc nuevo con mCod %s", filePath);
-
-	if (string_equals_ignore_case(arch->algoritmo, "FIFO")) {
-		//se hace esto si es fifo
-		administrarPath(filePath);
-		asignarPCBaCPU();
-	} else if (string_equals_ignore_case(arch->algoritmo, "RR")) {
-		//Se hace esto si es RR
-		administrarPath(filePath);
-		asignarPCBaCPU();
-	}
+	administrarPath(filePath);
+	asignarPCBaCPU();
 }
 
 void finalizarPID(char* comando) {
@@ -136,7 +128,7 @@ void finalizarPID(char* comando) {
 		printf(ANSI_COLOR_BOLDRED "Por favor ingrese un PID existente" ANSI_COLOR_RESET "\n");
 	}
 	//todo: Hacer q no se muestre mas en el Comando "PS"
-	agregarPidAColaAFinalizar(PID);
+	agregarPidParaFinalizar(PID);
 }
 
 char* get_estado_proceso(int32_t estado) {
