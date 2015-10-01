@@ -58,6 +58,8 @@ typedef enum algoritmo_reemplazo {
 extern t_list* TLB_tabla;
 extern char* mem_principal;
 extern t_list* tabla_Paginas;
+extern int32_t TLB_accesos;
+extern int32_t TLB_hit;
 
 /** TLB functions **/
 void TLB_create();
@@ -68,7 +70,9 @@ bool TLB_habilitada();
 t_resultado_busqueda TLB_buscar_pagina(int32_t, t_pagina*);
 void TLB_refresh(int32_t, TPagina*);
 void TLB_sort();
-void TLB_clean(int32_t);
+void TLB_clean_by_PID(int32_t);
+void TLB_clean_by_page(TPagina*);
+bool TLB_exist(TPagina*);
 
 /** Funciones tabla_paginas y MP **/
 void MP_create();

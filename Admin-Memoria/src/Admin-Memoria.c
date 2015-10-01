@@ -24,6 +24,8 @@ sem_t sem_mutex_tabla_paginas;
 sock_t* socketServidorCpus;
 sock_t* socketSwap;
 int32_t* frames;
+pthread_t TLB_aciertos;
+pthread_t atencion_pedido;
 
 ProcesoMemoria* crear_estructura_config(char* path) {
 	t_config* archConfig = config_create(path);
@@ -166,6 +168,24 @@ void limpiar_estructuras_memoria(){
 	frames_destroy();
 }
 
+void* thread_hit(void* arg){
+
+	int32_t tasa_acierto;
+
+	while(true){
+
+		sleep(60);
+
+		tasa_acierto = (TLB_hit/TLB_accesos)* 100;
+
+		log_info(loggerInfo,ANSI_COLOR_BOLDGREEN"La tasa de aciertos de la TLB es:%d" ANSI_COLOR_RESET, tasa_acierto);
+
+		tasa_acierto = 0;
+
+	}
+	return NULL;
+}
+
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
 int main(void) {
 
@@ -195,6 +215,15 @@ int main(void) {
 	/** Se crearan todas las estructuras de la memoria **/
 	crear_estructuras_memoria();
 
+	/** Creo hilo de tasa de aciertos TLB **/
+	if(TLB_habilitada()) {
+		int32_t resultado_acierto = pthread_create(&TLB_aciertos, NULL, thread_hit, NULL);
+		if (resultado_acierto != 0) {
+			log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de aciertos de TLB "ANSI_COLOR_RESET);
+			abort();
+		}
+	}
+
 	socketSwap = create_client_socket(arch->ip_swap, arch->puerto_swap);
 	int32_t resultado = connect_to_server(socketSwap);
 	if(resultado == ERROR_OPERATION) {
@@ -219,33 +248,53 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-void procesar_pedido(sock_t* socketCpu, header_t* header) {
+void thread_request(void* arg) {
+
+	t_atencion_pedido* pedido = (t_atencion_pedido*) arg;
+
+	sock_t* socketCpu = _create_socket_from_fd(pedido->cpu_fd);
 
 	t_pedido_cpu* pedido_cpu = malloc(sizeof(t_pedido_cpu));
-	switch (get_operation_code(header)) {
+	switch (get_operation_code(pedido->header_cpu)) {
 	case INICIAR: {
 		iniciar_proceso(socketCpu, pedido_cpu);
 		break;
-		}
+	}
 	case LEER: {
-		readOrWrite(LEER, socketCpu, header);
+		readOrWrite(LEER, socketCpu, pedido->header_cpu);
 		break;
-		}
+	}
 	case ESCRIBIR: {
-		readOrWrite(ESCRIBIR, socketCpu, header);
+		readOrWrite(ESCRIBIR, socketCpu, pedido->header_cpu);
 		break;
-		}
+	}
 	case FINALIZAR: {
 		finalizarPid(socketCpu);
 		break;
-		}
+	}
 	default: {
-		log_debug(loggerDebug, "Se recibio el codigo de operacion:%d", get_operation_code(header));
+		log_debug(loggerDebug, "Se recibio el codigo de operacion:%d", get_operation_code(pedido->header_cpu));
 		log_error(loggerError, ANSI_COLOR_RED "Desde la cpu recibo un codigo de operacion erroneo" ANSI_COLOR_RESET);
 		break;
-			}
+	}
 	}
 	log_debug(loggerDebug, ANSI_COLOR_BOLDCYAN "Pedido procesado" ANSI_COLOR_RESET);
+
+}
+
+void procesar_pedido(sock_t* socketCpu, header_t* header) {
+
+	t_atencion_pedido* pedido = malloc(sizeof(t_atencion_pedido));
+	pedido->cpu_fd = socketCpu->fd;
+	pedido->header_cpu = _create_header(header->cod_op, header->size_message);
+
+	/** Creo hilo para atender pedidos concurrentemente **/
+	int32_t resultado_pedido = pthread_create(&atencion_pedido, NULL, thread_request, pedido);
+	if (resultado_pedido != 0) {
+		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de aciertos de TLB "ANSI_COLOR_RESET);
+		abort();
+	}
+
 }
 
 
@@ -299,7 +348,7 @@ void finalizarPid(sock_t* socketCpu){
 
 int32_t limpiar_Informacion_PID(int32_t PID){
 
-	TLB_clean(PID);
+	TLB_clean_by_PID(PID);
 
 	return tabla_paginas_clean(PID);
 
@@ -381,13 +430,20 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 
 	int32_t enviado;
 	if (resultado==NOT_FOUND) {
+
+		/** Finalizo el proceso con ERROR **/
+		finalizar_proceso_error(pagina_pedida->PID);
+
+		/** Informo a la CPU que el proceso tuvo un ERROR **/
 		header_t* headerCpu = _create_header(ERROR, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		if(enviado == ERROR_OPERATION) return;
+
 		free(headerCpu);
+
 		if(cod_Operacion==LEER)log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo leer la pagina" ANSI_COLOR_RESET);
 		if(cod_Operacion==ESCRIBIR)log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo escribir la pagina" ANSI_COLOR_RESET);
-		return;
+
 	}else {
 		if(cod_Operacion==LEER){
 			header_t* headerCpu = _create_header(OK, 0);
@@ -397,13 +453,13 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 			enviado = _send_bytes(socketCpu, pagina_pedida->contenido, tamanio);
 			free(headerCpu);
 			log_debug(loggerDebug,ANSI_COLOR_GREEN "Se leyo la pagina correctamente" ANSI_COLOR_RESET);
-			}else{
-				header_t* headerCpu = _create_header(OK, 0);
-				enviado = _send_header(socketCpu, headerCpu);
-				free(headerCpu);
-				log_debug(loggerDebug,ANSI_COLOR_GREEN "Se escribio la pagina correctamente" ANSI_COLOR_RESET);
-				 }
-			}
+		}else{
+			header_t* headerCpu = _create_header(OK, 0);
+			enviado = _send_header(socketCpu, headerCpu);
+			free(headerCpu);
+			log_debug(loggerDebug,ANSI_COLOR_GREEN "Se escribio la pagina correctamente" ANSI_COLOR_RESET);
+		}
+	}
 
 }
 
@@ -416,6 +472,33 @@ t_resultado_busqueda buscar_pagina(int32_t codOperacion, t_pagina* pagina_solici
 	sleep(arch->retardo);
 
 	return TLB_buscar_pagina(codOperacion, pagina_solicitada);
+
+}
+
+void finalizar_proceso_error(int32_t PID) {
+
+	int32_t recibido;
+
+	header_t* headerSwap = _create_header(BORRAR_ESPACIO, 1 * sizeof(int32_t));
+	int32_t enviado = _send_header(socketSwap, headerSwap);
+	if (enviado == ERROR_OPERATION) return;
+
+	free(headerSwap);
+
+	enviado = _send_bytes(socketSwap, &(PID), sizeof(int32_t));
+	if (enviado == ERROR_OPERATION)	return;
+
+	log_debug(loggerDebug, "Envie al swap para finalizar el proceso:%d", PID);
+
+	header_t* headerNuevo=_create_empty_header();
+	recibido = _receive_header(socketSwap,headerNuevo);
+	int32_t resultado_operacion=get_operation_code(headerNuevo);
+	if (recibido == ERROR_OPERATION) return;
+
+	log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion);
+
+	/** Libero el espacio ocupado en memoria por el pid finalizado **/
+	limpiar_Informacion_PID(PID);
 
 }
 

@@ -38,6 +38,12 @@ typedef struct estructura_configuracion			//estructura que contiene los datos de
   char* algoritmo_reemplazo;
 }ProcesoMemoria;
 
+typedef struct estructura_hilo_atencion
+{
+	int32_t cpu_fd;
+	header_t* header_cpu;
+}t_atencion_pedido;
+
 /* VARIABLES GLOBALES */
 extern ProcesoMemoria* arch;
 extern t_log* loggerInfo;
@@ -48,6 +54,8 @@ extern sem_t sem_mutex_tabla_paginas;
 extern sock_t* socketServidorCpus;
 extern sock_t* socketSwap;
 extern int32_t* frames;
+extern pthread_t TLB_aciertos;
+extern pthread_t atencion_pedido;
 
 /** Funciones de configuracion inicial **/
 ProcesoMemoria* crear_estructura_config(char*);
@@ -70,6 +78,6 @@ void iniciar_proceso(sock_t*, t_pedido_cpu*);
 t_resultado_busqueda buscar_pagina(int32_t, t_pagina*);
 void finalizarPid(sock_t*);
 int32_t limpiar_Informacion_PID(int32_t);
-t_resultado_busqueda finalizar_proceso_error(int32_t);
+void finalizar_proceso_error(int32_t);
 void readOrWrite(int32_t, sock_t*, header_t* );
 #endif /* ADMIN_MEMORIA_H_ */

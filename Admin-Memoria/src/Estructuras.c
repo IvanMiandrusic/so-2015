@@ -15,6 +15,8 @@
 t_list* TLB_tabla;
 char* mem_principal;
 t_list* tabla_Paginas;
+int32_t TLB_accesos;
+int32_t TLB_hit;
 
 /** FUNCIONES DE LA TLB **/
 void TLB_create() {
@@ -50,6 +52,10 @@ void TLB_init() {
 		list_add(TLB_tabla, nuevaEntrada);
 		sem_post(&sem_mutex_tlb);
 	}
+
+	/** Inicializo contadores globales **/
+	TLB_accesos = 0;
+	TLB_hit = 0;
 }
 
 void TLB_flush() {
@@ -84,6 +90,9 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 	TLB* entrada_pagina=NULL;
 
 	if(TLB_habilitada()) {
+		/** Sumo un acceso a la TLB **/
+		TLB_accesos++;
+
 		sem_wait(&sem_mutex_tlb);
 		entrada_pagina = list_find(TLB_tabla, find_by_PID_page);
 		sem_post(&sem_mutex_tlb);
@@ -97,6 +106,9 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 
 		/** Hago el retardo que encontro la pagina **/
 		sleep(arch->retardo);
+
+		/** Hubo un TLB_HIT, se encontro la pagina **/
+		TLB_hit++;
 
 		int32_t offset=entrada_pagina->marco*arch->tamanio_marco;
 		if(cod_Operacion==LEER)	memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
@@ -146,7 +158,7 @@ void TLB_sort() {
 	sem_post(&sem_mutex_tlb);
 }
 
-void TLB_clean(int32_t PID) {
+void TLB_clean_by_PID(int32_t PID) {
 
 	void limpiar(void* parametro){
 		TLB* entrada = (TLB*) parametro;
@@ -160,6 +172,32 @@ void TLB_clean(int32_t PID) {
 		}
 	}
 	list_iterate(TLB_tabla, limpiar);
+}
+
+bool TLB_exist(TPagina* pagina) {
+
+	bool page_exist(void* parametro) {
+		TLB* entrada = (TLB*) parametro;
+		return entrada->pagina == pagina->pagina;
+	}
+
+	return list_any_satisfy(TLB_tabla, page_exist);
+}
+
+void TLB_clean_by_page(TPagina* pagina) {
+
+	void limpiar_entrada(void* parametro){
+		TLB* entrada = (TLB*) parametro;
+		if (entrada->pagina == pagina->pagina){
+			entrada->PID=0;
+			entrada->marco=0;
+			entrada->modificada=0;
+			entrada->pagina=0;
+			entrada->presente=0;
+			entrada->tiempo_referencia = 0;
+		}
+	}
+	list_iterate(TLB_tabla, limpiar_entrada);
 }
 
 /** FUNCIONES DE TABLA DE PAGINAS Y MP **/
@@ -423,13 +461,8 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 		marco_libre = reemplazar_pagina(pagina_recibida_swap->PID, paginas_PID);
 	}
 
-	/*
-	 * Si por esas casualidades no me queda espacio ni tengo chance de reemplazar otra pagina del proceso
-	 *  porque no tengo ninguna cargada en memoria, deberia finalizar el proceso con error
-	 */
-
 	if(marco_libre==-1 && presentes == 0)
-		return finalizar_proceso_error(pagina_recibida_swap->PID);
+		return NOT_FOUND;
 
 	log_debug(loggerDebug, "Busco la pagina: %d", pagina_recibida_swap->nro_pagina);
 
@@ -458,35 +491,6 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 	/** Actualizo contenido en la TLB **/
 	TLB_refresh(pagina_recibida_swap->PID, pagina_a_poner_presente);
 
-	return FOUND;
-}
-
-t_resultado_busqueda finalizar_proceso_error(int32_t PID) {
-
-	int32_t recibido;
-
-	header_t* headerSwap = _create_header(BORRAR_ESPACIO, 1 * sizeof(int32_t));
-	int32_t enviado = _send_header(socketSwap, headerSwap);
-	if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
-
-	free(headerSwap);
-
-	enviado = _send_bytes(socketSwap, &(PID), sizeof(int32_t));
-	if (enviado == ERROR_OPERATION)	return SEARCH_ERROR;
-
-	log_debug(loggerDebug, "Envie al swap para finalizar el proceso:%d", PID);
-
-	header_t* headerNuevo=_create_empty_header();
-	recibido = _receive_header(socketSwap,headerNuevo);
-	int32_t resultado_operacion=get_operation_code(headerNuevo);
-	if (recibido == ERROR_OPERATION) return SEARCH_ERROR;
-
-	log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion);
-
-	/** Libero el espacio ocupado en memoria por el pid finalizado **/
-	limpiar_Informacion_PID(PID);
-
-	/** Todo de alguna forma avisarle a la CPU que finalize, aca no tengo forma de conocer el socket **/
 	return FOUND;
 }
 
@@ -528,9 +532,9 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		pagina_a_ausentar->marco = 0;
 		pagina_a_ausentar->tiempo_referencia = 0;
 
-		/** Puede que este en la TLB esa pagina que se ausente **/ //Todo
-//		if(TLB_exist(pagina_a_ausentar))
-//			TLB_remove(pagina_a_ausentar);
+		/** Puede que este en la TLB esa pagina que se ausente **/
+		if(TLB_exist(pagina_a_ausentar))
+			TLB_clean_by_page(pagina_a_ausentar);
 
 		/** Escribo pagina en swap (si esta modificada) **/
 		if(pagina_a_ausentar->modificada == 1) {
@@ -615,7 +619,7 @@ t_algoritmo_reemplazo obtener_codigo_algoritmo(char* algoritmo) {
 
 	if(string_equals_ignore_case(algoritmo, "FIFO")) return FIFO;
 	if(string_equals_ignore_case(algoritmo, "LRU")) return LRU;
-	if(string_equals_ignore_case(algoritmo, "CLOCK_MODIFICADO")) return CLOCK_MODIFICADO;
+	if(string_equals_ignore_case(algoritmo, "CLOCK-M")) return CLOCK_MODIFICADO;
 
 	return INDEFINIDO;
 }
