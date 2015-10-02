@@ -18,12 +18,43 @@ t_list* tabla_Paginas;
 int32_t TLB_accesos;
 int32_t TLB_hit;
 
+void* thread_hit(void* arg){
+
+	int32_t tasa_acierto;
+
+	while(true){
+
+		sleep(60);
+
+		if(TLB_accesos == 0)
+			tasa_acierto = 0;
+		else
+			tasa_acierto = (TLB_hit/TLB_accesos)* 100;
+
+		log_info(loggerInfo,ANSI_COLOR_BOLDGREEN"La tasa de aciertos de la TLB es:%d" ANSI_COLOR_RESET, tasa_acierto);
+
+		tasa_acierto = 0;
+
+	}
+	return NULL;
+}
+
+
 /** FUNCIONES DE LA TLB **/
 void TLB_create() {
 
 	if (TLB_habilitada()) {
 		TLB_tabla = list_create();
 		TLB_init();
+	}
+	/** Creo hilo de tasa de aciertos TLB **/
+	if(TLB_habilitada()) {
+		pthread_t TLB_aciertos;
+		int32_t resultado_acierto = pthread_create(&TLB_aciertos, NULL, thread_hit, NULL);
+		if (resultado_acierto != 0) {
+			log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de aciertos de TLB "ANSI_COLOR_RESET);
+			abort();
+		}
 	}
 }
 
@@ -291,7 +322,7 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 	nueva_entrada_proceso->paginas = list_create();
 
 	int i;
-	for (i = 1; i <= cantidad_paginas; i++) {
+	for (i = 0; i < cantidad_paginas; i++) {
 
 		TPagina* nuevaEntrada = malloc(sizeof(TPagina));
 		nuevaEntrada->marco = 0;

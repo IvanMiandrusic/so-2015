@@ -24,8 +24,6 @@ sem_t sem_mutex_tabla_paginas;
 sock_t* socketServidorCpus;
 sock_t* socketSwap;
 int32_t* frames;
-pthread_t TLB_aciertos;
-pthread_t atencion_pedido;
 
 ProcesoMemoria* crear_estructura_config(char* path) {
 	t_config* archConfig = config_create(path);
@@ -168,23 +166,6 @@ void limpiar_estructuras_memoria(){
 	frames_destroy();
 }
 
-void* thread_hit(void* arg){
-
-	int32_t tasa_acierto;
-
-	while(true){
-
-		sleep(60);
-
-		tasa_acierto = (TLB_hit/TLB_accesos)* 100;
-
-		log_info(loggerInfo,ANSI_COLOR_BOLDGREEN"La tasa de aciertos de la TLB es:%d" ANSI_COLOR_RESET, tasa_acierto);
-
-		tasa_acierto = 0;
-
-	}
-	return NULL;
-}
 
 /*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
 int main(void) {
@@ -215,15 +196,6 @@ int main(void) {
 	/** Se crearan todas las estructuras de la memoria **/
 	crear_estructuras_memoria();
 
-	/** Creo hilo de tasa de aciertos TLB **/
-	if(TLB_habilitada()) {
-		int32_t resultado_acierto = pthread_create(&TLB_aciertos, NULL, thread_hit, NULL);
-		if (resultado_acierto != 0) {
-			log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de aciertos de TLB "ANSI_COLOR_RESET);
-			abort();
-		}
-	}
-
 	socketSwap = create_client_socket(arch->ip_swap, arch->puerto_swap);
 	int32_t resultado = connect_to_server(socketSwap);
 	if(resultado == ERROR_OPERATION) {
@@ -251,21 +223,20 @@ int main(void) {
 void thread_request(void* arg) {
 
 	t_atencion_pedido* pedido = (t_atencion_pedido*) arg;
-
 	sock_t* socketCpu = _create_socket_from_fd(pedido->cpu_fd);
-
-	t_pedido_cpu* pedido_cpu = malloc(sizeof(t_pedido_cpu));
-	switch (get_operation_code(pedido->header_cpu)) {
+	header_t* headerCpu = _create_header(pedido->operacion, pedido->tam_msj);
+	log_info(loggerInfo, "recibo fd:%d, headerop: %d", pedido->cpu_fd, get_operation_code(headerCpu));
+	switch (get_operation_code(headerCpu)) {
 	case INICIAR: {
-		iniciar_proceso(socketCpu, pedido_cpu);
+		iniciar_proceso(socketCpu);
 		break;
 	}
 	case LEER: {
-		readOrWrite(LEER, socketCpu, pedido->header_cpu);
+		readOrWrite(LEER, socketCpu, headerCpu);
 		break;
 	}
 	case ESCRIBIR: {
-		readOrWrite(ESCRIBIR, socketCpu, pedido->header_cpu);
+		readOrWrite(ESCRIBIR, socketCpu, headerCpu);
 		break;
 	}
 	case FINALIZAR: {
@@ -273,7 +244,7 @@ void thread_request(void* arg) {
 		break;
 	}
 	default: {
-		log_debug(loggerDebug, "Se recibio el codigo de operacion:%d", get_operation_code(pedido->header_cpu));
+		log_debug(loggerDebug, "Se recibio el codigo de operacion:%d", get_operation_code(headerCpu));
 		log_error(loggerError, ANSI_COLOR_RED "Desde la cpu recibo un codigo de operacion erroneo" ANSI_COLOR_RESET);
 		break;
 	}
@@ -286,14 +257,18 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 
 	t_atencion_pedido* pedido = malloc(sizeof(t_atencion_pedido));
 	pedido->cpu_fd = socketCpu->fd;
-	pedido->header_cpu = _create_header(header->cod_op, header->size_message);
-
+	pedido->operacion = header->cod_op;
+	pedido->tam_msj = header->size_message;
+	log_debug(loggerDebug, "Recibo una operacion");
+	thread_request(pedido);
 	/** Creo hilo para atender pedidos concurrentemente **/
-	int32_t resultado_pedido = pthread_create(&atencion_pedido, NULL, thread_request, pedido);
-	if (resultado_pedido != 0) {
-		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de aciertos de TLB "ANSI_COLOR_RESET);
-		abort();
-	}
+//	pthread_t atencion_pedido;
+//
+//	int32_t resultado_pedido = pthread_create(&atencion_pedido, NULL, thread_request, pedido);
+//	if (resultado_pedido != 0) {
+//		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de pedido de cpu" ANSI_COLOR_RESET);
+//		abort();
+//	}
 
 }
 
@@ -358,11 +333,12 @@ int32_t limpiar_Informacion_PID(int32_t PID){
 
 /*Funciones referentes a iniciar proceso */
 
-void iniciar_proceso(sock_t* socketCpu, t_pedido_cpu* pedido_cpu) {
+void iniciar_proceso(sock_t* socketCpu) {
 
 	int32_t recibido;
 	int32_t enviado;
 	int32_t resultado_operacion;
+	t_pedido_cpu* pedido_cpu = malloc(sizeof(t_pedido_cpu));
 
 	recibido = _receive_bytes(socketCpu, &(pedido_cpu->pid), sizeof(int32_t));
 	if (recibido == ERROR_OPERATION) return;
