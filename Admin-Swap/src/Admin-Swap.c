@@ -318,7 +318,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 				if(enviado == ERROR_OPERATION) return;
 				log_debug(loggerDebug, "No se reservo el espacio solicitado");
 				free(headerMemoria);
-				return;
+
 			} else if (operacionValida == RESULTADO_OK) {
 				header_t* headerMemoria = _create_header(RESULTADO_OK, 0);
 				int32_t enviado = _send_header(socketMemoria, headerMemoria);
