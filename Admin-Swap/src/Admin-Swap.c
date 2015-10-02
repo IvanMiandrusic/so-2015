@@ -458,7 +458,7 @@ FILE* abrirArchivoConTPagina(t_pagina* pagina_pedida){
 		log_error(loggerError, ANSI_COLOR_RED "No se puede abrir el archivo de Swap para escribir"ANSI_COLOR_RESET);
 		return ERROR_OPERATION;
 	}
-	int32_t bloque= nodoProceso->comienzo+pagina_pedida->nro_pagina-1;
+	int32_t bloque= nodoProceso->comienzo+pagina_pedida->nro_pagina;
 	if(fseek(espacioDeDatos, bloque*arch->tamanio_pagina,SEEK_SET)!=0){
 		log_error(loggerError, ANSI_COLOR_RED "No se puede ubicar la pagina a escribir"ANSI_COLOR_RESET);
 		return ERROR_OPERATION;

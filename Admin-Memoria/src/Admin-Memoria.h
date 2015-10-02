@@ -41,7 +41,8 @@ typedef struct estructura_configuracion			//estructura que contiene los datos de
 typedef struct estructura_hilo_atencion
 {
 	int32_t cpu_fd;
-	header_t* header_cpu;
+	int32_t operacion;
+	int32_t tam_msj;
 }t_atencion_pedido;
 
 /* VARIABLES GLOBALES */
@@ -54,8 +55,6 @@ extern sem_t sem_mutex_tabla_paginas;
 extern sock_t* socketServidorCpus;
 extern sock_t* socketSwap;
 extern int32_t* frames;
-extern pthread_t TLB_aciertos;
-extern pthread_t atencion_pedido;
 
 /** Funciones de configuracion inicial **/
 ProcesoMemoria* crear_estructura_config(char*);
@@ -74,7 +73,7 @@ void limpiar_MP();
 
 /** Funciones de operaciones con CPU **/
 void procesar_pedido(sock_t*, header_t* );
-void iniciar_proceso(sock_t*, t_pedido_cpu*);
+void iniciar_proceso(sock_t*);
 t_resultado_busqueda buscar_pagina(int32_t, t_pagina*);
 void finalizarPid(sock_t*);
 int32_t limpiar_Informacion_PID(int32_t);
