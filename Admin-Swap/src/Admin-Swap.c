@@ -363,7 +363,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 
 int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 	int32_t libre=calcularEspacioLibre();
-	if(libre <= pedido_pid->cantidad_paginas)return RESULTADO_ERROR;
+	if(libre < pedido_pid->cantidad_paginas)return RESULTADO_ERROR;
 	bool tieneEspacio(NodoLibre* nodo)
 		{
 				return nodo->paginas>=pedido_pid->cantidad_paginas;
@@ -385,11 +385,24 @@ int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 	sem_wait(&sem_mutex_ocupado);
 	list_add(espacioOcupado, nodoNuevo);
 	sem_post(&sem_mutex_ocupado);
+	int32_t nuevoComienzo=nodoNuevo->comienzo+nodoNuevo->paginas;
+	int32_t nuevoCantPag=nodoLibre->paginas-nodoNuevo->paginas;
 
-	nodoLibre->comienzo=nodoNuevo->comienzo+nodoNuevo->paginas;
-	nodoLibre->paginas= nodoLibre->paginas-nodoNuevo->paginas;
+	bool findNodo(NodoLibre* nodoABorrar)
+	{
+		return nodoABorrar->comienzo == nodoLibre->comienzo && nodoABorrar->paginas == nodoLibre->paginas;
+	}
+
+	if(nuevoComienzo==arch->cantidad_paginas && nuevoCantPag==0){
+	sem_wait(&sem_mutex_libre);
+	list_remove_and_destroy_by_condition(espacioLibre, findNodo, free);
+	sem_post(&sem_mutex_libre);
+	}else{
+		nodoLibre->comienzo=nuevoComienzo;
+		nodoLibre->paginas= nuevoCantPag;
+		log_debug(loggerDebug, "Creo un hueco, comienzo:%d, cantpags:%d",  nodoLibre->comienzo, nodoLibre->paginas);
+	}
 	log_debug(loggerDebug, "Creo un proceso: %d, comienzo:%d, cantpags:%d", nodoNuevo->PID, nodoNuevo->comienzo, nodoNuevo->paginas);
-	log_debug(loggerDebug, "Creo un hueco, comienzo:%d, cantpags:%d",  nodoLibre->comienzo, nodoLibre->paginas);
 
 	return RESULTADO_OK;
 }
