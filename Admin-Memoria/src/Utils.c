@@ -5,37 +5,37 @@
 #include <commons/temporal.h>
 #include <commons/string.h>
 
-int32_t get_hours(char* time) {
+char* get_hours(char* time) {
 
 	char* hora = malloc(2);
 	hora[0]= time[0];
 	hora[1]= time[1];
 	hora[2] = '\0';
 
-	return atoi(hora);
+	return hora;
 }
 
-int32_t get_minutes(char* time) {
+char* get_minutes(char* time) {
 
 	char* minutos=malloc(2);
 	minutos[0]=time[3];
 	minutos[1]=time[4];
 	minutos[2]='\0';
 
-	return atoi(minutos);
+	return minutos;
 }
 
-int32_t get_seconds(char* time) {
+char* get_seconds(char* time) {
 
 	char* segundos=malloc(2);
 	segundos[0]=time[6];
 	segundos[1]=time[7];
 	segundos[2]='\0';
 
-	return atoi(segundos);
+	return segundos;
 }
 
-int32_t get_milliseconds(char* time){
+char* get_milliseconds(char* time){
 
 	char* milisegundos=malloc(4);
 	milisegundos[0]=time[9];
@@ -44,7 +44,7 @@ int32_t get_milliseconds(char* time){
 	milisegundos[3]=time[12];
 	milisegundos[4]='\0';
 
-	return atoi(milisegundos);
+	return milisegundos;
 }
 
 /** Retorna el tiempo actual del sistema en formato hhmmssmmmm **/
@@ -53,7 +53,7 @@ char* get_actual_time() {
 	char* time = temporal_get_string_time();
 
 	char* locale_time = string_new();
-	string_append_with_format(&locale_time, "%d%d%d%d",
+	string_append_with_format(&locale_time, "%s%s%s%s",
 					get_hours(time),
 					get_minutes(time),
 					get_seconds(time),

@@ -28,10 +28,10 @@
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
 char* convertToString(int32_t);
-int32_t get_hours(char*);
-int32_t get_minutes(char* time);
-int32_t get_seconds(char* time);
-int32_t get_milliseconds(char* time);
+char* get_hours(char*);
+char* get_minutes(char* time);
+char* get_seconds(char* time);
+char* get_milliseconds(char* time);
 char* get_actual_time();
 int32_t get_actual_time_integer();
 
