@@ -172,6 +172,9 @@ Metricas* iniciarMetricas(int32_t PID){
 	misMetricas->finalizado = 0;
 	misMetricas->hora_de_Creacion = get_actual_time_integer();
 	misMetricas->hora_ejecucion = 0;
+	misMetricas->hora_listo = get_actual_time_integer();
+	misMetricas->tiempo_ejecucion = 0;
+	misMetricas->tiempo_espera = 0;
 	return misMetricas;
 }
 
@@ -280,20 +283,27 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion){
 		log_info(loggerInfo, "Recibido el proceso id: %d, ejecuto: %s",pcb->PID, resultado_operaciones);
 
 		/** operar la respuesta **/
-		if(cod_Operacion==INSTRUCCION_IO) operarIO(cpu_id, tiempo, pcb);
+		if(cod_Operacion==INSTRUCCION_IO){
+			calcularMetrica(pcb->PID, TIEMPO_EXEC);
+			operarIO(cpu_id, tiempo, pcb);
+		}
 		if(cod_Operacion==TERMINO_RAFAGA){
+			calcularMetrica(pcb->PID, TIEMPO_EXEC);
 			log_info(loggerInfo, "Termina rafaga del proceso: %d con respuesta:%s", pcb->PID, resultado_operaciones);
 			liberarCPU(cpu_id);
 			sacarDeExec(pcb->PID);
 			agregarPcbAColaListos(pcb);
+			actualizarMetricas(pcb->PID, TIEMPO_ESP);
 			asignarPCBaCPU();
 		}
 		if(cod_Operacion==RESULTADO_ERROR){
+			calcularMetrica(pcb->PID, TIEMPO_RSP);
 			finalizarPCB(pcb->PID, RESULTADO_ERROR);
 			liberarCPU(cpu_id);
 			asignarPCBaCPU();
 		}
 		if(cod_Operacion==RESULTADO_OK){
+			calcularMetrica(pcb->PID, TIEMPO_RSP);
 			finalizarPCB(pcb->PID, RESULTADO_OK);
 			liberarCPU(cpu_id);
 			asignarPCBaCPU();
@@ -312,20 +322,75 @@ void liberarCPU(int32_t cpu_id){
 
 }
 
+void actualizarMetricas(int32_t pid, int32_t tipo){
+
+	bool getIDMetricas(Metricas* metrica){
+						return metrica->PID == pid;
+					}
+	Metricas* metrica = list_find(colaMetricas, getIDMetricas);
+	metrica = malloc(sizeof(int32_t));
+	int32_t horaActual = get_actual_time_integer();
+
+	if(tipo == TIEMPO_ESP){
+		metrica->hora_listo = horaActual;
+		return;
+	}
+	if(tipo == TIEMPO_EXEC){
+		metrica->hora_ejecucion = horaActual;
+		return;
+	}
+
+}
+
+void calcularMetrica(int32_t ID, int32_t tipo){
+
+	bool getIDMetricas(Metricas* metrica){
+					return metrica->PID == ID;
+				}
+	Metricas* metrica = list_find(colaMetricas, getIDMetricas);
+	int32_t horaActual = get_actual_time_integer();
+
+	if(tipo == TIEMPO_RSP){
+		int32_t tiempo_respuesta = horaActual - (metrica->hora_de_Creacion);
+		if (string_equals_ignore_case(arch->algoritmo, "FIFO")){
+			calcularMetrica(ID, TIEMPO_ESP);
+			calcularMetrica(ID, TIEMPO_EXEC);
+		}
+
+		log_info(loggerInfo, "El tiempo de respuesta del mProc con ID = %d es %d", ID, tiempo_respuesta);
+		log_info(loggerInfo, "El tiempo de espera del mProc con ID = %d es %d", ID, metrica->tiempo_espera);
+		log_info(loggerInfo, "El tiempo de ejecucion del mProc con ID = %d es %d", ID, metrica->tiempo_ejecucion);
+		return;
+	}
+	if(tipo == TIEMPO_EXEC){
+		int32_t tiempo_exec = horaActual - (metrica->hora_ejecucion);
+		metrica->tiempo_ejecucion = (metrica->tiempo_ejecucion) + tiempo_exec;
+		return;
+	}
+
+	if(tipo == TIEMPO_ESP){
+		int32_t tiempo_esp = horaActual - (metrica->hora_listo);
+		metrica->tiempo_espera = (metrica->tiempo_espera) + tiempo_esp;
+		return;
+	}
+
+}
 
 void agregarPidParaFinalizar(int32_t pcbID){
 	bool getPcbByID(PCB* unPCB){
 			return unPCB->PID == pcbID;
 		}
 	bool getIDMetricas(Metricas* metrica){
-				return metrica->PID == pcbID;
+				return ((metrica->PID == pcbID) && (metrica->finalizado == 1));
 			}
 
 	if(list_any_satisfy(colaFinalizados, getPcbByID) || list_any_satisfy(colaMetricas, getIDMetricas)){
 			log_info(loggerInfo, "El PID indicado ya se esta finalizando o ya Finalizo");
 			printf(ANSI_COLOR_BOLDRED "El PID indicado ya se esta finalizando o ya Finalizo" ANSI_COLOR_RESET "\n");
 			return;
-		} else{ Metricas* unaMetrica = list_find(colaMetricas, getIDMetricas); //todo
+		} else{
+				log_info(loggerInfo, "El Proc: %d procedera a Finalizarce", pcbID);
+				Metricas* unaMetrica = list_find(colaMetricas, getIDMetricas); //todo FIXEAR
 				unaMetrica->finalizado = 1;
 
 				return;}
@@ -481,6 +546,7 @@ void asignarPCBaCPU(){ //todo: probar nuevo cambio
 		}else{
 			pcbAEnviar->estado = EJECUCION;
 		}
+		actualizarMetricas(pcbAEnviar->PID, TIEMPO_EXEC);
 		char* paquete = serializarPCB(pcbAEnviar);
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
 		enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, ENVIO_PCB);
@@ -490,6 +556,7 @@ void asignarPCBaCPU(){ //todo: probar nuevo cambio
 	}
 
 }
+
 
 CPU_t* obtener_cpu_libre() {
 

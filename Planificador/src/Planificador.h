@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <errno.h>
@@ -35,6 +34,12 @@ typedef enum estados_pcb {
 	   FINALIZANDO=6 //agregue este estado, que representa que al pcb lo esta finalizando la cpu
 }estados_pcb_t;
 
+typedef enum tipos_metricas{
+		TIEMPO_RSP=1,
+		TIEMPO_EXEC=2,
+		TIEMPO_ESP=3
+
+}tipos_metricas;
 
 typedef enum estados_cpu {
 
@@ -48,6 +53,9 @@ typedef struct estructura_metricas{
 	int32_t finalizado;
 	int32_t hora_de_Creacion;
 	int32_t hora_ejecucion;
+	int32_t hora_listo;
+	int32_t tiempo_ejecucion;
+	int32_t tiempo_espera;
 
 }Metricas;
 
@@ -128,6 +136,8 @@ void cambiarAUltimaInstruccion(PCB* );
 void recibirOperacion(sock_t*, int32_t, int32_t);
 void sacarDeExec(int32_t );
 Metricas* iniciarMetricas(int32_t PID);
+void calcularMetrica(int32_t ID, int32_t tipo);
+void actualizarMetricas(int32_t pid, int32_t tipo);
 
 
 /** Closures **/
