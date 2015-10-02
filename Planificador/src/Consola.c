@@ -127,7 +127,6 @@ void finalizarPID(char* comando) {
 	if((PID > idParaPCB) || PID <= 0){
 		printf(ANSI_COLOR_BOLDRED "Por favor ingrese un PID existente" ANSI_COLOR_RESET "\n");
 	}
-	//todo: Hacer q no se muestre mas en el Comando "PS"
 	agregarPidParaFinalizar(PID);
 }
 
