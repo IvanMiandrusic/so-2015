@@ -330,6 +330,7 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 		nuevaEntrada->modificada = 0;
 		nuevaEntrada->presente = 0;
 		nuevaEntrada->tiempo_referencia = 0;
+		nuevaEntrada->bitUso=0;
 		list_add(nueva_entrada_proceso->paginas, nuevaEntrada);
 	}
 	sem_wait(&sem_mutex_tabla_paginas);
@@ -544,11 +545,11 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 	int32_t marco_a_devolver;
 
 	t_algoritmo_reemplazo algoritmo_reemplazo = obtener_codigo_algoritmo(arch->algoritmo_reemplazo);
-
+	log_debug(loggerDebug, "El algoritmo de reemplazo es: %d", algoritmo_reemplazo);
 	t_list* paginasConPresencia=obtengoPaginasConPresencia(paginas_PID);
 
 	if((algoritmo_reemplazo == FIFO) || (algoritmo_reemplazo == LRU)) {
-
+		log_debug(loggerDebug, "Algoritmo LRU");
 		/** Saco primer pagina de la memoria **/
 		TPagina* pagina_obtenida = obtener_pagina_a_reemplazar(paginasConPresencia);
 
@@ -580,7 +581,8 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		return marco_a_devolver;
 	}
 	else if(algoritmo_reemplazo == CLOCK_MODIFICADO) {
-
+		log_debug(loggerDebug, "Algoritmo CLOCK-M");
+		log_debug(loggerDebug, "Cantidad de paginas con presencia:%d", list_size(paginasConPresencia));
 		int i=0;
 		bool encontre_pagina_a_ausentar=false;
 		TPagina* mejorPagina=list_get(paginasConPresencia,i);
