@@ -328,7 +328,6 @@ void actualizarMetricas(int32_t pid, int32_t tipo){
 						return metrica->PID == pid;
 					}
 	Metricas* metrica = list_find(colaMetricas, getIDMetricas);
-	metrica = malloc(sizeof(int32_t));
 	int32_t horaActual = get_actual_time_integer();
 
 	if(tipo == TIEMPO_ESP){
@@ -383,6 +382,9 @@ void agregarPidParaFinalizar(int32_t pcbID){
 	bool getIDMetricas(Metricas* metrica){
 				return ((metrica->PID == pcbID) && (metrica->finalizado == 1));
 			}
+	bool getMetrica(Metricas* metrica){
+					return ((metrica->PID == pcbID) && (metrica->finalizado == 0));
+				}
 
 	if(list_any_satisfy(colaFinalizados, getPcbByID) || list_any_satisfy(colaMetricas, getIDMetricas)){
 			log_info(loggerInfo, "El PID indicado ya se esta finalizando o ya Finalizo");
@@ -390,7 +392,7 @@ void agregarPidParaFinalizar(int32_t pcbID){
 			return;
 		} else{
 				log_info(loggerInfo, "El Proc: %d procedera a Finalizarce", pcbID);
-				Metricas* unaMetrica = list_find(colaMetricas, getIDMetricas); //todo FIXEAR
+				Metricas* unaMetrica = list_find(colaMetricas, getMetrica);
 				unaMetrica->finalizado = 1;
 
 				return;}
@@ -662,7 +664,7 @@ int main(void) {
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "../Planificador.config";
+	char* path = "Planificador.config";
 	arch = crear_estructura_config(path);
 
 	/*Se inicializan todos los semaforos necesarios */
