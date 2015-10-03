@@ -280,7 +280,16 @@ void finalizarPid(sock_t* socketCpu){
 
 	int32_t recibido = _receive_bytes(socketCpu, &(PID), sizeof(int32_t));
 	if (recibido == ERROR_OPERATION) return;
+/////////////////////////////////
+	t_list* paginasConPresencia=obtengoPaginasConPresencia(obtener_tabla_paginas_by_PID(PID));
+	int asd;
+	for (asd=0;asd<list_size(paginasConPresencia);asd++){
+		TPagina* pagina=list_get(paginasConPresencia, asd);
+		printf(ANSI_COLOR_BOLDBLUE"\n\nNro: %d, marco:%d, tiempo:%d, bitUso:%d, modificada:%d \n\n"ANSI_COLOR_RESET, pagina->pagina, pagina->marco, pagina->tiempo_referencia,pagina->bitUso,pagina->modificada);
+	}
 
+	dump();
+/////////////////////////////////
 	header_t* headerSwap = _create_header(BORRAR_ESPACIO, 1 * sizeof(int32_t));
 	int32_t enviado = _send_header(socketSwap, headerSwap);
 	if (enviado == ERROR_OPERATION) return;
@@ -422,7 +431,7 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 
 	}else {
 		if(cod_Operacion==LEER){
-			header_t* headerCpu = _create_header(OK, 0);
+			header_t* headerCpu = _create_header(OK, sizeof(int32_t)+pagina_pedida->tamanio_contenido);
 			enviado = _send_header(socketCpu, headerCpu);
 			int32_t tamanio=pagina_pedida->tamanio_contenido;
 			enviado = _send_bytes(socketCpu, &tamanio, sizeof(int32_t));

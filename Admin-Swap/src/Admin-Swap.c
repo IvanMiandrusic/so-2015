@@ -281,6 +281,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			recibido = _receive_bytes(socketMemoria, pedido_serializado, get_message_size(header));
 			if(recibido == ERROR_OPERATION) return;
 			t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
+			log_debug(loggerDebug, "Me llega a escribir pid: %d, pagina:%d, tam:%d, contenido:%s", pagina_pedida->PID, pagina_pedida->nro_pagina, pagina_pedida->tamanio_contenido, pagina_pedida->contenido);
 			int32_t resultado= escribir_pagina(pagina_pedida);
 			sleep(arch->retardo);
 			if (resultado == RESULTADO_ERROR) {
@@ -489,8 +490,9 @@ int32_t escribir_pagina(t_pagina* pagina_pedida){
 
 	FILE* espacioDeDatos=abrirArchivoConTPagina(pagina_pedida);
 	int32_t posicion = ftell(espacioDeDatos);
-
-	int32_t resultado=fwrite(pagina_pedida->contenido,strlen(pagina_pedida->contenido), 1, espacioDeDatos);
+	log_debug(loggerDebug, "Lo posiciono en:%d", posicion);
+	int32_t resultado=fwrite(pagina_pedida->contenido, 1, strlen(pagina_pedida->contenido), espacioDeDatos);
+	log_debug(loggerDebug, "Escribo:%d bytes", resultado);
 
 	int i;
 	int32_t resultado2=0;
@@ -498,14 +500,14 @@ int32_t escribir_pagina(t_pagina* pagina_pedida){
 		resultado2+=fwrite("\0", 1,1, espacioDeDatos);
 	}
 	fclose(espacioDeDatos);
-
+	log_debug(loggerDebug, "Cierro archivo");
 	if (resultado+resultado2==arch->tamanio_pagina){
 		log_info(loggerInfo, ANSI_COLOR_GREEN"Escritura: PID: %d byte inicial: %d tamaño: %d contenido: %s"ANSI_COLOR_RESET,pagina_pedida->PID,
 				posicion, strlen(pagina_pedida->contenido),pagina_pedida->contenido);
-		return SUCCESS_OPERATION;
+		return RESULTADO_OK;
 	}
 
-	return ERROR_OPERATION;
+	return RESULTADO_ERROR;
 }
 
 
