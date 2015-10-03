@@ -285,6 +285,7 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion){
 		/** operar la respuesta **/
 		if(cod_Operacion==INSTRUCCION_IO){
 			calcularMetrica(pcb->PID, TIEMPO_EXEC);
+			log_info(loggerInfo, "El proceso: %d pidio una I/O", pcb->PID);
 			operarIO(cpu_id, tiempo, pcb);
 		}
 		if(cod_Operacion==TERMINO_RAFAGA){
@@ -412,7 +413,8 @@ void finalizarPCB(int32_t pcbID, int32_t tipo){
 
 		PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
 		pcb_found->estado= FINALIZADO_OK;
-		agregarPcbAColaFinalizados(pcb_found);
+		agregarPcbAColaFinalizados(pcb_found->PID);
+		removerMetrica(pcb_found->PID);
 		log_info(loggerInfo, "Finaliza correctamente el PID:%d y ruta:%s", pcbID, pcb_found->ruta_archivo);
 		return;
 	}
@@ -422,11 +424,22 @@ void finalizarPCB(int32_t pcbID, int32_t tipo){
 		PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
 		pcb_found->estado= FINALIZADO_ERROR;
 		agregarPcbAColaFinalizados(pcb_found);
+		removerMetrica(pcb_found->PID);
 		log_debug(loggerDebug, "Cambio de estado (finalizado_error) y de lista del pcb con id %d", pcbID);
 		log_info(loggerInfo, "Se Finalizo con error el PID: %d y ruta: %s", pcbID, pcb_found->ruta_archivo);
 		return;
 	}
   }
+}
+
+void removerMetrica(int32_t ID){
+	bool getPcbByID(Metricas* unaMetrica){
+	return (unaMetrica->PID == ID);
+	}
+
+			sem_wait(&semMutex_colaMetricas);
+			list_remove_by_condition(colaMetricas, getPcbByID);
+			sem_post(&semMutex_colaMetricas);
 }
 
 
@@ -535,16 +548,13 @@ void asignarPCBaCPU(){ //todo: probar nuevo cambio
 		PCB* pcbAEnviar = list_remove(colaListos, 0);
 
 		bool getPcbByID(Metricas* unaMetrica){
-					return (unaMetrica->PID == pcbAEnviar->PID && unaMetrica->finalizado == 1);
-				}
+		return ((unaMetrica->PID == pcbAEnviar->PID)&& (unaMetrica->finalizado == 1));
+		}
 
 		if(list_any_satisfy(colaMetricas, getPcbByID)){
 			cambiarAUltimaInstruccion(pcbAEnviar);
 			pcbAEnviar->estado = FINALIZANDO;
-			sem_wait(&semMutex_colaMetricas);
-			list_remove_by_condition(colaMetricas, getPcbByID);
-			sem_post(&semMutex_colaMetricas);
-			agregarPcbAColaExec(pcbAEnviar);
+			agregarPcbAColaExec(pcbAEnviar); //todo: posible refactor, se envia directamente
 		}else{
 			pcbAEnviar->estado = EJECUCION;
 		}
@@ -664,7 +674,7 @@ int main(void) {
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "Planificador.config";
+	char* path = "../Planificador.config";
 	arch = crear_estructura_config(path);
 
 	/*Se inicializan todos los semaforos necesarios */
