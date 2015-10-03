@@ -202,7 +202,6 @@ void TLB_clean_by_PID(int32_t PID) {
 			entrada->tiempo_referencia = 0;
 		}
 	}
-	//TODO limpiar los frames ocupados
 	list_iterate(TLB_tabla, limpiar);
 }
 
