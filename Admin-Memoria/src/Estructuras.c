@@ -26,12 +26,12 @@ void* thread_hit(void* arg){
 
 		sleep(60);
 
-		if(TLB_accesos == 0)
+		if(TLB_accesos == 0){
 			tasa_acierto = 0;
-		else
-			tasa_acierto = (TLB_hit/TLB_accesos)* 100;
-
-		log_info(loggerInfo,ANSI_COLOR_BOLDGREEN"La tasa de aciertos de la TLB es:%d" ANSI_COLOR_RESET, tasa_acierto);
+		}else{
+			tasa_acierto = (TLB_hit*100)/TLB_accesos;
+		}
+		log_info(loggerInfo,ANSI_COLOR_BOLDGREEN"La tasa de aciertos de la TLB es:%d %%(%d/%d)" ANSI_COLOR_RESET, tasa_acierto, TLB_hit, TLB_accesos);
 
 		tasa_acierto = 0;
 
@@ -134,7 +134,7 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 		return buscar_pagina_tabla_paginas(cod_Operacion, pagina);
 	}
 	else{
-
+		log_debug(loggerDebug, ANSI_COLOR_BOLDYELLOW"Acierto en la TLB:%d" ANSI_COLOR_RESET, TLB_hit);
 		/** Hago el retardo que encontro la pagina **/
 		sleep(arch->retardo);
 
@@ -160,7 +160,7 @@ void TLB_refresh(int32_t PID, TPagina* pagina_a_actualizar) {
 
 	/** Ordeno la TLB segun tiempo de ultima referencia **/
 	TLB_sort();
-
+	log_debug(loggerDebug, "Cargo en TLB pid: %d, pagina:%d, presencia:%d", PID, pagina_a_actualizar->pagina, pagina_a_actualizar->presente);
 	TLB* nueva_entrada = malloc(sizeof(TLB));
 	nueva_entrada->PID = PID;
 	nueva_entrada->marco = pagina_a_actualizar->marco;
@@ -172,7 +172,8 @@ void TLB_refresh(int32_t PID, TPagina* pagina_a_actualizar) {
 	sem_wait(&sem_mutex_tlb);
 	list_replace_and_destroy_element(TLB_tabla, 0, nueva_entrada, free);
 	sem_post(&sem_mutex_tlb);
-
+	TLB_hit--;
+	TLB_accesos--;
 }
 
 void TLB_sort() {
@@ -539,11 +540,7 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 	TLB_refresh(pagina_recibida_swap->PID, pagina_a_poner_presente);
 
 
-	int asd;
-	for (asd=0;asd<list_size(obtengoPaginasConPresencia(paginas_PID));asd++){
-		TPagina* pagina=list_get(obtengoPaginasConPresencia(paginas_PID), asd);
-		printf(ANSI_COLOR_BOLDBLUE"\n\nNro: %d, marco:%d, tiempo:%d, bitUso:%d, modificada:%d \n\n"ANSI_COLOR_RESET, pagina->pagina, pagina->marco, pagina->tiempo_referencia,pagina->bitUso,pagina->modificada);
-	}
+
 
 	return FOUND;
 }
