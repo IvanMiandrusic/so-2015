@@ -449,11 +449,12 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap
 				if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
 				if(pagina_Nueva->tamanio_contenido>0){
 					pagina_Nueva->contenido = malloc(pagina_Nueva->tamanio_contenido);
+					recibido = _receive_bytes(socketSwap, pagina_Nueva->contenido, pagina_Nueva->tamanio_contenido);
+					if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
+					pagina_Nueva->contenido[pagina_Nueva->tamanio_contenido]='\0';
 				}else{
 					pagina_Nueva->contenido=NULL;
 				}
-				recibido = _receive_bytes(socketSwap, pagina_Nueva->contenido, pagina_Nueva->tamanio_contenido);
-				if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
 
 				log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Exito al leer pagina en el swap: tamanio:%d, contenido:%s" ANSI_COLOR_RESET, pagina_Nueva->tamanio_contenido, pagina_Nueva->contenido);
 
@@ -525,10 +526,12 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 		char* texto=string_repeat('\0', arch->tamanio_marco);
 		memcpy(mem_principal+offset,texto,arch->tamanio_marco);
 	}else{
-		log_debug(loggerDebug, "Tengo contenido no nulo");
+		log_debug(loggerDebug, "Tengo contenido no nulo:%s", pagina_recibida_swap->contenido);
 		int32_t diferencia= arch->tamanio_marco-pagina_recibida_swap->tamanio_contenido;
+		log_debug(loggerDebug, "La diferencia sería:%d (%d - %d", diferencia, arch->tamanio_marco,pagina_recibida_swap->tamanio_contenido );
 		char* texto=string_repeat('\0', diferencia);
 		string_append(&(pagina_recibida_swap->contenido), texto);
+		log_debug(loggerDebug,"Resultado del append:%s", pagina_recibida_swap->contenido);
 		memcpy(mem_principal+offset,pagina_recibida_swap->contenido,arch->tamanio_marco);
 	}
 
@@ -580,7 +583,6 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		TPagina* pagina_a_ausentar = list_find(paginas_PID, findByID);
 		pagina_a_ausentar->presente = 0;
 		marco_a_devolver = pagina_a_ausentar->marco;
-		pagina_a_ausentar->marco = 0;
 		pagina_a_ausentar->tiempo_referencia = 0;
 
 		/** Puede que este en la TLB esa pagina que se ausente **/
@@ -596,6 +598,7 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 			if(resultado == FOUND)
 				pagina_a_ausentar->modificada = 0;
 		}
+		pagina_a_ausentar->marco = 0;
 
 		return marco_a_devolver;
 	}

@@ -102,8 +102,7 @@ void leeryEscribir(NodoOcupado* nodoViejo,int32_t comienzo){
 		pagina->PID=nodoViejo->PID;
 		pagina->nro_pagina=i;
 		pagina->contenido=NULL;
-
-		pagina->contenido=leer_pagina(pagina);
+		leer_pagina(pagina);
 		pagina->nro_pagina=comienzo;
 		escribir_pagina(pagina);
 		comienzo++;
@@ -263,14 +262,13 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			recibido = _receive_bytes(socketMemoria, pedido_serializado, get_message_size(header));
 			if(recibido == ERROR_OPERATION) return;
 			t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
-			char* serializado= serializarTexto(leer_pagina(pagina_pedida));
-			int32_t longitud=strlen(serializado);
+			leer_pagina(pagina_pedida);
 			sleep(arch->retardo);
-			header_t* headerMemoria = _create_header(RESULTADO_OK, sizeof(int32_t)+longitud);
+			header_t* headerMemoria = _create_header(RESULTADO_OK, sizeof(int32_t)+pagina_pedida->tamanio_contenido);
 			int32_t enviado = _send_header(socketMemoria, headerMemoria);
-			enviado=_send_bytes(socketMemoria, &longitud, sizeof(int32_t));
-			enviado=_send_bytes(socketMemoria, serializado, longitud);
-			log_debug("Se leyeron :%d bytes", longitud);
+			enviado=_send_bytes(socketMemoria, &pagina_pedida->tamanio_contenido, sizeof(int32_t));
+			enviado=_send_bytes(socketMemoria, pagina_pedida->contenido, pagina_pedida->tamanio_contenido);
+			log_debug(loggerDebug, "Se leyeron :%d bytes", pagina_pedida->tamanio_contenido);
 			if(enviado == ERROR_OPERATION) return;
 			free(headerMemoria);
 			break;
@@ -480,22 +478,24 @@ FILE* abrirArchivoConTPagina(t_pagina* pagina_pedida){
 	return espacioDeDatos;
 }
 
-char* leer_pagina(t_pagina* pagina_pedida){
+void leer_pagina(t_pagina* pagina_pedida){
 	log_debug(loggerDebug, "leer pid:%d, pag:%d", pagina_pedida->PID, pagina_pedida->nro_pagina);
 	char* texto=malloc(arch->tamanio_pagina);
 	FILE* espacioDeDatos=abrirArchivoConTPagina(pagina_pedida);
 	log_debug(loggerDebug, "Se abre el espacio de datos");
 	int32_t posicion=ftell(espacioDeDatos);
 	log_debug(loggerDebug, "La posicion es:%d", posicion);
-	int32_t resultado=fread(texto, sizeof(char),arch->tamanio_pagina, espacioDeDatos);
+	pagina_pedida->contenido=malloc(arch->tamanio_pagina);
+	int32_t resultado=fread(pagina_pedida->contenido, sizeof(char),arch->tamanio_pagina, espacioDeDatos);
 	log_debug(loggerDebug, "Se lee el espacio de datos");
 	fclose(espacioDeDatos);
 	if (resultado==arch->tamanio_pagina){
+		pagina_pedida->tamanio_contenido=strlen(pagina_pedida->contenido);
 		log_info(loggerInfo, ANSI_COLOR_GREEN"Lectura: PID: %d byte inicial: %d tamaño: %d contenido: %s"ANSI_COLOR_RESET,pagina_pedida->PID,
-				posicion, strlen(texto),texto);
-		return texto;
+				posicion, pagina_pedida->tamanio_contenido,pagina_pedida->contenido);
+		return ;
 	}
-	return NULL;
+	return ;
 
 }
 
