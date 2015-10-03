@@ -64,11 +64,10 @@ char* get_actual_time() {
 	char* time = temporal_get_string_time();
 
 	char* locale_time = string_new();
-	string_append_with_format(&locale_time, "%s%s%s%s",
+	string_append_with_format(&locale_time, "%s%s%s",
 					get_hours(time),
 					get_minutes(time),
-					get_seconds(time),
-					get_milliseconds(time));
+					get_seconds(time));
 
 	return locale_time;
 }
