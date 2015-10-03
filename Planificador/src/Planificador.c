@@ -554,7 +554,6 @@ void asignarPCBaCPU(){ //todo: probar nuevo cambio
 		if(list_any_satisfy(colaMetricas, getPcbByID)){
 			cambiarAUltimaInstruccion(pcbAEnviar);
 			pcbAEnviar->estado = FINALIZANDO;
-			agregarPcbAColaExec(pcbAEnviar); //todo: posible refactor, se envia directamente
 		}else{
 			pcbAEnviar->estado = EJECUCION;
 		}

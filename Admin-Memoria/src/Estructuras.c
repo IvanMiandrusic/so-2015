@@ -134,7 +134,6 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 		return buscar_pagina_tabla_paginas(cod_Operacion, pagina);
 	}
 	else{
-		log_debug(loggerDebug, ANSI_COLOR_BOLDYELLOW"Acierto en la TLB:%d" ANSI_COLOR_RESET, TLB_hit);
 		/** Hago el retardo que encontro la pagina **/
 		sleep(arch->retardo);
 
