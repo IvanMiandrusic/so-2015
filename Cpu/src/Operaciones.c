@@ -37,10 +37,12 @@ void* thread_Use(void* thread_id){
 		}
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"Valores- Inicial:%d, Final:%d, Acumulado:%d" ANSI_COLOR_RESET, tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"El porcentaje de uso es:%d" ANSI_COLOR_RESET, porcentaje);
+
 		header_t* header_uso_cpu = _create_header(UTILIZACION_CPU, 2*sizeof(int32_t));
 		int32_t enviado = _send_header (socketPlanificador, header_uso_cpu);
 		int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
 		int32_t envio_uso = _send_bytes(socketPlanificador,&porcentaje,sizeof(int32_t));
+
 		tiempoAcumulado[id]=0;
 		toAnterior=tiempoInicial[id];
 		tfAnterior=tiempoFinal[id];
@@ -252,7 +254,7 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 
 	int32_t recibido = _receive_header(socketMemoria, header_de_memoria);
 	t_respuesta* response= malloc(sizeof(t_respuesta));
-	if(get_operation_code(header_de_memoria) == ERROR_OPERATION) {
+	if(get_operation_code(header_de_memoria) == 2) {
 		response->id=ERROR;
 		response->texto=string_new();
 		response->retardo = 0;
@@ -330,7 +332,7 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 	header_t* header_A_Memoria = _create_header(M_ESCRIBIR, 3 * sizeof(int32_t)+tamanio);
 
 	int32_t enviado_Header = _send_header(socketMemoria, header_A_Memoria);
-	int32_t enviado_Id_Proceso = _send_bytes(socketMemoria,&pcb->PID, sizeof (int32_t));
+	int32_t enviado_Id_Proceso = _send_bytes(socketMemoria,&pcb->PID,sizeof (int32_t));
 	int32_t enviado_numDePagina = _send_bytes(socketMemoria,&numDePagina, sizeof (int32_t));
 	int32_t enviado_tamanio_texto = _send_bytes(socketMemoria,&tamanio, sizeof (int32_t));
 	int32_t enviado_texto = _send_bytes(socketMemoria,texto, tamanio);
@@ -403,6 +405,7 @@ t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 	}
 	return response;
 }
+
 
 //Analizador de linea
 t_respuesta* analizadorLinea(int32_t id,PCB* pcb, char* const instruccion){
