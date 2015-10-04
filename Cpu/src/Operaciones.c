@@ -29,19 +29,25 @@ void* thread_Use(void* thread_id){
 	sock_t* socketPlanificador=getSocketPlanificador(id);
 	int32_t finalizar=1;
 	while(finalizar){finalizar=obtengoSegundos();}
-	tiempoAcumulado[id]=0;
 	while(TRUE){
-		if(tiempoFinal[id]<tiempoInicial[id]){
+		if(estado[id]==1){					//si esta ejecutando
 			tiempoAcumulado[id]+=60-tiempoInicial[id];
 		}
+
 		porcentaje=tiempoAcumulado[id]*10/6;
 		if(tiempoFinal[id]==tfAnterior && tiempoInicial[id]==toAnterior){
-			if(estado[id]==1) porcentaje=100;
-			if(estado[id]==0) porcentaje=0;
+			if(estado[id]==1) {				//si en un minuto no cambio y esta ejecutando
+				porcentaje=100;
+				tiempoAcumulado[id]=60;
+			}
+			if(estado[id]==0) {				//si en un minuto no cambio y no esta ejecutando
+				porcentaje=0;
+				tiempoAcumulado[id]=0;
+			}
 		}
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"CPU:%d Valores- Inicial:%d, Final:%d, Acumulado:%d" ANSI_COLOR_RESET,id, tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
 		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"CPU:%d El porcentaje de uso es:%d%%(%d/60)" ANSI_COLOR_RESET,id, porcentaje, tiempoAcumulado[id]);
-
+		tiempoAcumulado[id]=0;
 		header_t* header_uso_cpu = _create_header(UTILIZACION_CPU, 2*sizeof(int32_t));
 		int32_t enviado = _send_header (socketPlanificador, header_uso_cpu);
 		if(enviado == ERROR_OPERATION) exit(1);
@@ -49,7 +55,7 @@ void* thread_Use(void* thread_id){
 		if(enviado == ERROR_OPERATION) exit(1);
 		enviado = _send_bytes(socketPlanificador,&porcentaje,sizeof(int32_t));
 		if(enviado == ERROR_OPERATION) exit(1);
-		tiempoAcumulado[id]=0;
+
 		toAnterior=tiempoInicial[id];
 		tfAnterior=tiempoFinal[id];
 		sleep(60);

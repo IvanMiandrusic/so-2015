@@ -140,6 +140,7 @@ int main(void) {
 	free(tiempoAcumulado);
 	free(tiempoFinal);
 	free(tiempoInicial);
+	free(estado);
 	return EXIT_SUCCESS;
 
 }
