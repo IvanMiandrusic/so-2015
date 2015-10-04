@@ -9,6 +9,8 @@
 #define OPERACIONES_H_
 #include "Comunicacion.h"
 #include "parser.h"
+#include <commons/string.h>
+#include <pthread.h>
 
 typedef  struct {
 	int32_t id;

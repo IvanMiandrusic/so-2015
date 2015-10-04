@@ -54,7 +54,21 @@ ProcesoCPU* crear_estructura_config(char* path)
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie(){
-		//Queda a cargo del programador la implementación de la función
+
+	/** Si el proceso muere, debo avisar al planificador que me limpie de su lista de cpus **/
+	int32_t i;
+	for(i=0; i<arch->cantidad_hilos; i++){
+
+		header_t* header_control_c = _create_header(CPU_DIE, sizeof(int32_t));
+		sock_t* socketPlanificador = getSocketPlanificador(i);
+
+		int32_t enviado = _send_header(socketPlanificador, header_control_c);
+		if(enviado == ERROR_OPERATION)return;
+
+		enviado = _send_bytes(socketPlanificador, &i, get_message_size(header_control_c));
+		if(enviado == ERROR_OPERATION)return;
+
+	}
 	exit(1);
 }
 

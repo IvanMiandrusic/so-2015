@@ -13,6 +13,7 @@
 #define RESULTADO_OK 4
 #define RESULTADO_ERROR 5
 #define UTILIZACION_CPU 6
+#define CPU_DIE 7
 
 /** Codigos de operacion en las recepciones desde el planificador **/
 #define ENVIO_QUANTUM 1
