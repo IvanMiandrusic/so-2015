@@ -12,6 +12,7 @@ extern t_list* socketsCPU;
 extern int32_t* tiempoInicial;
 extern int32_t* tiempoFinal;
 extern int32_t* tiempoAcumulado;
+extern int32_t* estado;
 
 #define TRUE 1
 #define FALSE 0
@@ -19,33 +20,39 @@ int32_t quantum;
 
 void* thread_Use(void* thread_id){
 	int32_t id = (void*)thread_id;
-	tiempoAcumulado[id]=1;
+	tiempoAcumulado[id]=0;
 	tiempoInicial[id]=0;
 	tiempoFinal[id]=0;
 	int32_t toAnterior;
 	int32_t tfAnterior;
 	int32_t porcentaje;
 	sock_t* socketPlanificador=getSocketPlanificador(id);
+	int32_t finalizar=1;
+	while(finalizar){finalizar=obtengoSegundos();}
+	tiempoAcumulado[id]=0;
 	while(TRUE){
-		sleep(60);
-		if(tiempoFinal[id]==toAnterior && tiempoInicial[id]==tfAnterior){
-			porcentaje=0;
-		}
 		if(tiempoFinal[id]<tiempoInicial[id]){
 			tiempoAcumulado[id]+=60-tiempoInicial[id];
-			porcentaje=tiempoAcumulado[id]*10/6;
 		}
-		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"Valores- Inicial:%d, Final:%d, Acumulado:%d" ANSI_COLOR_RESET, tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
-		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"El porcentaje de uso es:%d" ANSI_COLOR_RESET, porcentaje);
+		porcentaje=tiempoAcumulado[id]*10/6;
+		if(tiempoFinal[id]==toAnterior && tiempoInicial[id]==tfAnterior){
+			if(estado[id]==1) porcentaje=100;
+			if(estado[id]==0) porcentaje=0;
+		}
+		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"CPU:%d Valores- Inicial:%d, Final:%d, Acumulado:%d" ANSI_COLOR_RESET,id, tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
+		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"CPU:%d El porcentaje de uso es:%d%%(%d/60)" ANSI_COLOR_RESET,id, porcentaje, tiempoAcumulado[id]);
 
 		header_t* header_uso_cpu = _create_header(UTILIZACION_CPU, 2*sizeof(int32_t));
 		int32_t enviado = _send_header (socketPlanificador, header_uso_cpu);
-		int32_t envio_id = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
-		int32_t envio_uso = _send_bytes(socketPlanificador,&porcentaje,sizeof(int32_t));
-
+		if(enviado == ERROR_OPERATION) exit(1);
+		enviado = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
+		if(enviado == ERROR_OPERATION) exit(1);
+		enviado = _send_bytes(socketPlanificador,&porcentaje,sizeof(int32_t));
+		if(enviado == ERROR_OPERATION) exit(1);
 		tiempoAcumulado[id]=0;
 		toAnterior=tiempoInicial[id];
 		tfAnterior=tiempoFinal[id];
+		sleep(60);
 	}
 	return NULL;
 }
@@ -80,19 +87,19 @@ void* thread_Cpu(void* id){
 	log_debug(loggerDebug, "Conectado con el planificador la cpu: %d", thread_id);
 	free(header_nueva_cpu);
 
-	pthread_t CPUuse;
-	int32_t resultado_uso = pthread_create(&CPUuse, NULL, thread_Use, (void*) thread_id );
-	if (resultado_uso != 0) {
-		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de uso de CPU número: %d"ANSI_COLOR_RESET, id);
-		abort();
-	}
-
 	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
 	if(connect_to_server(socket_Memoria)!=SUCCESS_OPERATION){
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - No se puedo conectar con la memoria, se aborta el proceso" ANSI_COLOR_RESET, thread_id);
 		exit(1);
 	}
-	log_debug(loggerDebug, "Conectado con la memoria cpu:", thread_id);
+	log_debug(loggerDebug, "Conectado con la memoria cpu:%d", thread_id);
+
+	pthread_t CPUuse;
+	int32_t resultado_uso = pthread_create(&CPUuse, NULL, thread_Use, (void*) thread_id );
+	if (resultado_uso != 0) {
+		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de uso de CPU número:%d"ANSI_COLOR_RESET, id);
+		abort();
+	}
 
 	/*Me guardo en mi list de sockets los fd*/
 	t_sockets* sockets=list_get(socketsCPU, thread_id);
@@ -142,15 +149,18 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 		int32_t final;
 		inicial=obtengoSegundos();
 		tiempoInicial[id]=inicial;
+		estado[id]=1;
 		ejecutar(id, pcb);
 		final=obtengoSegundos();
 		tiempoFinal[id]=final;
-		if(tiempoAcumulado[id]==0){
-			tiempoAcumulado[id]=tiempoAcumulado[id]+final;
-		}else{
-			tiempoAcumulado[id]=tiempoAcumulado[id]+(final-inicial);
+		log_debug(loggerDebug, ANSI_COLOR_BOLDYELLOW "Inicial: %d, final:%d"ANSI_COLOR_RESET, inicial, final);
+		if(final>inicial){
+			tiempoAcumulado[id]+=(final-inicial);
+		}else if(final<inicial){
+			tiempoAcumulado[id]+=final;
 		}
-		log_debug(loggerDebug, ANSI_COLOR_BOLDGREEN "Valores: inicial %d final %d acumulado %d" ANSI_COLOR_RESET,
+		estado[id]=0;
+		log_debug(loggerDebug, ANSI_COLOR_BOLDYELLOW "Valores: inicial %d final %d acumulado %d" ANSI_COLOR_RESET,
 				tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
 		break;
 	}

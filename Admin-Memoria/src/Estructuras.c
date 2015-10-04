@@ -31,9 +31,11 @@ void* thread_hit(void* arg){
 		}else{
 			tasa_acierto = (TLB_hit*100)/TLB_accesos;
 		}
-		log_info(loggerInfo,ANSI_COLOR_BOLDGREEN"La tasa de aciertos de la TLB es:%d %%(%d/%d)" ANSI_COLOR_RESET, tasa_acierto, TLB_hit, TLB_accesos);
+		log_info(loggerInfo,ANSI_COLOR_BOLDGREEN"La tasa de aciertos de la TLB es:%d%% (%d/%d)" ANSI_COLOR_RESET, tasa_acierto, TLB_hit, TLB_accesos);
 
 		tasa_acierto = 0;
+		TLB_hit=0;
+		TLB_accesos=0;
 
 	}
 	return NULL;

@@ -35,6 +35,7 @@ t_list* socketsCPU;
 int32_t* tiempoInicial;
 int32_t* tiempoFinal;
 int32_t* tiempoAcumulado;
+int32_t* estado;
 sem_t sem_mutex;
 
 
@@ -90,7 +91,7 @@ int main(void) {
 	tiempoInicial=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 	tiempoFinal=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 	tiempoAcumulado=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
-
+	estado=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
 	crearArchivoDeLog();
 	log_info(loggerInfo, "Se cargaron correctamente los parametros de configuración");
