@@ -29,8 +29,11 @@
 
 char* convertToString(int32_t);
 char* get_hours(char*);
+char* get_hours_v2(char*);
 char* get_minutes(char* time);
+char* get_minutes_v2(char* time);
 char* get_seconds(char* time);
+char* get_seconds_v2(char* time);
 char* get_milliseconds(char* time);
 char* get_actual_time();
 int32_t get_actual_time_integer();

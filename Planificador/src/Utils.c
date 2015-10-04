@@ -10,13 +10,23 @@
 
 char* convertToString(int32_t num) {
 
-	char buffer[3];
+	char buffer[6];
 	sprintf( buffer, "%d", num);
 	buffer[2] = '\0';
 	return buffer;
 }
 
 char* get_hours(char* time) {
+
+	char* hora = malloc(2);
+	hora[0]= time[0];
+	hora[1]= time[1];
+	hora[2] = '\0';
+
+	return hora;
+}
+
+char* get_hours_v2(char* time) {
 
 	char* hora = malloc(2);
 	hora[0]= time[0];
@@ -36,11 +46,31 @@ char* get_minutes(char* time) {
 	return minutos;
 }
 
+char* get_minutes_v2(char* time) {
+
+	char* minutos=malloc(2);
+	minutos[0]=time[2];
+	minutos[1]=time[3];
+	minutos[2]='\0';
+
+	return minutos;
+}
+
 char* get_seconds(char* time) {
 
 	char* segundos=malloc(2);
 	segundos[0]=time[6];
 	segundos[1]=time[7];
+	segundos[2]='\0';
+
+	return segundos;
+}
+
+char* get_seconds_v2(char* time) {
+
+	char* segundos=malloc(2);
+	segundos[0]=time[4];
+	segundos[1]=time[5];
 	segundos[2]='\0';
 
 	return segundos;

@@ -355,11 +355,10 @@ void calcularMetrica(int32_t ID, int32_t tipo){
 		if (string_equals_ignore_case(arch->algoritmo, "FIFO")){
 			calcularMetrica(ID, TIEMPO_ESP);
 			calcularMetrica(ID, TIEMPO_EXEC);
+			separarHorasMinSeg(ID, tiempo_respuesta, TIEMPO_RSP);
+			separarHorasMinSeg(ID, metrica->tiempo_ejecucion, TIEMPO_EXEC);
+			separarHorasMinSeg(ID, metrica->tiempo_espera, TIEMPO_ESP);
 		}
-
-		log_info(loggerInfo, "El tiempo de respuesta del mProc con ID = %d es %d", ID, tiempo_respuesta);
-		log_info(loggerInfo, "El tiempo de espera del mProc con ID = %d es %d", ID, metrica->tiempo_espera);
-		log_info(loggerInfo, "El tiempo de ejecucion del mProc con ID = %d es %d", ID, metrica->tiempo_ejecucion);
 		return;
 	}
 	if(tipo == TIEMPO_EXEC){
@@ -374,6 +373,25 @@ void calcularMetrica(int32_t ID, int32_t tipo){
 		return;
 	}
 
+}
+
+void separarHorasMinSeg(int32_t ID, int32_t horario, int32_t tipo){
+
+	char* stringHora = convertToString(horario);
+	int32_t lenght = string_length(stringHora);
+	lenght = 6 - lenght;
+	char* completado = string_repeat('0',lenght);
+	string_append(&completado, stringHora);
+	char* horas = get_hours_v2(completado);
+	char* minutos = get_minutes_v2(completado);
+	char* segundos = get_seconds_v2(completado);
+	if(tipo == TIEMPO_RSP){
+		log_info(loggerInfo, "El tiempo de respuesta del mProc con ID = %d es %s Horas, %s Min y %s Seg", ID, horas, minutos, segundos);}
+	if(tipo == TIEMPO_EXEC){
+		log_info(loggerInfo, "El tiempo de ejecucion del mProc con ID = %d es %s Horas, %s Min y %s Seg", ID, horas, minutos, segundos);}
+	if(tipo == TIEMPO_ESP){
+		log_info(loggerInfo, "El tiempo de espera del mProc con ID = %d es %s Horas, %s Min y %s Seg", ID, horas, minutos, segundos);}
+	return;
 }
 
 void agregarPidParaFinalizar(int32_t pcbID){

@@ -139,6 +139,7 @@ Metricas* iniciarMetricas(int32_t PID);
 void calcularMetrica(int32_t ID, int32_t tipo);
 void actualizarMetricas(int32_t pid, int32_t tipo);
 void removerMetrica(int32_t ID);
+void separarHorasMinSeg(int32_t ID, int32_t horario, int32_t tipo);
 
 
 /** Closures **/
