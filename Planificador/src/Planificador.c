@@ -164,6 +164,7 @@ void cleanAll() {
 	log_destroy(loggerInfo);
 	log_destroy(loggerError);
 	log_destroy(loggerDebug);
+	clean_socket(socketServidor);
 }
 
 /*Este metodo podria ser generico para ambos algoritmos, lo que varia seria el manejo de la "cola de listos"*/
