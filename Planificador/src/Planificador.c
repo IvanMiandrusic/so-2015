@@ -190,12 +190,12 @@ Metricas* iniciarMetricas(int32_t PID) {
 	misMetricas->hora_de_Creacion = get_actual_time_integer();
 	misMetricas->hora_ejecucion = 0;
 	misMetricas->hora_listo = get_actual_time_integer();
-	misMetricas->horasEjec=0;
-	misMetricas->minEjec=0;
-	misMetricas->segEjec=0;
-	misMetricas->horasEsp=0;
-	misMetricas->minEsp=0;
-	misMetricas->segEsp=0;
+	misMetricas->horasEjec = 0;
+	misMetricas->minEjec = 0;
+	misMetricas->segEjec = 0;
+	misMetricas->horasEsp = 0;
+	misMetricas->minEsp = 0;
+	misMetricas->segEsp = 0;
 	/*misMetricas->tiempo_ejecucion = 0;
 	 misMetricas->tiempo_espera = 0;*/
 	return misMetricas;
@@ -337,7 +337,8 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 	}
 	if (cod_Operacion == TERMINO_RAFAGA) {
 		calcularMetrica(pcb->PID, TIEMPO_EXEC);
-		log_info(loggerInfo, "Termina rafaga del proceso: %d con respuesta:%s",
+		log_info(loggerInfo,
+				ANSI_COLOR_BOLDWHITE "Termina rafaga del proceso: %d con respuesta:%s" ANSI_COLOR_RESET,
 				pcb->PID, resultado_operaciones);
 		liberarCPU(cpu_id);
 		sacarDeExec(pcb->PID);
@@ -394,17 +395,17 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 	if (tipo == TIEMPO_RSP) {
 		t_time* t_horaCreacion = obtengoTiempo(metrica->hora_de_Creacion);
 		t_time* respuestaRSP = calculoDefinitivo(t_horaActual, t_horaCreacion);
-			log_info(loggerInfo,
-					"El tiempo de Respuesta es %d horas, %d minutos, %d segundos",
-					respuestaRSP->horas, respuestaRSP->minutos,
-					respuestaRSP->segundos);
-			calcularMetrica(ID, TIEMPO_EXEC);
-			log_info(loggerInfo,
-					"El tiempo de Ejecucion es %d horas, %d minutos, %d segundos",
-					metrica->horasEjec, metrica->minEjec, metrica->segEjec);
-			log_info(loggerInfo,
-					"El tiempo de Espera es %d horas, %d minutos, %d segundos",
-					metrica->horasEsp, metrica->minEsp, metrica->segEsp);
+		log_info(loggerInfo,
+				ANSI_COLOR_BOLDYELLOW"El tiempo de Respuesta del Proc %d es %d horas, %d minutos, %d segundos"ANSI_COLOR_RESET,
+				ID, respuestaRSP->horas, respuestaRSP->minutos,
+				respuestaRSP->segundos);
+		calcularMetrica(ID, TIEMPO_EXEC);
+		log_info(loggerInfo,
+				ANSI_COLOR_BOLDYELLOW"El tiempo de Ejecucion del Proc %d es %d horas, %d minutos, %d segundos"ANSI_COLOR_RESET,
+				ID, metrica->horasEjec, metrica->minEjec, metrica->segEjec);
+		log_info(loggerInfo,
+				ANSI_COLOR_BOLDYELLOW"El tiempo de Espera del Proc %d es %d horas, %d minutos, %d segundos"ANSI_COLOR_RESET,
+				ID, metrica->horasEsp, metrica->minEsp, metrica->segEsp);
 		return;
 	}
 	if (tipo == TIEMPO_EXEC) {
@@ -413,6 +414,19 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 		metrica->horasEjec = metrica->horasEjec + resultado->horas;
 		metrica->minEjec = metrica->minEjec + resultado->minutos;
 		metrica->segEjec = metrica->segEjec + resultado->segundos;
+		if (metrica->segEjec > 59) {
+			int32_t seg = adaptarHora(metrica->segEjec);
+			metrica->minEjec = metrica->segEjec/60;
+			metrica->segEjec = seg;
+
+		}
+		if (metrica->minEjec > 59) {
+			int32_t min = adaptarHora(metrica->minEjec);
+			metrica->horasEjec = metrica->minEjec/60;
+			metrica->minEjec = min;
+
+		}
+		free(resultado);
 		return;
 	}
 
@@ -422,9 +436,29 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 		metrica->horasEsp = metrica->horasEsp + resultado->horas;
 		metrica->minEsp = metrica->minEsp + resultado->minutos;
 		metrica->segEsp = metrica->segEsp + resultado->segundos;
+		if (metrica->segEsp > 59) {
+			int32_t seg = adaptarHora(metrica->segEsp);
+			metrica->minEsp = metrica->segEsp/60;
+			metrica->segEsp = seg;
+
+		}
+		if (metrica->minEsp > 59) {
+			int32_t min = adaptarHora(metrica->minEsp);
+			metrica->horasEsp = metrica->minEsp/60;
+			metrica->minEsp = min;
+
+		}
+		free(resultado);
 		return;
 	}
 
+}
+
+int32_t adaptarHora(int32_t hora) {
+	double decimal = hora / 60;
+	int32_t partEntera = decimal;
+	int32_t deciEntero = (decimal - partEntera) * 100;
+	return deciEntero;
 }
 
 t_time* calculoDefinitivo(t_time* t_horaActual, t_time* t_horaInicial) {
@@ -502,13 +536,15 @@ void finalizarPCB(int32_t pcbID, int32_t tipo) {
 	PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
 	if (tipo == RESULTADO_OK) {
 		pcb_found->estado = FINALIZADO_OK;
-		log_info(loggerInfo, "Finaliza correctamente el PID:%d y ruta:%s",
+		log_info(loggerInfo,
+				ANSI_COLOR_GREEN"Finaliza correctamente el PID:%d y ruta:%s"ANSI_COLOR_RESET,
 				pcbID, pcb_found->ruta_archivo);
 	}
 
 	if (tipo == RESULTADO_ERROR) {
 		pcb_found->estado = FINALIZADO_ERROR;
-		log_info(loggerInfo, "Se Finalizo con error el PID: %d y ruta: %s",
+		log_info(loggerInfo,
+				ANSI_COLOR_BOLDRED"Se Finalizo con error el PID: %d y ruta: %s"ANSI_COLOR_RESET,
 				pcbID, pcb_found->ruta_archivo);
 	}
 	agregarPcbAColaFinalizados(pcb_found);

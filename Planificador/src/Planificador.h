@@ -154,6 +154,7 @@ void actualizarMetricas(int32_t pid, int32_t tipo);
 void removerMetrica(int32_t ID);
 t_time* obtengoTiempo(int32_t tiempo);
 t_time* calculoDefinitivo(t_time* t_horaActual, t_time* t_horaInicial);
+int32_t adaptarHora(int32_t hora);
 
 
 /** Closures **/
