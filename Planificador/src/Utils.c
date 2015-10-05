@@ -36,16 +36,6 @@ char* get_minutes(char* time) {
 	return minutos;
 }
 
-char* get_minutes_v2(char* time) {
-
-	char* minutos=malloc(2);
-	minutos[0]=time[2];
-	minutos[1]=time[3];
-	minutos[2]='\0';
-
-	return minutos;
-}
-
 char* get_seconds(char* time) {
 
 	char* segundos=malloc(2);
@@ -56,15 +46,7 @@ char* get_seconds(char* time) {
 	return segundos;
 }
 
-char* get_seconds_v2(char* time) {
 
-	char* segundos=malloc(2);
-	segundos[0]=time[4];
-	segundos[1]=time[5];
-	segundos[2]='\0';
-
-	return segundos;
-}
 
 char* get_milliseconds(char* time){
 

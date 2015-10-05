@@ -492,10 +492,17 @@ t_time* calculoDefinitivo(t_time* t_horaActual, t_time* t_horaInicial) {
 t_time* obtengoTiempo(int32_t tiempo) {
 
 	t_time* new_time = malloc(sizeof(t_time));
-	new_time->horas = tiempo / 10000;
-	new_time->minutos = (tiempo - new_time->horas * 10000) / 100;
-	new_time->segundos = (tiempo - new_time->horas * 10000)
-			- new_time->minutos * 100;
+	if(tiempo>10000){
+		new_time->horas=tiempo/10000;
+	}else{
+		new_time->horas=0;
+	}
+	if(tiempo>100){
+		new_time->minutos=(tiempo-new_time->horas*10000)/100;
+	}else {
+		new_time->minutos=0;
+	}
+	new_time->segundos = (tiempo - new_time->horas * 10000) - new_time->minutos * 100;
 
 	return new_time;
 
