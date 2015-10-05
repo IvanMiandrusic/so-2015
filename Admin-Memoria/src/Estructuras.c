@@ -17,6 +17,7 @@ char* mem_principal;
 t_list* tabla_Paginas;
 int32_t TLB_accesos;
 int32_t TLB_hit;
+t_list* metricas;
 
 void* thread_hit(void* arg){
 
@@ -38,6 +39,17 @@ void* thread_hit(void* arg){
 	return NULL;
 }
 
+/** FUNCIONES DE METRICAS **/
+
+void metricas_create() {
+
+	metricas = list_create();
+}
+
+void metricas_destroy() {
+
+	list_destroy_and_destroy_elements(metricas, free);
+}
 
 /** FUNCIONES DE LA TLB **/
 void TLB_create() {
@@ -60,7 +72,6 @@ void TLB_create() {
 void TLB_destroy() {
 
 	if (TLB_habilitada()) {
-		TLB_flush();
 		list_destroy_and_destroy_elements(TLB_tabla, free);
 	}
 }
@@ -139,6 +150,7 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 		log_info(loggerInfo, ANSI_COLOR_GREEN "TLB HIT! Pagina:%d->Marco:%d" ANSI_COLOR_RESET, pagina->nro_pagina, entrada_pagina->marco);
 		/** Hubo un TLB_HIT, se encontro la pagina **/
 		TLB_hit++;
+		sumar_metrica(ACCESO, pagina->PID);
 
 		int32_t offset=entrada_pagina->marco*arch->tamanio_marco;
 		if(cod_Operacion==LEER)	memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
@@ -316,6 +328,11 @@ void frames_destroy() {
 
 void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 
+	/** Creo un elemento de metricas de ese mProc **/
+	t_metricas* metrica = malloc(sizeof(t_metricas));
+	metrica->PID = processID;
+	metrica->accesos_memoria = 0;
+	metrica->page_fault = 0;
 
 	t_paginas_proceso* nueva_entrada_proceso = malloc(sizeof(t_paginas_proceso));
 	nueva_entrada_proceso->PID = processID;
@@ -356,6 +373,9 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 
 		log_info(loggerInfo, ANSI_COLOR_GREEN "Acceso a Memoria Pid: - Pagina:%d->Marco:%d" ANSI_COLOR_RESET,pagina->PID, pagina->nro_pagina, entradaFound->marco);
 
+		/** Sumo acceso a ese PID **/
+		sumar_metrica(ACCESO, pagina->PID);
+
 		/** Si es LRU me interesa saber en que instante se referencia la pag en MP **/
 		if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
 			entradaFound->tiempo_referencia = get_actual_time_integer();
@@ -374,6 +394,9 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 	else {
 		log_debug(loggerDebug, "No se encontro en la tabla de paginas, se pide al swap, pagina id:%d nro:%d", pagina->PID, pagina->nro_pagina);
 		t_resultado_busqueda resultado = pedido_pagina_swap(pagina, LEER_PAGINA);
+
+		/** Ocurre un PF en la memoria **/
+		sumar_metrica(PF, pagina->PID);
 
 		if(resultado == FOUND) {
 			log_debug(loggerDebug, "cargue pagina del swap");
@@ -732,4 +755,28 @@ char* obtener_contenido_marco(TPagina* pagina) {
 	memcpy(contenido_marco, mem_principal+offset, arch->tamanio_marco);
 	return contenido_marco;
 
+}
+
+void sumar_metrica(t_operacion_metrica cod_op, int32_t PID) {
+
+	bool find_metrica_by_PID(void* arg) {
+		t_metricas* metrica = (t_metricas*) arg;
+		return metrica->PID == PID;
+	}
+
+	t_metricas* metrica_pid = list_find(metricas, find_metrica_by_PID);
+
+	if(cod_op == ACCESO) metrica_pid->accesos_memoria++;
+	if(cod_op == PF) metrica_pid->page_fault++;
+
+}
+
+t_metricas* obtener_metrica_PID(int32_t PID) {
+
+	bool find_metrica_by_PID(void* arg) {
+		t_metricas* metrica = (t_metricas*) arg;
+		return metrica->PID == PID;
+	}
+
+	return (t_metricas*) list_remove_by_condition(metricas, find_metrica_by_PID);
 }

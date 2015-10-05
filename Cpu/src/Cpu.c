@@ -49,6 +49,7 @@ ProcesoCPU* crear_estructura_config(char* path)
     config->puerto_memoria = config_get_int_value(archConfig, "PUERTO_MEMORIA");
     config->cantidad_hilos = config_get_int_value(archConfig, "CANTIDAD_HILOS");
     config->retardo = config_get_int_value(archConfig, "RETARDO");
+    config_destroy(archConfig);
     return config;
 }
 void clean(){
@@ -58,6 +59,9 @@ void clean(){
 	free(estado);
 	list_destroy_and_destroy_elements(socketsCPU,free);
 	free(arch);
+	log_destroy(loggerDebug);
+	log_destroy(loggerError);
+	log_destroy(loggerInfo);
 }
 
 /* Función que es llamada cuando ctrl+c */

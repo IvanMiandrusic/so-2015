@@ -45,7 +45,8 @@ ProcesoSwap* crear_estructura_config(char* path)
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie(){
-		log_error(loggerError, ANSI_COLOR_BLUE "Se da por finalizado el proceso Swap"ANSI_COLOR_RESET);
+	limpiar_estructuras_swap();
+	log_error(loggerError, ANSI_COLOR_BLUE "Se da por finalizado el proceso Swap"ANSI_COLOR_RESET);
 		exit(1);
 }
 

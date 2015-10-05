@@ -38,6 +38,7 @@ ProcesoMemoria* crear_estructura_config(char* path) {
 	config->tlb_habilitada = config_get_string_value(archConfig, "TLB_HABILITADA");
 	config->retardo = config_get_int_value(archConfig, "RETARDO_MEMORIA");
 	config->algoritmo_reemplazo = config_get_string_value(archConfig, "ALGORITMO_REEMPLAZO");
+	config_destroy(archConfig);
 	return config;
 }
 
@@ -155,6 +156,7 @@ void crear_estructuras_memoria() {
 	tabla_paginas_create();
 	MP_create();
 	frames_create();
+	metricas_create();
 
 }
 
@@ -164,6 +166,16 @@ void limpiar_estructuras_memoria(){
 	tabla_paginas_destroy();
 	MP_destroy();
 	frames_destroy();
+	metricas_destroy();
+	sem_destroy(&sem_mutex_tlb);
+	sem_destroy(&sem_mutex_tabla_paginas);
+	log_destroy(loggerDebug);
+	log_destroy(loggerError);
+	log_destroy(loggerInfo);
+	clean_socket(socketServidorCpus);
+	clean_socket(socketSwap);
+	free(arch);
+
 }
 
 
@@ -280,7 +292,7 @@ void finalizarPid(sock_t* socketCpu){
 
 	int32_t recibido = _receive_bytes(socketCpu, &(PID), sizeof(int32_t));
 	if (recibido == ERROR_OPERATION) return;
-/////////////////////////////////
+
 	t_list* paginasConPresencia=obtengoPaginasConPresencia(obtener_tabla_paginas_by_PID(PID));
 	int asd;
 	for (asd=0;asd<list_size(paginasConPresencia);asd++){
@@ -289,7 +301,7 @@ void finalizarPid(sock_t* socketCpu){
 	}
 
 	dump();
-/////////////////////////////////
+
 	header_t* headerSwap = _create_header(BORRAR_ESPACIO, 1 * sizeof(int32_t));
 	int32_t enviado = _send_header(socketSwap, headerSwap);
 	if (enviado == ERROR_OPERATION) return;
@@ -331,6 +343,11 @@ void finalizarPid(sock_t* socketCpu){
 }
 
 int32_t limpiar_Informacion_PID(int32_t PID){
+
+	/** Logeo metricas **/
+	t_metricas* metrica_PID = obtener_metrica_PID(PID);
+	log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "mProc %d - cantidad de fallos de pagina %d - cantidad de paginas accedidas %d" ANSI_COLOR_RESET,
+			PID, metrica_PID->page_fault, metrica_PID->accesos_memoria);
 
 	TLB_clean_by_PID(PID);
 

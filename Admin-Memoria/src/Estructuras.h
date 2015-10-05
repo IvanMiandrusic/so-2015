@@ -35,6 +35,12 @@ typedef struct estructura_tabla_paginas			//estructura que contiene los datos de
   int32_t bitUso;
 }TPagina;
 
+typedef struct metricas {
+	int32_t PID;
+	int32_t page_fault;
+	int32_t accesos_memoria;
+}t_metricas;
+
 //Lista doblemente enlazada de procesos
 typedef struct estructura_proceso_paginas {
 	int32_t PID;
@@ -54,12 +60,21 @@ typedef enum algoritmo_reemplazo {
 	INDEFINIDO=4
 }t_algoritmo_reemplazo;
 
+typedef enum operaciones_metricas {
+	ACCESO = 1,
+	PF = 2
+}t_operacion_metrica;
+
 /** Declaracion de variables globales **/
 extern t_list* TLB_tabla;
 extern char* mem_principal;
 extern t_list* tabla_Paginas;
 extern int32_t TLB_accesos;
 extern int32_t TLB_hit;
+
+/** Metrics functions **/
+void metricas_create();
+void metricas_destroy();
 
 /** TLB functions **/
 void TLB_create();
@@ -103,5 +118,7 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina*, int32_t);
 t_list* obtener_tabla_paginas_by_PID(int32_t );
 TPagina* obtener_pagina_a_reemplazar(t_list* );
 char* obtener_contenido_marco(TPagina*);
+void sumar_metrica(t_operacion_metrica, int32_t);
+t_metricas* obtener_metrica_PID(int32_t);
 
 #endif /* ESTRUCTURAS_H_ */
