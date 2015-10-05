@@ -19,6 +19,8 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#define TAM_FINALIZAR -10
+
 /** TAD para PLANIFICADOR **/
 ProcesoPlanificador* arch;
 /** Loggers **/

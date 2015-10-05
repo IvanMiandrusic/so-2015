@@ -23,7 +23,7 @@
 #include <commons/temporal.h>
 #include "libsocket.h"
 
-#define TAM_FINALIZAR -10
+
 
 typedef enum estados_pcb {
        LISTO=1,
