@@ -151,6 +151,7 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 		}
 		log_debug(loggerDebug, "Recibio el PCB correctamente");
 		PCB* pcb = deserializarPCB (pedido_serializado);
+		free(pedido_serializado);
 		int32_t inicial;
 		int32_t final;
 		inicial=obtengoSegundos();
@@ -343,6 +344,7 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 		string_append_with_format(&response->texto, "Error en el mProc %d - Pagina %d no leida: %s ",pcb->PID, numDePagina, contenido_pagina);
 		log_error(loggerError, ANSI_COLOR_RED "CPU:%d - Error en el mProc %d - Pagina %d NO leida: %s " ANSI_COLOR_RESET,id, pcb->PID, numDePagina, contenido_pagina);
 	}
+	free(contenido_pagina);
 	return response;
 }
 
@@ -384,6 +386,7 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 		string_append_with_format(&response->texto, "Error en el mProc %d - Pagina %d NO escrita: %s ", pcb->PID,numDePagina, texto);
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - Error en el mProc %d - Pagina %d NO escrita: %s "ANSI_COLOR_RESET, id, pcb->PID,numDePagina, texto);
 	}
+	free(header_de_memoria);
 	return response;
 }
 

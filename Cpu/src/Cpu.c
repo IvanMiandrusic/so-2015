@@ -51,6 +51,14 @@ ProcesoCPU* crear_estructura_config(char* path)
     config->retardo = config_get_int_value(archConfig, "RETARDO");
     return config;
 }
+void clean(){
+	free(tiempoAcumulado);
+	free(tiempoFinal);
+	free(tiempoInicial);
+	free(estado);
+	list_destroy_and_destroy_elements(socketsCPU,free);
+	free(arch);
+}
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie(){
@@ -69,6 +77,7 @@ void ifProcessDie(){
 		if(enviado == ERROR_OPERATION)return;
 
 	}
+	clean();
 	exit(1);
 }
 
@@ -136,11 +145,7 @@ int main(void) {
 	for(i=0;i<cantidad_hilos;i++){ // espera a que terminen los hilos para terminar el proceso
 		pthread_join(CPUthreads[i],NULL);
 	}
-	list_destroy_and_destroy_elements(socketsCPU,free);
-	free(tiempoAcumulado);
-	free(tiempoFinal);
-	free(tiempoInicial);
-	free(estado);
+	clean();
 	return EXIT_SUCCESS;
 
 }

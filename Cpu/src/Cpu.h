@@ -36,8 +36,7 @@ ProcesoCPU* crear_estructura_config(char*);
 void ifProcessDie();
 void inicializoSemaforos();
 void crearArchivoDeLog();
-
-
+void clean();
 
 
 
