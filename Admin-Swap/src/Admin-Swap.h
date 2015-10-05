@@ -52,6 +52,13 @@ typedef struct pedido_memoria {
 	int32_t cantidad_paginas;
 }t_pedido_memoria;
 
+typedef struct estructura_metricas			//estructura que contiene los datos lecturas y escrituras
+{
+ int32_t PID;
+ int32_t lecturas;
+ int32_t escrituras;
+}t_metrica;
+
 ProcesoSwap* crear_estructura_config(char*);
 void ifProcessDie();
 void inicializoSemaforos();
@@ -66,5 +73,5 @@ int32_t borrarEspacio(int32_t );
 int32_t escribir_pagina(t_pagina* );
 void recibir_operaciones_memoria(sock_t*);
 FILE* abrirArchivoConTPagina(t_pagina*);
-
+void agregarMetrica(int32_t, int32_t );
 #endif /* ADMIN_SWAP_H_ */

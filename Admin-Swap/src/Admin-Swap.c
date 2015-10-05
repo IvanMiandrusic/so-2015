@@ -23,6 +23,7 @@ t_log* loggerError;
 t_log* loggerDebug;
 t_list* espacioLibre;
 t_list* espacioOcupado;
+t_list* metricas;
 sem_t sem_mutex_libre;
 sem_t sem_mutex_ocupado;
 int32_t totalPaginas;
@@ -74,6 +75,7 @@ void creoEstructuraSwap(){
 
 	espacioLibre=list_create();
 	espacioOcupado=list_create();
+	metricas=list_create();
 
 	char* comando=string_new();
 	string_append_with_format(&comando, "dd if=/dev/zero of=%s bs=%d count=%d", arch->nombre_swap, arch->tamanio_pagina, arch->cantidad_paginas);
@@ -406,6 +408,11 @@ int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 	}
 	log_debug(loggerDebug, "Creo un proceso: %d, comienzo:%d, cantpags:%d", nodoNuevo->PID, nodoNuevo->comienzo, nodoNuevo->paginas);
 
+	t_metrica* metrica=malloc(sizeof(t_metrica));
+	metrica->PID=pedido_pid->pid;
+	metrica->lecturas=0;
+	metrica->escrituras=0;
+	list_add(metricas, metrica);
 	return RESULTADO_OK;
 }
 
@@ -455,7 +462,15 @@ int32_t borrarEspacio(int32_t PID){
 	sem_post(&sem_mutex_libre);
 	log_info(loggerInfo, ANSI_COLOR_GREEN"Proceso mProc liberado: PID: %d byte inicial: %d tamaño: %d"ANSI_COLOR_RESET,procesoRemovido->PID,
 				(procesoRemovido->comienzo)*(arch->tamanio_pagina),(procesoRemovido->paginas)*(arch->tamanio_pagina));
+
+	bool findById(t_metrica* unaMetrica)
+		{
+			return unaMetrica->PID==procesoRemovido->PID;
+		}
+	t_metrica* metrica=list_remove_by_condition(metricas, findById);
+	log_info(loggerInfo, ANSI_COLOR_GREEN "Proceso mProc: %d tuvo %d lecturas y %d escrituras"ANSI_COLOR_RESET, procesoRemovido->PID, metrica->lecturas, metrica->escrituras);
 	free(procesoRemovido);
+	free(metrica);
 	return RESULTADO_OK;
 }
 
@@ -471,12 +486,12 @@ FILE* abrirArchivoConTPagina(t_pagina* pagina_pedida){
 	FILE* espacioDeDatos = fopen(arch->nombre_swap,"r+");
 	if (espacioDeDatos==NULL) {
 		log_error(loggerError, ANSI_COLOR_RED "No se puede abrir el archivo de Swap para escribir"ANSI_COLOR_RESET);
-		return ERROR_OPERATION;
+		return NULL;
 	}
 	int32_t bloque= nodoProceso->comienzo+pagina_pedida->nro_pagina;
 	if(fseek(espacioDeDatos, bloque*arch->tamanio_pagina,SEEK_SET)!=0){
 		log_error(loggerError, ANSI_COLOR_RED "No se puede ubicar la pagina a escribir"ANSI_COLOR_RESET);
-		return ERROR_OPERATION;
+		return NULL;
 	}
 	return espacioDeDatos;
 }
@@ -498,10 +513,22 @@ void leer_pagina(t_pagina* pagina_pedida){
 				posicion, pagina_pedida->tamanio_contenido,pagina_pedida->contenido);
 		return ;
 	}
+	agregarMetrica(LEER_PAGINA, pagina_pedida->PID);
 	return ;
 
 }
 
+void agregarMetrica(int32_t codigo, int32_t PID){
+
+	bool findById(t_metrica* unaMetrica)
+	{
+		return unaMetrica->PID==PID;
+	}
+	t_metrica* metrica=list_find(metricas, findById);
+	if(codigo==LEER_PAGINA) metrica->lecturas++;
+	if(codigo==ESCRIBIR_PAGINA) metrica->escrituras++;
+
+}
 int32_t escribir_pagina(t_pagina* pagina_pedida){
 
 	FILE* espacioDeDatos=abrirArchivoConTPagina(pagina_pedida);
@@ -520,6 +547,7 @@ int32_t escribir_pagina(t_pagina* pagina_pedida){
 	if (resultado+resultado2==arch->tamanio_pagina){
 		log_info(loggerInfo, ANSI_COLOR_GREEN"Escritura: PID: %d byte inicial: %d tamaño: %d contenido: %s"ANSI_COLOR_RESET,pagina_pedida->PID,
 				posicion, strlen(pagina_pedida->contenido),pagina_pedida->contenido);
+		agregarMetrica(ESCRIBIR_PAGINA, pagina_pedida->PID);
 		return RESULTADO_OK;
 	}
 
