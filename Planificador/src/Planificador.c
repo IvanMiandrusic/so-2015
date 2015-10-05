@@ -295,7 +295,7 @@ void limpiarCpuById(int32_t cpu_id){
 				return unaCpu->ID == cpu_id;
 			}
 	CPU_t* cpu = list_remove_by_condition(colaCPUs, findCpu);
-	finalizarPCB(cpu->pcbID, RESULTADO_ERROR);
+	if(cpu->estado==OCUPADO)finalizarPCB(cpu->pcbID, RESULTADO_ERROR);
 	free(cpu);
 }
 

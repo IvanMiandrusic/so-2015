@@ -511,9 +511,9 @@ void leer_pagina(t_pagina* pagina_pedida){
 		pagina_pedida->tamanio_contenido=strlen(pagina_pedida->contenido);
 		log_info(loggerInfo, ANSI_COLOR_GREEN"Lectura: PID: %d byte inicial: %d tamaño: %d contenido: %s"ANSI_COLOR_RESET,pagina_pedida->PID,
 				posicion, pagina_pedida->tamanio_contenido,pagina_pedida->contenido);
+		agregarMetrica(LEER_PAGINA, pagina_pedida->PID);
 		return ;
 	}
-	agregarMetrica(LEER_PAGINA, pagina_pedida->PID);
 	return ;
 
 }
@@ -525,8 +525,8 @@ void agregarMetrica(int32_t codigo, int32_t PID){
 		return unaMetrica->PID==PID;
 	}
 	t_metrica* metrica=list_find(metricas, findById);
-	if(codigo==LEER_PAGINA) metrica->lecturas++;
-	if(codigo==ESCRIBIR_PAGINA) metrica->escrituras++;
+	if(codigo==LEER_PAGINA) (metrica->lecturas)++;
+	if(codigo==ESCRIBIR_PAGINA) (metrica->escrituras)++;
 
 }
 int32_t escribir_pagina(t_pagina* pagina_pedida){
