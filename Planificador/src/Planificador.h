@@ -23,7 +23,7 @@
 #include <commons/temporal.h>
 #include "libsocket.h"
 
-
+#define TAM_FINALIZAR -10
 
 typedef enum estados_pcb {
        LISTO=1,
@@ -33,6 +33,13 @@ typedef enum estados_pcb {
        FINALIZADO_ERROR=5,
 	   FINALIZANDO=6 //agregue este estado, que representa que al pcb lo esta finalizando la cpu
 }estados_pcb_t;
+
+typedef struct tiempo {
+	int32_t horas;
+	int32_t minutos;
+	int32_t segundos;
+
+}t_time;
 
 typedef enum tipos_metricas{
 		TIEMPO_RSP=1,
@@ -54,8 +61,14 @@ typedef struct estructura_metricas{
 	int32_t hora_de_Creacion;
 	int32_t hora_ejecucion;
 	int32_t hora_listo;
-	int32_t tiempo_ejecucion;
-	int32_t tiempo_espera;
+	int32_t horasEjec;
+	int32_t minEjec;
+	int32_t segEjec;
+	int32_t horasEsp;
+	int32_t minEsp;
+	int32_t segEsp;
+	/*int32_t tiempo_ejecucion;
+	int32_t tiempo_espera;*/
 
 }Metricas;
 
@@ -139,7 +152,8 @@ Metricas* iniciarMetricas(int32_t PID);
 void calcularMetrica(int32_t ID, int32_t tipo);
 void actualizarMetricas(int32_t pid, int32_t tipo);
 void removerMetrica(int32_t ID);
-void separarHorasMinSeg(int32_t ID, int32_t horario, int32_t tipo);
+t_time* obtengoTiempo(int32_t tiempo);
+t_time* calculoDefinitivo(t_time* t_horaActual, t_time* t_horaInicial);
 
 
 /** Closures **/

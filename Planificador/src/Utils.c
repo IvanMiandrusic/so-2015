@@ -10,23 +10,13 @@
 
 char* convertToString(int32_t num) {
 
-	char buffer[6];
+	char buffer[7];
 	sprintf( buffer, "%d", num);
-	buffer[2] = '\0';
+	buffer[7] = '\0';
 	return buffer;
 }
 
 char* get_hours(char* time) {
-
-	char* hora = malloc(2);
-	hora[0]= time[0];
-	hora[1]= time[1];
-	hora[2] = '\0';
-
-	return hora;
-}
-
-char* get_hours_v2(char* time) {
 
 	char* hora = malloc(2);
 	hora[0]= time[0];
