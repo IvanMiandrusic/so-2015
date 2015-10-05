@@ -148,14 +148,14 @@ void agregarPidParaFinalizar(int32_t );
 void cambiarAUltimaInstruccion(PCB* );
 void recibirOperacion(sock_t*, int32_t, int32_t);
 void sacarDeExec(int32_t );
-Metricas* iniciarMetricas(int32_t PID);
-void calcularMetrica(int32_t ID, int32_t tipo);
-void actualizarMetricas(int32_t pid, int32_t tipo);
-void removerMetrica(int32_t ID);
-t_time* obtengoTiempo(int32_t tiempo);
-t_time* calculoDefinitivo(t_time* t_horaActual, t_time* t_horaInicial);
-int32_t adaptarHora(int32_t hora);
-
+Metricas* iniciarMetricas(int32_t );
+void calcularMetrica(int32_t , int32_t );
+void actualizarMetricas(int32_t , int32_t );
+void removerMetrica(int32_t );
+t_time* obtengoTiempo(int32_t );
+t_time* calculoDefinitivo(t_time* , t_time* );
+int32_t adaptarHora(int32_t );
+void limpiarCpuById(int32_t );
 
 /** Closures **/
 bool estaLibre(CPU_t* cpu);

@@ -24,6 +24,7 @@
 #define RESULTADO_OK 4
 #define RESULTADO_ERROR 5
 #define UTILIZACION_CPU 6
+#define CPU_DIE 7
 
 PCB* deserializarPCB(char* pedidoSerializado); //tipo a definir
 char* serializarPCB(PCB* unPCB);

@@ -213,7 +213,6 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 			header->size_message);
 	int32_t recibido;
 	int32_t cpu_id;
-	int32_t tiempo;
 
 	/** Recibo el cpu_id desde la CPU **/
 	recibido = _receive_bytes(socketCPU, &(cpu_id), sizeof(int32_t));
@@ -272,10 +271,14 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 		/** Actualizar rendimiento de la CPU **/
 		bool findCpu(void* parametro) {
 			CPU_t* unaCpu = (CPU_t*) parametro;
-			return unaCpu->socketCPU->fd == socketCPU->fd;
+			return unaCpu->socketCPU->fd == socketCPU->fd;				//todo, porque compara fd y no id?
 		}
 		CPU_t* cpu = list_find(colaCPUs, findCpu);
 		cpu->rendimiento = tiempo_uso_cpu;
+		break;
+	}
+	case CPU_DIE:{
+		limpiarCpuById(cpu_id);
 		break;
 	}
 	default: {
@@ -283,6 +286,17 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 	}
 	}
 	free(header);
+}
+
+void limpiarCpuById(int32_t cpu_id){
+	//todo
+	bool findCpu(void* parametro) {
+				CPU_t* unaCpu = (CPU_t*) parametro;
+				return unaCpu->ID == cpu_id;
+			}
+	CPU_t* cpu = list_remove_by_condition(colaCPUs, findCpu);
+	finalizarPCB(cpu->pcbID, RESULTADO_ERROR);
+	free(cpu);
 }
 
 void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) {
@@ -527,7 +541,7 @@ void agregarPidParaFinalizar(int32_t pcbID) {
 				ANSI_COLOR_BOLDRED "El PID indicado ya se esta finalizando o ya Finalizo" ANSI_COLOR_RESET "\n");
 		return;
 	} else {
-		log_info(loggerInfo, "El Proc: %d procedera a Finalizarce", pcbID);
+		log_info(loggerInfo, "El Proc: %d procedera a Finalizarse", pcbID);
 		Metricas* unaMetrica = list_find(colaMetricas, getMetrica);
 		unaMetrica->finalizado = 1;
 
@@ -730,8 +744,6 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb, int32_t pcbID,
 		log_error(loggerError, "Fallo en el envio de PCB");
 		return;
 	}
-	//todo, si se cerro la conexión de la cpu, tengo que borrar la cpu de la lista, o cambiarle el estado para que
-	//no se la tenga que mandar y mandarle el pcb a otra.
 	CPU->estado = OCUPADO;
 }
 

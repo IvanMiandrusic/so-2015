@@ -131,7 +131,6 @@ int32_t compactar(){
 		log_debug(loggerDebug, "Debo mover el primer elemento que no arranca en 0");
 		leeryEscribir(primerNodo,0);
 		primerNodo->comienzo=0;
-//		list_replace_and_destroy_element(espacioOcupado, 0, primerNodo, free);
 	}
 
 	int32_t i;
@@ -143,7 +142,6 @@ int32_t compactar(){
 		if(!chequeo){
 			leeryEscribir(nodo,anterior->comienzo+anterior->paginas);
 			nodo->comienzo=anterior->comienzo+anterior->paginas;
-//			list_replace_and_destroy_element(espacioOcupado, i, nodo, free);
 		}
 		//fin for
 	}
@@ -160,8 +158,7 @@ int32_t compactar(){
 	list_clean_and_destroy_elements(espacioLibre, free);
 	list_add(espacioLibre, nodoLibre);
 	sem_post(&sem_mutex_libre);
-
-}
+	}
 	graficoCompactar();
 	sem_post(&sem_mutex_ocupado);
 	return 1;
@@ -179,6 +176,7 @@ int32_t calcularEspacioLibre(){
 }
 
 void graficoCompactar(){
+	printf(ANSI_COLOR_BOLDYELLOW "Procesando, por favor espere......\n" ANSI_COLOR_RESET);
 	printf("Procesando, por favor espere......\n");
 	sleep(arch->retardo_comp/3);
 	printf("░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n"
@@ -187,14 +185,14 @@ void graficoCompactar(){
 		   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n");
 	printf("\n... Creando estructuras necesarias para la compactación.....\n");
 	sleep(arch->retardo_comp/3);
-printf("▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n"
+	printf("▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n"
 	   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n"
 	   "░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░\n"
 	   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n");
-sleep(arch->retardo_comp/3);
-printf("\n... Guardando estructuras necesarias para la compactación\n");
+	sleep(arch->retardo_comp/3);
+	printf("\n... Guardando estructuras necesarias para la compactación\n");
 
-printf("▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n"
+	printf("▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n"
 	   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n"
 	   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n"
 	   "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n");
@@ -375,7 +373,8 @@ int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 
 	if(nodoLibre==NULL){
 		log_debug(loggerDebug, "Se debe compactar, no hay espacio libre");
-		compactar();
+		int32_t resultado=compactar();
+		if (resultado==-1) return RESULTADO_ERROR;
 		nodoLibre=list_get(espacioLibre, 0);
 	}
 	if(nodoLibre==NULL)return RESULTADO_ERROR;
