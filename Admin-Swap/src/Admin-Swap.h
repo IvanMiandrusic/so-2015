@@ -71,6 +71,7 @@ void leer_pagina(t_pagina*);
 int32_t reservarEspacio(t_pedido_memoria* );
 int32_t borrarEspacio(int32_t );
 int32_t escribir_pagina(t_pagina* );
+void limpiar_estructuras_swap();
 void recibir_operaciones_memoria(sock_t*);
 FILE* abrirArchivoConTPagina(t_pagina*);
 void agregarMetrica(int32_t, int32_t );

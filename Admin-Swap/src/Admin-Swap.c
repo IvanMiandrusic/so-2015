@@ -39,6 +39,7 @@ ProcesoSwap* crear_estructura_config(char* path)
     config->tamanio_pagina= config_get_int_value(archConfig, "TAMANIO_PAGINA");
     config->retardo= config_get_int_value(archConfig, "RETARDO_SWAP");
     config->retardo_comp= config_get_int_value(archConfig, "RETARDO_COMPACTACION");
+    config_destroy(archConfig);
     return config;
 }
 
@@ -237,7 +238,23 @@ int main(void) {
 
 	recibir_operaciones_memoria(socketCliente);
 
+	limpiar_estructuras_swap();
+
 	return EXIT_SUCCESS;
+}
+
+void limpiar_estructuras_swap() {
+
+	log_destroy(loggerDebug);
+	log_destroy(loggerError);
+	log_destroy(loggerInfo);
+	list_destroy_and_destroy_elements(metricas, free);
+	list_destroy_and_destroy_elements(espacioLibre, free);
+	list_destroy_and_destroy_elements(espacioOcupado, free);
+	sem_destroy(&sem_mutex_libre);
+	sem_destroy(&sem_mutex_ocupado);
+	free(arch);
+	clean_socket(socketServidor);
 }
 
 void recibir_operaciones_memoria(sock_t* socketMemoria){

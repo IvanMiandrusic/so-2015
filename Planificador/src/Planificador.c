@@ -56,6 +56,7 @@ ProcesoPlanificador* crear_estructura_config(char* path) {
 	config->algoritmo = config_get_string_value(archConfig,
 			"ALGORITMO_PLANIFICACION");
 	config->quantum = config_get_int_value(archConfig, "QUANTUM");
+	config_destroy(archConfig);
 	return config;
 }
 
@@ -161,6 +162,17 @@ void cleanAll() {
 	list_destroy_and_destroy_elements(colaBlock, free);
 	list_destroy_and_destroy_elements(colaFinalizados, free);
 	list_destroy_and_destroy_elements(retardos_PCB, free);
+	list_destroy_and_destroy_elements(colaCPUs, free);
+	list_destroy_and_destroy_elements(colaMetricas, free);
+	sem_destroy(&semMutex_colaBlock);
+	sem_destroy(&semMutex_colaExec);
+	sem_destroy(&semMutex_colaFinalizados);
+	sem_destroy(&semMutex_colaListos);
+	sem_destroy(&semMutex_colaCPUs);
+	sem_destroy(&semMutex_colaMetricas);
+	sem_destroy(&sem_list_retardos);
+	sem_destroy(&sem_io);
+	free(arch);
 	log_destroy(loggerInfo);
 	log_destroy(loggerError);
 	log_destroy(loggerDebug);
