@@ -408,8 +408,8 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 	if(recibido == ERROR_OPERATION) return;
 
 	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
-	if(cod_Operacion==LEER)log_debug(loggerDebug, "Debo leer la pagina:%d, del proceso: %d", pagina_pedida->nro_pagina, pagina_pedida->PID);
-	if(cod_Operacion==ESCRIBIR)log_debug(loggerDebug, "Se tiene que escribir del proceso:%d la pagina:%d con:%s", pagina_pedida->PID, pagina_pedida->nro_pagina, pagina_pedida->contenido);
+	if(cod_Operacion==LEER)log_info(loggerInfo, "Debo leer la pagina:%d, del proceso: %d", pagina_pedida->nro_pagina, pagina_pedida->PID);
+	if(cod_Operacion==ESCRIBIR)log_info(loggerInfo, "Se tiene que escribir del proceso:%d la pagina:%d con:%s", pagina_pedida->PID, pagina_pedida->nro_pagina, pagina_pedida->contenido);
 
 	t_resultado_busqueda resultado=buscar_pagina(cod_Operacion, pagina_pedida);
 

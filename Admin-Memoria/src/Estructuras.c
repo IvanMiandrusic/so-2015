@@ -129,13 +129,14 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 	}
 
 	if(entrada_pagina == NULL) {
+		if(TLB_habilitada()) log_info(loggerInfo, "TLB Miss");
 		log_debug(loggerDebug, "No se encontro la pagina en la TLB, se busca en la tabla de paginas");
 		return buscar_pagina_tabla_paginas(cod_Operacion, pagina);
 	}
 	else{
 		/** Hago el retardo que encontro la pagina **/
 		sleep(arch->retardo);
-
+		log_info(loggerInfo, ANSI_COLOR_GREEN "TLB HIT! Pagina:%d->Marco:%d" ANSI_COLOR_RESET, pagina->nro_pagina, entrada_pagina->marco);
 		/** Hubo un TLB_HIT, se encontro la pagina **/
 		TLB_hit++;
 
@@ -353,6 +354,8 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 
 	if(entradaFound != NULL){
 
+		log_info(loggerInfo, ANSI_COLOR_GREEN "Acceso a Memoria Pid: - Pagina:%d->Marco:%d" ANSI_COLOR_RESET,pagina->PID, pagina->nro_pagina, entradaFound->marco);
+
 		/** Si es LRU me interesa saber en que instante se referencia la pag en MP **/
 		if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
 			entradaFound->tiempo_referencia = get_actual_time_integer();
@@ -407,12 +410,12 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap
 		if(operacion_swap==LEER_PAGINA){
 			headerSwap= _create_header(operacion_swap, 3 * sizeof(int32_t));
 			tamanio=0;
-			log_debug(loggerDebug, "se envia a leer del pid:%d, la pag:%d, tam:%d", pagina->PID, pagina->nro_pagina, tamanio);
+			log_info(loggerInfo, "Se envia al Swap a leer del pid:%d, la pag:%d, tam:%d", pagina->PID, pagina->nro_pagina, tamanio);
 		}else{
 			headerSwap= _create_header(operacion_swap, 3 * sizeof(int32_t) + pagina->tamanio_contenido);
 			tamanio=pagina->tamanio_contenido;
 			pagina->contenido[tamanio]='\0';
-			log_debug(loggerDebug, "se envia a escribir del pid:%d, la pag:%d, tam:%d, contenido:%s", pagina->PID, pagina->nro_pagina, tamanio, pagina->contenido);
+			log_info(loggerInfo, "Se envia al Swap a escribir del pid:%d, la pag:%d, tam:%d, contenido:%s", pagina->PID, pagina->nro_pagina, tamanio, pagina->contenido);
 		}
 		enviado = _send_header(socketSwap, headerSwap);
 		if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
@@ -514,6 +517,7 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 
 	TPagina* pagina_a_poner_presente = list_find(paginas_PID, findByID);
 	log_debug(loggerDebug, "Tengo pagina para cambiar:%d", pagina_a_poner_presente->pagina);
+	log_info(loggerInfo, ANSI_COLOR_BOLDCYAN "Resultado del algoritmo %s, se sustituye el marco %d"ANSI_COLOR_RESET, arch->algoritmo_reemplazo, marco_libre);
 	pagina_a_poner_presente->presente = 1;
 	pagina_a_poner_presente->marco = marco_libre;
 	pagina_a_poner_presente->tiempo_referencia = get_actual_time_integer();
@@ -583,7 +587,7 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		/** Puede que este en la TLB esa pagina que se ausente **/
 		if(TLB_exist(pagina_a_ausentar))
 			TLB_clean_by_page(pagina_a_ausentar);
-
+		log_info(loggerInfo, "Por algoritmo %s, deja de estar en memoria la pagina %d", arch->algoritmo_reemplazo, pagina_a_ausentar->pagina);
 		/** Escribo pagina en swap (si esta modificada) **/
 		if(pagina_a_ausentar->modificada == 1) {
 
@@ -626,6 +630,7 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 			}
 				if (list_size(paginasConPresencia)==(i+1)) encontre_pagina_a_ausentar=true;
 		}
+		log_info(loggerInfo, "Por algoritmo %s, deja de estar en memoria la pagina %d", arch->algoritmo_reemplazo, mejorPagina->pagina);
 
 		/** Escribo pagina en swap (si esta modificada) **/
 		if(mejorPagina->modificada == 1) {
