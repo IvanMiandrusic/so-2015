@@ -283,6 +283,7 @@ void tabla_paginas_refresh(TLB* entrada_tlb) {
 	/** Actualizo la pagina en la tabla de paginas **/
 	TPagina* pagina_a_modificar = list_find(paginas_PID, find_by_ID);
 	pagina_a_modificar->modificada = entrada_tlb->modificada;
+	pagina_a_modificar->bitUso=1;
 
 	/** Si es LRU, me interesa el tiempo de referencia **/
 	if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))

@@ -575,4 +575,3 @@ int32_t escribir_pagina(t_pagina* pagina_pedida){
 
 
 
-
