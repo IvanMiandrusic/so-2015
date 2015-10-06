@@ -49,7 +49,6 @@ ProcesoCPU* crear_estructura_config(char* path)
     config->puerto_memoria = config_get_int_value(archConfig, "PUERTO_MEMORIA");
     config->cantidad_hilos = config_get_int_value(archConfig, "CANTIDAD_HILOS");
     config->retardo = config_get_int_value(archConfig, "RETARDO");
-    config_destroy(archConfig);
     return config;
 }
 void clean(){

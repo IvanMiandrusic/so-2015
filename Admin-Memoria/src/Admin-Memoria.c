@@ -38,7 +38,6 @@ ProcesoMemoria* crear_estructura_config(char* path) {
 	config->tlb_habilitada = config_get_string_value(archConfig, "TLB_HABILITADA");
 	config->retardo = config_get_int_value(archConfig, "RETARDO_MEMORIA");
 	config->algoritmo_reemplazo = config_get_string_value(archConfig, "ALGORITMO_REEMPLAZO");
-	config_destroy(archConfig);
 	return config;
 }
 

@@ -56,7 +56,6 @@ ProcesoPlanificador* crear_estructura_config(char* path) {
 	config->algoritmo = config_get_string_value(archConfig,
 			"ALGORITMO_PLANIFICACION");
 	config->quantum = config_get_int_value(archConfig, "QUANTUM");
-	config_destroy(archConfig);
 	return config;
 }
 
