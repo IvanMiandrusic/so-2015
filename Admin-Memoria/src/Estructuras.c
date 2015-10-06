@@ -434,7 +434,8 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap
 		if(operacion_swap==LEER_PAGINA){
 			headerSwap= _create_header(operacion_swap, 3 * sizeof(int32_t));
 			tamanio=0;
-			log_info(loggerInfo, "Se envia al Swap a leer del pid:%d, la pag:%d, tam:%d", pagina->PID, pagina->nro_pagina, tamanio);
+			log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Ocurrio un FALLO DE PAGINA" ANSI_COLOR_RESET);
+			log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Se envia al SWAP a leer del mProc:%d, la pag:%d, tam:%d", pagina->PID, pagina->nro_pagina, tamanio);
 		}else{
 			headerSwap= _create_header(operacion_swap, 3 * sizeof(int32_t) + pagina->tamanio_contenido);
 			tamanio=pagina->tamanio_contenido;
@@ -541,7 +542,7 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 
 	TPagina* pagina_a_poner_presente = list_find(paginas_PID, findByID);
 	log_debug(loggerDebug, "Tengo pagina para cambiar:%d", pagina_a_poner_presente->pagina);
-	log_info(loggerInfo, ANSI_COLOR_BOLDCYAN "Resultado del algoritmo %s, se sustituye el marco %d"ANSI_COLOR_RESET, arch->algoritmo_reemplazo, marco_libre);
+	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Resultado del algoritmo %s, se sustituye el marco %d"ANSI_COLOR_RESET, arch->algoritmo_reemplazo, marco_libre);
 	pagina_a_poner_presente->presente = 1;
 	pagina_a_poner_presente->marco = marco_libre;
 	pagina_a_poner_presente->tiempo_referencia = get_actual_time_integer();
@@ -565,8 +566,8 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 	/** Actualizo contenido en la TLB **/
 	TLB_refresh(pagina_recibida_swap->PID, pagina_a_poner_presente);
 
-
-
+	/** Muestro como quedaron las estructuras luego del reemplazo **/
+	mostrarEstadoActualEstructuras(pagina_recibida_swap->PID, pagina_a_poner_presente);
 
 	return FOUND;
 }
@@ -586,7 +587,7 @@ int32_t obtener_frame_libre() {
 }
 
 int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
-	log_debug(loggerDebug, "Debo reemplzar la pagina del pid:%d", PID);
+
 	int32_t marco_a_devolver;
 
 	t_algoritmo_reemplazo algoritmo_reemplazo = obtener_codigo_algoritmo(arch->algoritmo_reemplazo);
@@ -595,6 +596,7 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 
 	if((algoritmo_reemplazo == FIFO) || (algoritmo_reemplazo == LRU)) {
 		log_debug(loggerDebug, "Algoritmo LRU");
+
 		/** Saco primer pagina de la memoria **/
 		TPagina* pagina_obtenida = obtener_pagina_a_reemplazar(paginasConPresencia);
 
@@ -611,7 +613,8 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		/** Puede que este en la TLB esa pagina que se ausente **/
 		if(TLB_exist(pagina_a_ausentar))
 			TLB_clean_by_page(pagina_a_ausentar);
-		log_info(loggerInfo, "Por algoritmo %s, deja de estar en memoria la pagina %d", arch->algoritmo_reemplazo, pagina_a_ausentar->pagina);
+		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Se reemplaza por algoritmo %s, deja de estar en memoria la pagina %d del mProc %d" ANSI_COLOR_RESET, arch->algoritmo_reemplazo, pagina_a_ausentar->pagina, PID);
+
 		/** Escribo pagina en swap (si esta modificada) **/
 		if(pagina_a_ausentar->modificada == 1) {
 
@@ -780,4 +783,62 @@ t_metricas* obtener_metrica_PID(int32_t PID) {
 	}
 
 	return (t_metricas*) list_remove_by_condition(metricas, find_metrica_by_PID);
+}
+
+void mostrarEstadoActualEstructuras(int32_t PID, TPagina* pagina) {
+
+	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Estado actual de estructuras en memoria" ANSI_COLOR_RESET);
+	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Tabla de Paginas del mProc %d" ANSI_COLOR_RESET,PID);
+
+	void mostrarEntradaTablaPaginas(void* arg) {
+
+			TPagina* entrada = (TPagina*) arg;
+			if(entrada->pagina == pagina->pagina) {
+				log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Pagina %d - Marco %d - Uso %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
+						entrada->pagina,
+						entrada->marco,
+						entrada->bitUso,
+						entrada->modificada,
+						entrada->presente,
+						entrada->tiempo_referencia);
+			}
+			else {
+				log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Pagina %d - Marco %d - Uso %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
+						entrada->pagina,
+						entrada->marco,
+						entrada->bitUso,
+						entrada->modificada,
+						entrada->presente,
+						entrada->tiempo_referencia);
+			}
+		}
+
+	list_iterate(tabla_Paginas, mostrarEntradaTablaPaginas);
+
+	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "TLB" ANSI_COLOR_RESET,PID);
+
+	void mostrarEntradaTLB(void* arg) {
+
+				TLB* entrada = (TLB*) arg;
+				if(entrada->pagina == pagina->pagina) {
+					log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "mProc %d - Pagina %d - Marco %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
+							PID,
+							entrada->pagina,
+							entrada->marco,
+							entrada->modificada,
+							entrada->presente,
+							entrada->tiempo_referencia);
+				}
+				else {
+					log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "mProc %d - Pagina %d - Marco %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
+							PID,
+							entrada->pagina,
+							entrada->marco,
+							entrada->modificada,
+							entrada->presente,
+							entrada->tiempo_referencia);
+				}
+	}
+
+	list_iterate(TLB_tabla, mostrarEntradaTLB);
 }

@@ -120,5 +120,6 @@ TPagina* obtener_pagina_a_reemplazar(t_list* );
 char* obtener_contenido_marco(TPagina*);
 void sumar_metrica(t_operacion_metrica, int32_t);
 t_metricas* obtener_metrica_PID(int32_t);
+void mostrarEstadoActualEstructuras(int32_t, TPagina*);
 
 #endif /* ESTRUCTURAS_H_ */
