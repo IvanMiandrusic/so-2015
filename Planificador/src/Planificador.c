@@ -109,8 +109,7 @@ void inicializoSemaforos() {
 	int32_t semIO = sem_init(&sem_io, 0, 0);
 	if (semIO == -1)
 		log_error(loggerError,
-				"No pudo crearse el semaforo Mutex para manejar la IO");
-
+				"No pudo crearse el semaforo para manejar la IO");
 }
 
 /*Se crea un archivo de log donde se registra to-do */
@@ -208,8 +207,10 @@ Metricas* iniciarMetricas(int32_t PID) {
 	misMetricas->horasEsp = 0;
 	misMetricas->minEsp = 0;
 	misMetricas->segEsp = 0;
-	/*misMetricas->tiempo_ejecucion = 0;
-	 misMetricas->tiempo_espera = 0;*/
+	misMetricas->horasRsp = 0;
+	misMetricas->minRsp = 0;
+	misMetricas->seg_Resp = 0;
+	misMetricas->resp = 0;
 	return misMetricas;
 }
 
@@ -236,9 +237,10 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 	case NUEVA_CPU: {
 		/** Genero un nuevo cpu_t **/
 		CPU_t* nuevaCPU = generarCPU(cpu_id, socketCPU);
-		log_info(loggerDebug, "Se conecto una Cpu con id: %d", cpu_id);
+		log_debug(loggerDebug, "Se conecto una Cpu con id: %d", cpu_id);
 		agregarColaCPUs(nuevaCPU);
-		log_debug(loggerDebug, "Recibi una CPU nueva con id %d y socket %d",
+		log_info(loggerDebug,
+				ANSI_COLOR_BOLDYELLOW"Se conecto una CPU nueva con id %d y socket %d"ANSI_COLOR_RESET,
 				nuevaCPU->ID, nuevaCPU->socketCPU->fd);
 		/** Envio el quantum a la CPU **/
 		header_t* header_quantum = _create_header(ENVIO_QUANTUM,
@@ -283,14 +285,17 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 		/** Actualizar rendimiento de la CPU **/
 		bool findCpu(void* parametro) {
 			CPU_t* unaCpu = (CPU_t*) parametro;
-			return unaCpu->socketCPU->fd == socketCPU->fd;				//todo, porque compara fd y no id?
+			return unaCpu->socketCPU->fd == socketCPU->fd; //todo, porque compara fd y no id?
 		}
 		CPU_t* cpu = list_find(colaCPUs, findCpu);
 		cpu->rendimiento = tiempo_uso_cpu;
 		break;
 	}
-	case CPU_DIE:{
+	case CPU_DIE: {
 		limpiarCpuById(cpu_id);
+		log_info(loggerInfo,
+		ANSI_COLOR_BOLDYELLOW"La CPU con ID: %d se Desconecto"ANSI_COLOR_RESET,
+				cpu_id);
 		break;
 	}
 	default: {
@@ -300,14 +305,15 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 	free(header);
 }
 
-void limpiarCpuById(int32_t cpu_id){
+void limpiarCpuById(int32_t cpu_id) {
 	//todo
 	bool findCpu(void* parametro) {
-				CPU_t* unaCpu = (CPU_t*) parametro;
-				return unaCpu->ID == cpu_id;
-			}
+		CPU_t* unaCpu = (CPU_t*) parametro;
+		return unaCpu->ID == cpu_id;
+	}
 	CPU_t* cpu = list_remove_by_condition(colaCPUs, findCpu);
-	if(cpu->estado==OCUPADO)finalizarPCB(cpu->pcbID, RESULTADO_ERROR);
+	if (cpu->estado == OCUPADO)
+		finalizarPCB(cpu->pcbID, RESULTADO_ERROR);
 	free(cpu);
 }
 
@@ -364,8 +370,8 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 	if (cod_Operacion == TERMINO_RAFAGA) {
 		calcularMetrica(pcb->PID, TIEMPO_EXEC);
 		log_info(loggerInfo,
-				ANSI_COLOR_BOLDWHITE "Termina rafaga del proceso: %d con respuesta:%s" ANSI_COLOR_RESET,
-				pcb->PID, resultado_operaciones);
+				ANSI_COLOR_BOLDYELLOW "Termina rafaga del proceso con ruta: %s e ID: %d con respuesta:%s" ANSI_COLOR_RESET,
+				pcb->ruta_archivo, pcb->PID, resultado_operaciones);
 		liberarCPU(cpu_id);
 		sacarDeExec(pcb->PID);
 		agregarPcbAColaListos(pcb);
@@ -373,7 +379,7 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 		asignarPCBaCPU();
 	}
 	if (cod_Operacion == RESULTADO_ERROR || cod_Operacion == RESULTADO_OK) {
-		calcularMetrica(pcb->PID, TIEMPO_RSP);
+		calcularMetrica(pcb->PID, MOSTRAR_METRICAS);
 		finalizarPCB(pcb->PID, cod_Operacion);
 		liberarCPU(cpu_id);
 		asignarPCBaCPU();
@@ -418,13 +424,10 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 	Metricas* metrica = list_find(colaMetricas, getIDMetricas);
 	int32_t horaActual = get_actual_time_integer();
 	t_time* t_horaActual = obtengoTiempo(horaActual);
-	if (tipo == TIEMPO_RSP) {
-		t_time* t_horaCreacion = obtengoTiempo(metrica->hora_de_Creacion);
-		t_time* respuestaRSP = calculoDefinitivo(t_horaActual, t_horaCreacion);
+	if (tipo == MOSTRAR_METRICAS) {
 		log_info(loggerInfo,
 				ANSI_COLOR_BOLDYELLOW"El tiempo de Respuesta del Proc %d es %d horas, %d minutos, %d segundos"ANSI_COLOR_RESET,
-				ID, respuestaRSP->horas, respuestaRSP->minutos,
-				respuestaRSP->segundos);
+				ID, metrica->horasRsp, metrica->minRsp, metrica->seg_Resp);
 		calcularMetrica(ID, TIEMPO_EXEC);
 		log_info(loggerInfo,
 				ANSI_COLOR_BOLDYELLOW"El tiempo de Ejecucion del Proc %d es %d horas, %d minutos, %d segundos"ANSI_COLOR_RESET,
@@ -442,13 +445,13 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 		metrica->segEjec = metrica->segEjec + resultado->segundos;
 		if (metrica->segEjec > 59) {
 			int32_t seg = adaptarHora(metrica->segEjec);
-			metrica->minEjec = metrica->segEjec/60;
+			metrica->minEjec = metrica->segEjec / 60;
 			metrica->segEjec = seg;
 
 		}
 		if (metrica->minEjec > 59) {
 			int32_t min = adaptarHora(metrica->minEjec);
-			metrica->horasEjec = metrica->minEjec/60;
+			metrica->horasEjec = metrica->minEjec / 60;
 			metrica->minEjec = min;
 
 		}
@@ -457,24 +460,39 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 	}
 
 	if (tipo == TIEMPO_ESP) {
-		t_time* t_horaEjec = obtengoTiempo(metrica->hora_listo);
-		t_time* resultado = calculoDefinitivo(t_horaActual, t_horaEjec);
+		t_time* t_horaEsp = obtengoTiempo(metrica->hora_listo);
+		t_time* resultado = calculoDefinitivo(t_horaActual, t_horaEsp);
 		metrica->horasEsp = metrica->horasEsp + resultado->horas;
 		metrica->minEsp = metrica->minEsp + resultado->minutos;
 		metrica->segEsp = metrica->segEsp + resultado->segundos;
 		if (metrica->segEsp > 59) {
 			int32_t seg = adaptarHora(metrica->segEsp);
-			metrica->minEsp = metrica->segEsp/60;
+			metrica->minEsp = metrica->segEsp / 60;
 			metrica->segEsp = seg;
 
 		}
 		if (metrica->minEsp > 59) {
 			int32_t min = adaptarHora(metrica->minEsp);
-			metrica->horasEsp = metrica->minEsp/60;
+			metrica->horasEsp = metrica->minEsp / 60;
 			metrica->minEsp = min;
 
 		}
+
+		if (metrica->resp == 0) {
+			t_time* t_horaCreacion = obtengoTiempo(metrica->hora_de_Creacion);
+			t_time* respuestaRSP = calculoDefinitivo(t_horaActual,
+					t_horaCreacion);
+			metrica->horasRsp = respuestaRSP->horas;
+			metrica->minRsp = respuestaRSP->minutos;
+			metrica->seg_Resp = respuestaRSP->segundos;
+			metrica->resp = 1;
+			free(t_horaCreacion);
+			free(respuestaRSP);
+		}
+
 		free(resultado);
+		free(t_horaEsp);
+		free(t_horaActual);
 		return;
 	}
 
@@ -518,17 +536,18 @@ t_time* calculoDefinitivo(t_time* t_horaActual, t_time* t_horaInicial) {
 t_time* obtengoTiempo(int32_t tiempo) {
 
 	t_time* new_time = malloc(sizeof(t_time));
-	if(tiempo>10000){
-		new_time->horas=tiempo/10000;
-	}else{
-		new_time->horas=0;
+	if (tiempo > 10000) {
+		new_time->horas = tiempo / 10000;
+	} else {
+		new_time->horas = 0;
 	}
-	if(tiempo>100){
-		new_time->minutos=(tiempo-new_time->horas*10000)/100;
-	}else {
-		new_time->minutos=0;
+	if (tiempo > 100) {
+		new_time->minutos = (tiempo - new_time->horas * 10000) / 100;
+	} else {
+		new_time->minutos = 0;
 	}
-	new_time->segundos = (tiempo - new_time->horas * 10000) - new_time->minutos * 100;
+	new_time->segundos = (tiempo - new_time->horas * 10000)
+			- new_time->minutos * 100;
 
 	return new_time;
 
@@ -570,7 +589,7 @@ void finalizarPCB(int32_t pcbID, int32_t tipo) {
 	if (tipo == RESULTADO_OK) {
 		pcb_found->estado = FINALIZADO_OK;
 		log_info(loggerInfo,
-				ANSI_COLOR_GREEN"Finaliza correctamente el PID:%d y ruta:%s"ANSI_COLOR_RESET,
+				ANSI_COLOR_YELLOW"Finaliza correctamente el PID:%d y ruta:%s"ANSI_COLOR_RESET,
 				pcbID, pcb_found->ruta_archivo);
 	}
 
@@ -715,7 +734,9 @@ void asignarPCBaCPU() {
 		char* paquete = serializarPCB(pcbAEnviar);
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
 		enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, ENVIO_PCB);
-		log_info(loggerInfo, "El PCB se envio satisfactoriamente");
+		log_info(loggerInfo,
+				ANSI_COLOR_BOLDYELLOW"El Proc con ruta: %s e ID: %d entro en ejecucion"ANSI_COLOR_RESET,
+				pcbAEnviar->ruta_archivo, pcbAEnviar->PID);
 		/** Pongo el PCB en ejecucion **/
 		calcularMetrica(pcbAEnviar->PID, TIEMPO_ESP);
 		agregarPcbAColaExec(pcbAEnviar);

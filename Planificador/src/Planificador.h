@@ -42,9 +42,10 @@ typedef struct tiempo {
 }t_time;
 
 typedef enum tipos_metricas{
-		TIEMPO_RSP=1,
+		MOSTRAR_METRICAS=1,
 		TIEMPO_EXEC=2,
-		TIEMPO_ESP=3
+		TIEMPO_ESP=3,
+		TIEMPO_RSP=4
 
 }tipos_metricas;
 
@@ -67,8 +68,10 @@ typedef struct estructura_metricas{
 	int32_t horasEsp;
 	int32_t minEsp;
 	int32_t segEsp;
-	/*int32_t tiempo_ejecucion;
-	int32_t tiempo_espera;*/
+	int32_t horasRsp;
+	int32_t minRsp;
+	int32_t seg_Resp;
+	int32_t resp;
 
 }Metricas;
 
