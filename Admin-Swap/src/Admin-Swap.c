@@ -45,9 +45,9 @@ ProcesoSwap* crear_estructura_config(char* path)
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie(){
-	limpiar_estructuras_swap();
 	log_error(loggerError, ANSI_COLOR_BLUE "Se da por finalizado el proceso Swap"ANSI_COLOR_RESET);
-		exit(1);
+	limpiar_estructuras_swap();
+	exit(1);
 }
 
 /*Función donde se inicializan los semaforos */
