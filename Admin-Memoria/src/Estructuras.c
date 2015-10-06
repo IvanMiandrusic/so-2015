@@ -333,6 +333,7 @@ void crear_tabla_pagina_PID(int32_t processID, int32_t cantidad_paginas) {
 	metrica->PID = processID;
 	metrica->accesos_memoria = 0;
 	metrica->page_fault = 0;
+	list_add(metricas, metrica);
 
 	t_paginas_proceso* nueva_entrada_proceso = malloc(sizeof(t_paginas_proceso));
 	nueva_entrada_proceso->PID = processID;
