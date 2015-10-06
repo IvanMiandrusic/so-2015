@@ -32,7 +32,7 @@ void* thread_hit(void* arg){
 		}else{
 			tasa_acierto = (TLB_hit*100)/TLB_accesos;
 		}
-		log_info(loggerInfo,ANSI_COLOR_BOLDGREEN"La tasa de aciertos de la TLB es:%d%% (%d/%d)" ANSI_COLOR_RESET, tasa_acierto, TLB_hit, TLB_accesos);
+		log_info(loggerInfo,ANSI_COLOR_BOLDYELLOW "La tasa de aciertos de la TLB es:%d%% (%d/%d)" ANSI_COLOR_RESET, tasa_acierto, TLB_hit, TLB_accesos);
 
 		tasa_acierto = 0;
 	}
@@ -140,14 +140,14 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 	}
 
 	if(entrada_pagina == NULL) {
-		if(TLB_habilitada()) log_info(loggerInfo, "TLB Miss");
+		if(TLB_habilitada()) log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "TLB Miss" ANSI_COLOR_RESET);
 		log_debug(loggerDebug, "No se encontro la pagina en la TLB, se busca en la tabla de paginas");
 		return buscar_pagina_tabla_paginas(cod_Operacion, pagina);
 	}
 	else{
 		/** Hago el retardo que encontro la pagina **/
 		sleep(arch->retardo);
-		log_info(loggerInfo, ANSI_COLOR_GREEN "TLB HIT! Pagina:%d->Marco:%d" ANSI_COLOR_RESET, pagina->nro_pagina, entrada_pagina->marco);
+		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "TLB HIT! Pagina:%d->Marco:%d" ANSI_COLOR_RESET, pagina->nro_pagina, entrada_pagina->marco);
 		/** Hubo un TLB_HIT, se encontro la pagina **/
 		TLB_hit++;
 		sumar_metrica(ACCESO, pagina->PID);
@@ -372,7 +372,7 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 
 	if(entradaFound != NULL){
 
-		log_info(loggerInfo, ANSI_COLOR_GREEN "Acceso a Memoria Pid: - Pagina:%d->Marco:%d" ANSI_COLOR_RESET,pagina->PID, pagina->nro_pagina, entradaFound->marco);
+		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Acceso a Memoria Pid: - Pagina:%d->Marco:%d" ANSI_COLOR_RESET,pagina->PID, pagina->nro_pagina, entradaFound->marco);
 
 		/** Sumo acceso a ese PID **/
 		sumar_metrica(ACCESO, pagina->PID);
@@ -435,7 +435,7 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap
 			headerSwap= _create_header(operacion_swap, 3 * sizeof(int32_t));
 			tamanio=0;
 			log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Ocurrio un FALLO DE PAGINA" ANSI_COLOR_RESET);
-			log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Se envia al SWAP a leer del mProc:%d, la pag:%d, tam:%d", pagina->PID, pagina->nro_pagina, tamanio);
+			log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Se envia al SWAP a leer del mProc:%d, la pag:%d, tam:%d" ANSI_COLOR_RESET, pagina->PID, pagina->nro_pagina, tamanio);
 		}else{
 			headerSwap= _create_header(operacion_swap, 3 * sizeof(int32_t) + pagina->tamanio_contenido);
 			tamanio=pagina->tamanio_contenido;
@@ -483,7 +483,7 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap
 					pagina_Nueva->contenido=NULL;
 				}
 
-				log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Exito al leer pagina en el swap: tamanio:%d, contenido:%s" ANSI_COLOR_RESET, pagina_Nueva->tamanio_contenido, pagina_Nueva->contenido);
+				log_info(loggerInfo, ANSI_COLOR_BOLDCYAN "Exito al leer pagina en el swap: tamanio:%d, contenido:%s" ANSI_COLOR_RESET, pagina_Nueva->tamanio_contenido, pagina_Nueva->contenido);
 
 				/** Se reemplaza la pagina en MP **/
 				return asignar_pagina(pagina_Nueva);

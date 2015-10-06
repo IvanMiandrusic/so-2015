@@ -345,7 +345,7 @@ int32_t limpiar_Informacion_PID(int32_t PID){
 
 	/** Logeo metricas **/
 	t_metricas* metrica_PID = obtener_metrica_PID(PID);
-	log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "mProc %d - cantidad de fallos de pagina %d - cantidad de paginas accedidas %d" ANSI_COLOR_RESET,
+	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "mProc %d - cantidad de fallos de pagina %d - cantidad de paginas accedidas %d" ANSI_COLOR_RESET,
 			PID, metrica_PID->page_fault, metrica_PID->accesos_memoria);
 
 	TLB_clean_by_PID(PID);
@@ -372,7 +372,7 @@ void iniciar_proceso(sock_t* socketCpu) {
 			sizeof(int32_t));
 	if (recibido == ERROR_OPERATION) return;
 
-	log_debug(loggerDebug, ANSI_COLOR_YELLOW "Recibi el pcb %d, con %d paginas" ANSI_COLOR_RESET ,pedido_cpu->pid, pedido_cpu->cantidad_paginas);
+	log_debug(loggerDebug, "Recibi el pcb %d, con %d paginas" ,pedido_cpu->pid, pedido_cpu->cantidad_paginas);
 
 	//Envio al swap para que reserve espacio
 	header_t* headerSwap = _create_header(RESERVAR_ESPACIO,	2 * sizeof(int32_t));
@@ -406,8 +406,8 @@ void iniciar_proceso(sock_t* socketCpu) {
 		header_t* headerCpu = _create_header(OK, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
-		log_debug(loggerDebug,ANSI_COLOR_GREEN "En la memoria tambien se asigna" ANSI_COLOR_RESET);
-		log_info(loggerInfo, "mProc: %d creado, con :%d paginas", pedido_cpu->pid, pedido_cpu->cantidad_paginas);
+		log_debug(loggerDebug, "En la memoria tambien se asigna");
+		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "mProc: %d creado, con %d paginas" ANSI_COLOR_RESET, pedido_cpu->pid, pedido_cpu->cantidad_paginas);
 	}
 
 	free(pedido_cpu);
@@ -453,12 +453,12 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 			enviado = _send_bytes(socketCpu, &tamanio, sizeof(int32_t));
 			enviado = _send_bytes(socketCpu, pagina_pedida->contenido, tamanio);
 			free(headerCpu);
-			log_debug(loggerDebug,ANSI_COLOR_GREEN "Se leyo la pagina correctamente" ANSI_COLOR_RESET);
+			log_debug(loggerDebug,"Se leyo la pagina correctamente");
 		}else{
 			header_t* headerCpu = _create_header(OK, 0);
 			enviado = _send_header(socketCpu, headerCpu);
 			free(headerCpu);
-			log_debug(loggerDebug,ANSI_COLOR_GREEN "Se escribio la pagina correctamente" ANSI_COLOR_RESET);
+			log_debug(loggerDebug, "Se escribio la pagina correctamente");
 		}
 	}
 
