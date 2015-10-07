@@ -739,13 +739,13 @@ void asignarPCBaCPU() {
 		char* paquete = serializarPCB(pcbAEnviar);
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
 		enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, ENVIO_PCB);
-		mostrarContenidoListas();
 		log_info(loggerInfo,
 				ANSI_COLOR_BOLDYELLOW"El Proc con ruta: %s e ID: %d entro en ejecucion medriante un algoritmo %s"ANSI_COLOR_RESET,
 				pcbAEnviar->ruta_archivo, pcbAEnviar->PID, arch->algoritmo);
 		/** Pongo el PCB en ejecucion **/
 		calcularMetrica(pcbAEnviar->PID, TIEMPO_ESP);
 		agregarPcbAColaExec(pcbAEnviar);
+		mostrarContenidoListas();
 	}
 
 }
