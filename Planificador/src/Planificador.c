@@ -62,7 +62,7 @@ ProcesoPlanificador* crear_estructura_config(char* path) {
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie() {
 	log_info(loggerInfo,
-	ANSI_COLOR_BLUE"Se dio de baja el proceso Planificador"ANSI_COLOR_RESET);
+			ANSI_COLOR_BOLDBLUE"Se dio de baja el proceso Planificador"ANSI_COLOR_RESET);
 	cleanAll();
 	exit(EXIT_FAILURE);
 }
@@ -187,8 +187,9 @@ void administrarPath(char* filePath) {
 	list_add(colaMetricas, metricas);
 	sem_post(&semMutex_colaMetricas);
 	agregarPcbAColaListos(unPCB);
-	log_info(loggerInfo, "Comienza el proceso con id %d y mCod %s", unPCB->PID,
-			unPCB->ruta_archivo);
+	log_info(loggerInfo,
+			ANSI_COLOR_YELLOW"El proceso con id %d y mCod %s esta listo para ejecutarse"ANSI_COLOR_RESET,
+			unPCB->PID, unPCB->ruta_archivo);
 	return;
 
 }
@@ -240,7 +241,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 		log_debug(loggerDebug, "Se conecto una Cpu con id: %d", cpu_id);
 		agregarColaCPUs(nuevaCPU);
 		log_info(loggerDebug,
-				ANSI_COLOR_BOLDYELLOW"Se conecto una CPU nueva con id %d y socket %d"ANSI_COLOR_RESET,
+				ANSI_COLOR_YELLOW"Se conecto una CPU nueva con id %d y socket %d"ANSI_COLOR_RESET,
 				nuevaCPU->ID, nuevaCPU->socketCPU->fd);
 		/** Envio el quantum a la CPU **/
 		header_t* header_quantum = _create_header(ENVIO_QUANTUM,
@@ -276,7 +277,8 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 		recibido = _receive_bytes(socketCPU, &tiempo_uso_cpu, sizeof(int32_t));
 		if (recibido == ERROR_OPERATION) {
 			log_error(loggerError,
-					"Fallo al recibir tiempo_uso_cpu (Utilizacion_CPU)");
+					ANSI_COLOR_RED
+					"Fallo al recibir tiempo_uso_cpu (Utilizacion_CPU)"ANSI_COLOR_RESET);
 			return;
 		}
 		log_debug(loggerDebug,
@@ -294,7 +296,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 	case CPU_DIE: {
 		limpiarCpuById(cpu_id);
 		log_info(loggerInfo,
-		ANSI_COLOR_BOLDYELLOW"La CPU con ID: %d se Desconecto"ANSI_COLOR_RESET,
+		ANSI_COLOR_BOLDMAGENTA"La CPU con ID: %d se Desconecto"ANSI_COLOR_RESET,
 				cpu_id);
 		break;
 	}
@@ -364,13 +366,15 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 	/** operar la respuesta **/
 	if (cod_Operacion == INSTRUCCION_IO) {
 		calcularMetrica(pcb->PID, TIEMPO_EXEC);
-		log_info(loggerInfo, "El proceso: %d pidio una I/O", pcb->PID);
+		log_info(loggerInfo,
+		ANSI_COLOR_YELLOW"El proceso: %d pidio una I/O"ANSI_COLOR_RESET,
+				pcb->PID);
 		operarIO(cpu_id, tiempo, pcb);
 	}
 	if (cod_Operacion == TERMINO_RAFAGA) {
 		calcularMetrica(pcb->PID, TIEMPO_EXEC);
 		log_info(loggerInfo,
-				ANSI_COLOR_BOLDYELLOW "Termina rafaga del proceso con ruta: %s e ID: %d con respuesta:%s" ANSI_COLOR_RESET,
+				ANSI_COLOR_BOLDWHITE "Termina rafaga del proceso con ruta: %s e ID: %d con respuesta:%s" ANSI_COLOR_RESET,
 				pcb->ruta_archivo, pcb->PID, resultado_operaciones);
 		liberarCPU(cpu_id);
 		sacarDeExec(pcb->PID);
@@ -566,10 +570,10 @@ void agregarPidParaFinalizar(int32_t pcbID) {
 
 	if (list_any_satisfy(colaFinalizados, getPcbByID)
 			|| list_any_satisfy(colaMetricas, getIDMetricas)) {
-		log_info(loggerInfo,
-				"El PID indicado ya se esta finalizando o ya Finalizo");
+		log_info(loggerInfo, ANSI_COLOR_BOLDMAGENTA
+		"El PID indicado ya se esta finalizando o ya Finalizo"ANSI_COLOR_RESET);
 		printf(
-				ANSI_COLOR_BOLDRED "El PID indicado ya se esta finalizando o ya Finalizo" ANSI_COLOR_RESET "\n");
+				ANSI_COLOR_BOLDRED "El PID indicado ya se esta finalizando o ya Finalizo \n" ANSI_COLOR_RESET);
 		return;
 	} else {
 		log_info(loggerInfo, "El Proc: %d procedera a Finalizarse", pcbID);
@@ -589,7 +593,7 @@ void finalizarPCB(int32_t pcbID, int32_t tipo) {
 	if (tipo == RESULTADO_OK) {
 		pcb_found->estado = FINALIZADO_OK;
 		log_info(loggerInfo,
-				ANSI_COLOR_YELLOW"Finaliza correctamente el PID:%d y ruta:%s"ANSI_COLOR_RESET,
+				ANSI_COLOR_BOLDGREEN"Finaliza correctamente el PID:%d y ruta:%s"ANSI_COLOR_RESET,
 				pcbID, pcb_found->ruta_archivo);
 	}
 
@@ -700,7 +704,8 @@ void cambiarAUltimaInstruccion(PCB* pcb) {
 	FILE* programa = fopen(pcb->ruta_archivo, "r");
 	if (programa == NULL) {
 		log_error(loggerError,
-				"Error al intentar abrir la ruta_archivo del pcb con id: %d",
+				ANSI_COLOR_BOLDRED
+				"Error al intentar abrir la ruta_archivo del pcb con id: %d"ANSI_COLOR_RESET,
 				pcb->PID);
 		return;
 	}
@@ -734,13 +739,37 @@ void asignarPCBaCPU() {
 		char* paquete = serializarPCB(pcbAEnviar);
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
 		enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, ENVIO_PCB);
+		mostrarContenidoListas();
 		log_info(loggerInfo,
-				ANSI_COLOR_BOLDYELLOW"El Proc con ruta: %s e ID: %d entro en ejecucion"ANSI_COLOR_RESET,
-				pcbAEnviar->ruta_archivo, pcbAEnviar->PID);
+				ANSI_COLOR_BOLDYELLOW"El Proc con ruta: %s e ID: %d entro en ejecucion medriante un algoritmo %s"ANSI_COLOR_RESET,
+				pcbAEnviar->ruta_archivo, pcbAEnviar->PID, arch->algoritmo);
 		/** Pongo el PCB en ejecucion **/
 		calcularMetrica(pcbAEnviar->PID, TIEMPO_ESP);
 		agregarPcbAColaExec(pcbAEnviar);
 	}
+
+}
+
+void mostrarContenidoListas() {
+	void mostrarElementos(PCB* unPCB) {
+		log_info(loggerInfo, ANSI_COLOR_BLUE"ID: %d   Ruta: %s"ANSI_COLOR_RESET,
+				unPCB->PID, unPCB->ruta_archivo);
+	}
+	log_info(loggerInfo,
+	ANSI_COLOR_BOLDBLUE"La cola de Listos contiene:"ANSI_COLOR_RESET);
+	list_iterate(colaListos, mostrarElementos);
+
+	log_info(loggerInfo,
+	ANSI_COLOR_BOLDBLUE"La cola de Ejec contiene:"ANSI_COLOR_RESET);
+	list_iterate(colaExec, mostrarElementos);
+
+	log_info(loggerInfo,
+			ANSI_COLOR_BOLDBLUE"La cola de Bloqueados contiene:"ANSI_COLOR_RESET);
+	list_iterate(colaBlock, mostrarElementos);
+
+	log_info(loggerInfo,
+			ANSI_COLOR_BOLDBLUE"La cola de Finalizados contiene:"ANSI_COLOR_RESET);
+	list_iterate(colaFinalizados, mostrarElementos);
 
 }
 
@@ -768,13 +797,14 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb, int32_t pcbID,
 	log_debug(loggerDebug, "El tamaño del serializado es %d",
 			strlen(paquete_serializado));
 
-	// Asigno el pcbID a la CPU_t
+// Asigno el pcbID a la CPU_t
 	CPU->pcbID = pcbID;
 
 	int32_t enviado = send_msg(CPU->socketCPU, tipo, paquete_serializado,
 			tamanio_pcb); //le envia el tipo de Envio
 	if (enviado == ERROR_OPERATION) {
-		log_error(loggerError, "Fallo en el envio de PCB");
+		log_error(loggerError,
+		ANSI_COLOR_BOLDRED"Fallo en el envio de PCB"ANSI_COLOR_RESET);
 		return;
 	}
 	CPU->estado = OCUPADO;

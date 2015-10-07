@@ -159,6 +159,7 @@ t_time* obtengoTiempo(int32_t );
 t_time* calculoDefinitivo(t_time* , t_time* );
 int32_t adaptarHora(int32_t );
 void limpiarCpuById(int32_t );
+void mostrarContenidoListas();
 
 /** Closures **/
 bool estaLibre(CPU_t* cpu);
