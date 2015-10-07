@@ -341,7 +341,7 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 	recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
 	if (recibido == ERROR_OPERATION)
 		return;
-	log_debug(loggerDebug, "Recibo un pcb desde la cpu, para una IO");
+	log_debug(loggerDebug, "Recibo un pcb desde la cpu");
 	PCB* pcb = deserializarPCB(pcb_serializado);
 	/** recibo el char* de resultados **/
 	int32_t tamanio_resultado_operaciones;
@@ -618,7 +618,6 @@ void removerMetrica(int32_t ID) {
 }
 
 void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb) {
-
 	bool getPcbByID(PCB* unPCB) {
 		return unPCB->PID == pcb->PID;
 	}
@@ -672,7 +671,7 @@ void procesar_IO() {
 
 		/** Simulo la IO del proceso **/
 		sleep(tiempo_retardo->retardo);
-
+		log_info(loggerInfo, ANSI_COLOR_YELLOW"Finalizo la I/O del proc: %d"ANSI_COLOR_RESET,tiempo_retardo->ID);
 		/** El proceso va a la cola de LISTOS **/
 		pcb_to_sleep->estado = LISTO;
 		agregarPcbAColaListos(pcb_to_sleep);
