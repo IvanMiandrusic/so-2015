@@ -791,9 +791,8 @@ void mostrarEstadoActualEstructuras(int32_t PID, TPagina* pagina) {
 	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Estado actual de estructuras en memoria" ANSI_COLOR_RESET);
 	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Tabla de Paginas del mProc %d" ANSI_COLOR_RESET,PID);
 
-	void mostrarEntradaTablaPaginas(void* arg) {
+	void mostrarEntradaTablaPaginas(TPagina* entrada) {
 
-			TPagina* entrada = (TPagina*) arg;
 			if(entrada->pagina == pagina->pagina) {
 				log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Pagina %d - Marco %d - Uso %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
 						entrada->pagina,
@@ -813,10 +812,10 @@ void mostrarEstadoActualEstructuras(int32_t PID, TPagina* pagina) {
 						entrada->tiempo_referencia);
 			}
 		}
+	t_list* tabla_paginas_PID = obtener_tabla_paginas_by_PID(PID);
+	list_iterate(tabla_paginas_PID, mostrarEntradaTablaPaginas);
 
-	list_iterate(tabla_Paginas, mostrarEntradaTablaPaginas);
-
-	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "TLB" ANSI_COLOR_RESET,PID);
+	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "TLB" ANSI_COLOR_RESET);
 
 	void mostrarEntradaTLB(void* arg) {
 

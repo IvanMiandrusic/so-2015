@@ -382,7 +382,10 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 
 int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 	int32_t libre=calcularEspacioLibre();
-	if(libre < pedido_pid->cantidad_paginas)return RESULTADO_ERROR;
+	if(libre < pedido_pid->cantidad_paginas){
+		log_info(loggerInfo, "Proceso mProc (id%d) rechazado por falta de espacio", pedido_pid->pid);
+		return RESULTADO_ERROR;
+	}
 	bool tieneEspacio(NodoLibre* nodo)
 		{
 				return nodo->paginas>=pedido_pid->cantidad_paginas;
@@ -425,6 +428,8 @@ int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 		log_debug(loggerDebug, "Creo un hueco, comienzo:%d, cantpags:%d",  nodoLibre->comienzo, nodoLibre->paginas);
 	}
 	log_debug(loggerDebug, "Creo un proceso: %d, comienzo:%d, cantpags:%d", nodoNuevo->PID, nodoNuevo->comienzo, nodoNuevo->paginas);
+	log_info(loggerInfo, ANSI_COLOR_GREEN "Proceso mProc iniciado: PID: %d byte inicial: %d tamaño: %d"ANSI_COLOR_RESET,nodoNuevo->PID,
+					(nodoNuevo->comienzo)*(arch->tamanio_pagina),(nodoNuevo->paginas)*(arch->tamanio_pagina));
 
 	t_metrica* metrica=malloc(sizeof(t_metrica));
 	metrica->PID=pedido_pid->pid;
