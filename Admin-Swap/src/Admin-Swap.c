@@ -29,17 +29,16 @@ sem_t sem_mutex_ocupado;
 int32_t totalPaginas;
 sock_t* socketServidor;
 
-ProcesoSwap* crear_estructura_config(char* path)
+void crear_estructura_config(char* path)
 {
     t_config* archConfig = config_create(path);
-    ProcesoSwap* config = malloc(sizeof(ProcesoSwap));
-    config->puerto_escucha = config_get_int_value(archConfig, "PUERTO_ESCUCHA");
-    config->nombre_swap = config_get_string_value(archConfig, "NOMBRE_SWAP");
-    config->cantidad_paginas = config_get_int_value(archConfig, "CANTIDAD_PAGINAS");
-    config->tamanio_pagina= config_get_int_value(archConfig, "TAMANIO_PAGINA");
-    config->retardo= config_get_int_value(archConfig, "RETARDO_SWAP");
-    config->retardo_comp= config_get_int_value(archConfig, "RETARDO_COMPACTACION");
-    return config;
+    arch = malloc(sizeof(ProcesoSwap));
+    arch->puerto_escucha = config_get_int_value(archConfig, "PUERTO_ESCUCHA");
+    arch->nombre_swap = config_get_string_value(archConfig, "NOMBRE_SWAP");
+    arch->cantidad_paginas = config_get_int_value(archConfig, "CANTIDAD_PAGINAS");
+    arch->tamanio_pagina= config_get_int_value(archConfig, "TAMANIO_PAGINA");
+    arch->retardo= config_get_int_value(archConfig, "RETARDO_SWAP");
+    arch->retardo_comp= config_get_int_value(archConfig, "RETARDO_COMPACTACION");
 }
 
 /* Función que es llamada cuando ctrl+c */
@@ -212,7 +211,7 @@ int main(void) {
 
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "../Admin-Swap.config";
-    arch = crear_estructura_config(path);
+    crear_estructura_config(path);
 
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
 	crearArchivoDeLog();

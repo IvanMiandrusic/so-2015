@@ -182,6 +182,7 @@ void ejecutar(int32_t id, PCB* pcb){
 	{
 		string_append_with_format(&log_acciones, "No se pudo encontrar la ruta del archivo del proceso con id: %d", pcb->PID);
 		log_error (loggerError, ANSI_COLOR_RED "CPU: %d - Error al abrir la ruta del archivo del proceso:%d"ANSI_COLOR_RESET, id, pcb->PID);
+		close(prog);
 		enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_ERROR,id,pcb,log_acciones,0);
 		return;
 	}
@@ -198,14 +199,17 @@ void ejecutar(int32_t id, PCB* pcb){
 			if(respuesta->id==FINALIZAR){
 				enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_OK,id,pcb,log_acciones,0);
 				ultimoQuantum = quantum;
+				close(prog);
 				return ;
 			}
 			if(respuesta->id==ENTRADASALIDA){
 				enviar_Header_ID_Retardo_PCB_Texto (SOLICITUD_IO,id,pcb,log_acciones,respuesta->retardo);
+				close(prog);
 				return ;
 			}
 			if(respuesta->id==ERROR){
 				enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_ERROR,id,pcb,log_acciones,0);
+				close(prog);
 				return ;
 			}
 		} else finalizado = TRUE;
@@ -215,6 +219,7 @@ void ejecutar(int32_t id, PCB* pcb){
 			}
 	}
 	log_info(loggerInfo, "Rafaga terminada del PID: %d", pcb->PID);
+	close(prog);
 	enviar_Header_ID_Retardo_PCB_Texto (TERMINO_RAFAGA,id,pcb,log_acciones,0);
 }
 

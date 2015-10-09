@@ -49,14 +49,13 @@ sem_t semMutex_colaMetricas;
 sem_t sem_list_retardos;
 sem_t sem_io;
 
-ProcesoPlanificador* crear_estructura_config(char* path) {
+void crear_estructura_config(char* path) {
 	t_config* archConfig = config_create(path);
-	ProcesoPlanificador* config = malloc(sizeof(ProcesoPlanificador));
-	config->puerto_escucha = config_get_int_value(archConfig, "PUERTO_ESCUCHA");
-	config->algoritmo = config_get_string_value(archConfig,
+	arch = malloc(sizeof(ProcesoPlanificador));
+	arch->puerto_escucha = config_get_int_value(archConfig, "PUERTO_ESCUCHA");
+	arch->algoritmo = config_get_string_value(archConfig,
 			"ALGORITMO_PLANIFICACION");
-	config->quantum = config_get_int_value(archConfig, "QUANTUM");
-	return config;
+	arch->quantum = config_get_int_value(archConfig, "QUANTUM");
 }
 
 /* Función que es llamada cuando ctrl+c */
@@ -877,7 +876,7 @@ int main(void) {
 
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "../Planificador.config";
-	arch = crear_estructura_config(path);
+	crear_estructura_config(path);
 
 	/*Se inicializan todos los semaforos necesarios */
 	inicializoSemaforos();

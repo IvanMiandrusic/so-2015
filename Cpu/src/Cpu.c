@@ -39,17 +39,17 @@ int32_t* estado;
 sem_t sem_mutex;
 
 
-ProcesoCPU* crear_estructura_config(char* path)
+void crear_estructura_config(char* path)
 {
     t_config* archConfig = config_create(path);
-    ProcesoCPU* config = malloc(sizeof(ProcesoCPU));
-    config->ip_planificador = config_get_string_value(archConfig, "IP_PLANIFICADOR");
-    config->puerto_planificador = config_get_int_value(archConfig, "PUERTO_PLANIFICADOR");
-    config->ip_memoria = config_get_string_value(archConfig, "IP_MEMORIA");
-    config->puerto_memoria = config_get_int_value(archConfig, "PUERTO_MEMORIA");
-    config->cantidad_hilos = config_get_int_value(archConfig, "CANTIDAD_HILOS");
-    config->retardo = config_get_int_value(archConfig, "RETARDO");
-    return config;
+    arch = malloc(sizeof(ProcesoCPU));
+    arch->ip_planificador = config_get_string_value(archConfig, "IP_PLANIFICADOR");
+    arch->puerto_planificador = config_get_int_value(archConfig, "PUERTO_PLANIFICADOR");
+    arch->ip_memoria = config_get_string_value(archConfig, "IP_MEMORIA");
+    arch->puerto_memoria = config_get_int_value(archConfig, "PUERTO_MEMORIA");
+    arch->cantidad_hilos = config_get_int_value(archConfig, "CANTIDAD_HILOS");
+    arch->retardo = config_get_int_value(archConfig, "RETARDO");
+
 }
 void clean(){
 	free(tiempoAcumulado);
@@ -112,7 +112,7 @@ int main(void) {
 
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "../Cpu.config";
-	arch = crear_estructura_config(path);
+	crear_estructura_config(path);
 	socketsCPU=list_create();
 	tiempoInicial=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 	tiempoFinal=malloc(sizeof(int32_t)* (arch->cantidad_hilos));

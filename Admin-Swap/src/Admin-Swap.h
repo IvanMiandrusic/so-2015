@@ -59,7 +59,7 @@ typedef struct estructura_metricas			//estructura que contiene los datos lectura
  int32_t escrituras;
 }t_metrica;
 
-ProcesoSwap* crear_estructura_config(char*);
+void crear_estructura_config(char*);
 void ifProcessDie();
 void inicializoSemaforos();
 void crearArchivoDeLog();

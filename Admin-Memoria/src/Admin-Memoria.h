@@ -57,7 +57,7 @@ extern sock_t* socketSwap;
 extern int32_t* frames;
 
 /** Funciones de configuracion inicial **/
-ProcesoMemoria* crear_estructura_config(char*);
+void crear_estructura_config(char*);
 void inicializoSemaforos();
 void crearArchivoDeLog();
 void crear_estructuras_memoria();

@@ -32,7 +32,7 @@ typedef struct estructura_PCB			//estructura que contiene los datos del pcb
   int32_t siguienteInstruccion;
 }PCB;
 
-ProcesoCPU* crear_estructura_config(char*);
+void crear_estructura_config(char*);
 void ifProcessDie();
 void inicializoSemaforos();
 void crearArchivoDeLog();

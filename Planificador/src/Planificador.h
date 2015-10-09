@@ -121,7 +121,7 @@ extern t_list* colaFinalizados;
 extern t_list* colaCPUs;
 extern t_list* retardos_PCB;
 
-ProcesoPlanificador* crear_estructura_config(char*);
+void crear_estructura_config(char*);
 void ifProcessDie();
 void inicializoSemaforos();
 void crearArchivoDeLog();

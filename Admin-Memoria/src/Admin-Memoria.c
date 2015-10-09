@@ -25,20 +25,19 @@ sock_t* socketServidorCpus;
 sock_t* socketSwap;
 int32_t* frames;
 
-ProcesoMemoria* crear_estructura_config(char* path) {
+void crear_estructura_config(char* path) {
 	t_config* archConfig = config_create(path);
-	ProcesoMemoria* config = malloc(sizeof(ProcesoMemoria));
-	config->puerto_escucha = config_get_int_value(archConfig, "PUERTO_ESCUCHA");
-	config->ip_swap = config_get_string_value(archConfig, "IP_SWAP");
-	config->puerto_swap = config_get_int_value(archConfig, "PUERTO_SWAP");
-	config->maximo_marcos = config_get_int_value(archConfig, "MAXIMO_MARCOS_POR_PROCESO");
-	config->cantidad_marcos = config_get_int_value(archConfig, "CANTIDAD_MARCOS");
-	config->tamanio_marco = config_get_int_value(archConfig, "TAMANIO_MARCO");
-	config->entradas_tlb = config_get_int_value(archConfig, "ENTRADAS_TLB");
-	config->tlb_habilitada = config_get_string_value(archConfig, "TLB_HABILITADA");
-	config->retardo = config_get_int_value(archConfig, "RETARDO_MEMORIA");
-	config->algoritmo_reemplazo = config_get_string_value(archConfig, "ALGORITMO_REEMPLAZO");
-	return config;
+	arch = malloc(sizeof(ProcesoMemoria));
+	arch->puerto_escucha = config_get_int_value(archConfig, "PUERTO_ESCUCHA");
+	arch->ip_swap = config_get_string_value(archConfig, "IP_SWAP");
+	arch->puerto_swap = config_get_int_value(archConfig, "PUERTO_SWAP");
+	arch->maximo_marcos = config_get_int_value(archConfig, "MAXIMO_MARCOS_POR_PROCESO");
+	arch->cantidad_marcos = config_get_int_value(archConfig, "CANTIDAD_MARCOS");
+	arch->tamanio_marco = config_get_int_value(archConfig, "TAMANIO_MARCO");
+	arch->entradas_tlb = config_get_int_value(archConfig, "ENTRADAS_TLB");
+	arch->tlb_habilitada = config_get_string_value(archConfig, "TLB_HABILITADA");
+	arch->retardo = config_get_int_value(archConfig, "RETARDO_MEMORIA");
+	arch->algoritmo_reemplazo = config_get_string_value(archConfig, "ALGORITMO_REEMPLAZO");
 }
 
 /* Función que es llamada cuando ctrl+c */
@@ -199,7 +198,7 @@ int main(void) {
 
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "../Admin-Memoria.config";
-	arch = crear_estructura_config(path);
+	crear_estructura_config(path);
 
 	/*Se inicializan todos los semaforos necesarios */
 	inicializoSemaforos();
