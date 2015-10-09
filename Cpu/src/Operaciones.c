@@ -45,8 +45,7 @@ void* thread_Use(void* thread_id){
 				tiempoAcumulado[id]=0;
 			}
 		}
-		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"CPU:%d Valores- Inicial:%d, Final:%d, Acumulado:%d" ANSI_COLOR_RESET,id, tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
-		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"CPU:%d El porcentaje de uso es:%d%%(%d/60)" ANSI_COLOR_RESET,id, porcentaje, tiempoAcumulado[id]);
+		log_debug(loggerDebug,ANSI_COLOR_BOLDGREEN"CPU:%d El porcentaje de uso es: %d%%(%d/60)" ANSI_COLOR_RESET,id, porcentaje, tiempoAcumulado[id]);
 		tiempoAcumulado[id]=0;
 		header_t* header_uso_cpu = _create_header(UTILIZACION_CPU, 2*sizeof(int32_t));
 		int32_t enviado = _send_header (socketPlanificador, header_uso_cpu);
@@ -55,7 +54,7 @@ void* thread_Use(void* thread_id){
 		if(enviado == ERROR_OPERATION) exit(1);
 		enviado = _send_bytes(socketPlanificador,&porcentaje,sizeof(int32_t));
 		if(enviado == ERROR_OPERATION) exit(1);
-
+		free(header_uso_cpu);
 		toAnterior=tiempoInicial[id];
 		tfAnterior=tiempoFinal[id];
 		sleep(60);
@@ -127,6 +126,7 @@ void* thread_Cpu(void* id){
 		tipo_Cod_Operacion (thread_id,header_planificador);
 	}
 	log_info(loggerInfo, ANSI_COLOR_BOLDBLUE "CPU_ID:%d->Finaliza sus tareas, hilo concluido" ANSI_COLOR_RESET, thread_id);
+	free(header_planificador);
 	return NULL;
 }
 
@@ -160,15 +160,12 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 		ejecutar(id, pcb);
 		final=obtengoSegundos();
 		tiempoFinal[id]=final;
-		log_debug(loggerDebug, ANSI_COLOR_BOLDYELLOW "Inicial: %d, final:%d"ANSI_COLOR_RESET, inicial, final);
 		if(final>inicial){
 			tiempoAcumulado[id]+=(final-inicial);
 		}else if(final<inicial){
 			tiempoAcumulado[id]+=final;
 		}
 		estado[id]=0;
-		log_debug(loggerDebug, ANSI_COLOR_BOLDYELLOW "Valores: inicial %d final %d acumulado %d" ANSI_COLOR_RESET,
-				tiempoInicial[id], tiempoFinal[id], tiempoAcumulado[id]);
 		break;
 	}
 
@@ -176,6 +173,7 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 }
 
 void ejecutar(int32_t id, PCB* pcb){
+	log_info(loggerInfo, "PCB recibido- Contexto: PID: %d, ruta:%s, PC:%d, Quantum:%d", pcb->PID, pcb->ruta_archivo, pcb->siguienteInstruccion, quantum);
 	int32_t ultimoQuantum=0;
 	char cadena[100];
 	char* log_acciones=string_new();
@@ -216,6 +214,7 @@ void ejecutar(int32_t id, PCB* pcb){
 					if (ultimoQuantum > quantum)finalizado = TRUE;
 			}
 	}
+	log_info(loggerInfo, "Rafaga terminada del PID: %d", pcb->PID);
 	enviar_Header_ID_Retardo_PCB_Texto (TERMINO_RAFAGA,id,pcb,log_acciones,0);
 }
 
