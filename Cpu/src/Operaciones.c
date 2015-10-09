@@ -81,13 +81,13 @@ void* thread_Cpu(void* id){
 	if (enviado !=SUCCESS_OPERATION)
 	{
 		log_error(loggerError, ANSI_COLOR_RED "Se perdio la conexion con el Planificador de la cpu: %d" ANSI_COLOR_RESET, thread_id);
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 	enviado = _send_bytes(socket_Planificador, &thread_id,sizeof(int32_t));
 	if (enviado !=SUCCESS_OPERATION)
 	{
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - Se perdio la conexion con el Planificador" ANSI_COLOR_RESET, thread_id);
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 	log_debug(loggerDebug, "Conectado con el planificador la cpu: %d", thread_id);
 	free(header_nueva_cpu);
@@ -95,7 +95,7 @@ void* thread_Cpu(void* id){
 	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
 	if(connect_to_server(socket_Memoria)!=SUCCESS_OPERATION){
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - No se puedo conectar con la memoria, se aborta el proceso" ANSI_COLOR_RESET, thread_id);
-		exit(1);
+		return NULL;
 	}
 	log_debug(loggerDebug, "Conectado con la memoria cpu:%d", thread_id);
 
@@ -103,7 +103,7 @@ void* thread_Cpu(void* id){
 	int32_t resultado_uso = pthread_create(&CPUuse, NULL, thread_Use, (void*) thread_id );
 	if (resultado_uso != 0) {
 		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de uso de CPU número:%d"ANSI_COLOR_RESET, id);
-		abort();
+		return NULL;
 	}
 
 	/*Me guardo en mi list de sockets los fd*/
@@ -182,7 +182,7 @@ void ejecutar(int32_t id, PCB* pcb){
 	{
 		string_append_with_format(&log_acciones, "No se pudo encontrar la ruta del archivo del proceso con id: %d", pcb->PID);
 		log_error (loggerError, ANSI_COLOR_RED "CPU: %d - Error al abrir la ruta del archivo del proceso:%d"ANSI_COLOR_RESET, id, pcb->PID);
-		close(prog);
+		fclose(prog);
 		enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_ERROR,id,pcb,log_acciones,0);
 		return;
 	}
@@ -196,20 +196,24 @@ void ejecutar(int32_t id, PCB* pcb){
 			string_append(&log_acciones, respuesta->texto);
 			pcb->siguienteInstruccion=ftell(prog);
 			log_debug(loggerDebug, "Analice y ejecute una linea, la proxima tiene PC en:%d", pcb->siguienteInstruccion);
+			free(respuesta);
 			if(respuesta->id==FINALIZAR){
 				enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_OK,id,pcb,log_acciones,0);
 				ultimoQuantum = quantum;
-				close(prog);
+				free(log_acciones);
+				fclose(prog);
 				return ;
 			}
 			if(respuesta->id==ENTRADASALIDA){
 				enviar_Header_ID_Retardo_PCB_Texto (SOLICITUD_IO,id,pcb,log_acciones,respuesta->retardo);
-				close(prog);
+				free(log_acciones);
+				fclose(prog);
 				return ;
 			}
 			if(respuesta->id==ERROR){
 				enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_ERROR,id,pcb,log_acciones,0);
-				close(prog);
+				free(log_acciones);
+				fclose(prog);
 				return ;
 			}
 		} else finalizado = TRUE;
@@ -219,14 +223,15 @@ void ejecutar(int32_t id, PCB* pcb){
 			}
 	}
 	log_info(loggerInfo, "Rafaga terminada del PID: %d", pcb->PID);
-	close(prog);
+	free(log_acciones);
+	fclose(prog);
 	enviar_Header_ID_Retardo_PCB_Texto (TERMINO_RAFAGA,id,pcb,log_acciones,0);
 }
 
 void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion,int32_t id,PCB* pcb,char* texto, int32_t retardo){
 
 		sock_t* socketPlanificador=getSocketPlanificador(id);
-		int32_t tamanio_texto = strlen(texto);
+		int32_t tamanio_texto = string_length(texto);
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcb);
 		header_t* header;
 
@@ -256,6 +261,8 @@ void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion,int32_t id,PCB* p
 		if(enviado == ERROR_OPERATION) return;
 		enviado = _send_bytes(socketPlanificador,texto,tamanio_texto);
 		if(enviado == ERROR_OPERATION) return;
+		free(header);
+		free(pcb);
 }
 
 t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
@@ -320,7 +327,7 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 	enviado = _send_bytes(socketMemoria,&tamanio, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
 	log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d, tamanio:%d",pcb->PID, numDePagina, tamanio);
-
+	free(header_A_Memoria);
 	/** Recibo header de la memoria con el codigo CONTENIDO_PAGINA o NULL **/
 	header_t* header_de_memoria = _create_empty_header();
 	int32_t recibido = _receive_header(socketMemoria, header_de_memoria);
@@ -349,14 +356,15 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 		log_error(loggerError, ANSI_COLOR_RED "CPU:%d - Error en el mProc %d - Pagina %d NO leida: %s " ANSI_COLOR_RESET,id, pcb->PID, numDePagina, contenido_pagina);
 	}
 	free(contenido_pagina);
+	free(header_de_memoria);
 	return response;
 }
 
 t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* texto){
 	sock_t* socketMemoria=getSocketMemoria(id);
-	log_debug(loggerDebug, "CPU:%d - Se procedera a escribir del proceso:%d, la pagina: %d, %d bytes", id, pcb->PID, numDePagina, strlen(texto));
+	log_debug(loggerDebug, "CPU:%d - Se procedera a escribir del proceso:%d, la pagina: %d, %d bytes", id, pcb->PID, numDePagina, string_length(texto));
 	/** Envio header a la memoria con ESCRIBIR **/
-	int32_t tamanio = strlen(texto);
+	int32_t tamanio = string_length(texto);
 	header_t* header_A_Memoria = _create_header(M_ESCRIBIR, 3 * sizeof(int32_t)+tamanio);
 
 	int32_t enviado = _send_header(socketMemoria, header_A_Memoria);
@@ -370,7 +378,7 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 	enviado = _send_bytes(socketMemoria,texto, tamanio);
 	if(enviado == ERROR_OPERATION) return NULL;
 	log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d,y el texto %s",pcb->PID, numDePagina, texto);
-
+	free(header_A_Memoria);
 	/** Recibo header de la memoria con el resultado (OK o ERROR) **/
 	header_t* header_de_memoria = _create_empty_header();
 	int32_t recibido = _receive_header(socketMemoria, header_de_memoria);
@@ -391,6 +399,7 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - Error en el mProc %d - Pagina %d NO escrita: %s "ANSI_COLOR_RESET, id, pcb->PID,numDePagina, texto);
 	}
 	free(header_de_memoria);
+	free(texto);
 	return response;
 }
 
@@ -420,6 +429,7 @@ t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 	enviado = _send_bytes(socketMemoria,&pcb->PID, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION) return NULL;
 	log_debug(loggerDebug, "Envie el id %d de finalizar",pcb->PID);
+	free(header_A_Memoria);
 
 	header_t* respuestaMem=_create_empty_header();
 	int32_t recibido = _receive_header(socketMemoria,respuestaMem);
@@ -439,6 +449,7 @@ t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 		string_append_with_format(&response->texto, "Error al finalizar el mProc %d ", pcb->PID);
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - Error al finalizar el mProc %d " ANSI_COLOR_RESET,id, pcb->PID);
 	}
+	free(respuestaMem);
 	return response;
 }
 

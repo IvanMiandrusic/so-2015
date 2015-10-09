@@ -792,8 +792,7 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb, int32_t pcbID,
 
 	if (CPU == NULL)
 		log_debug(loggerDebug, "No encontre ninguna CPU");
-	log_debug(loggerDebug, "El tamaño del serializado es %d",
-			strlen(paquete_serializado));
+
 
 // Asigno el pcbID a la CPU_t
 	CPU->pcbID = pcbID;

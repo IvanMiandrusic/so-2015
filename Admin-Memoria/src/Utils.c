@@ -7,7 +7,7 @@
 
 char* get_hours(char* time) {
 
-	char* hora = malloc(2);
+	char* hora = malloc(3);
 	hora[0]= time[0];
 	hora[1]= time[1];
 	hora[2] = '\0';
@@ -17,7 +17,7 @@ char* get_hours(char* time) {
 
 char* get_minutes(char* time) {
 
-	char* minutos=malloc(2);
+	char* minutos=malloc(3);
 	minutos[0]=time[3];
 	minutos[1]=time[4];
 	minutos[2]='\0';
@@ -27,24 +27,12 @@ char* get_minutes(char* time) {
 
 char* get_seconds(char* time) {
 
-	char* segundos=malloc(2);
+	char* segundos=malloc(3);
 	segundos[0]=time[6];
 	segundos[1]=time[7];
 	segundos[2]='\0';
 
 	return segundos;
-}
-
-char* get_milliseconds(char* time){
-
-	char* milisegundos=malloc(4);
-	milisegundos[0]=time[9];
-	milisegundos[1]=time[10];
-	milisegundos[2]=time[11];
-	milisegundos[3]=time[12];
-	milisegundos[4]='\0';
-
-	return milisegundos;
 }
 
 /** Retorna el tiempo actual del sistema en formato hhmmssmmmm **/
@@ -65,6 +53,8 @@ char* get_actual_time() {
 int32_t get_actual_time_integer() {
 
 	char* time = get_actual_time();
-	return atoi(time);
+	int32_t valor= atoi(time);
+	free(time);
+	return valor;
 }
 

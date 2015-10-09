@@ -417,7 +417,7 @@ t_resultado_busqueda escribir_pagina_modificada_en_swap(int32_t PID, TPagina* pa
 	pagina_a_escribir->nro_pagina = pagina->pagina;
 
 	char* contenido_marco = obtener_contenido_marco(pagina);
-	pagina_a_escribir->tamanio_contenido = strlen(contenido_marco);
+	pagina_a_escribir->tamanio_contenido = string_length(contenido_marco);
 	pagina_a_escribir->contenido = malloc(arch->tamanio_marco);
 	memcpy(pagina_a_escribir->contenido, contenido_marco, pagina_a_escribir->tamanio_contenido);
 
@@ -668,7 +668,7 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 			pagina_a_escribir->nro_pagina = mejorPagina->pagina;
 
 			char* contenido_marco = obtener_contenido_marco(mejorPagina);
-			pagina_a_escribir->tamanio_contenido = strlen(contenido_marco);
+			pagina_a_escribir->tamanio_contenido = string_length(contenido_marco);
 			pagina_a_escribir->contenido = malloc(arch->tamanio_marco);
 			memcpy(pagina_a_escribir->contenido, contenido_marco, pagina_a_escribir->tamanio_contenido);
 

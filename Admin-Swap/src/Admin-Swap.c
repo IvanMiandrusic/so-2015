@@ -530,7 +530,7 @@ void leer_pagina(t_pagina* pagina_pedida){
 	log_debug(loggerDebug, "Se lee el espacio de datos");
 	fclose(espacioDeDatos);
 	if (resultado==arch->tamanio_pagina){
-		pagina_pedida->tamanio_contenido=strlen(pagina_pedida->contenido);
+		pagina_pedida->tamanio_contenido=string_length(pagina_pedida->contenido);
 		log_info(loggerInfo, ANSI_COLOR_GREEN"Lectura: PID: %d byte inicial: %d tamaño: %d contenido: %s"ANSI_COLOR_RESET,pagina_pedida->PID,
 				posicion, pagina_pedida->tamanio_contenido,pagina_pedida->contenido);
 		agregarMetrica(LEER_PAGINA, pagina_pedida->PID);
@@ -556,19 +556,19 @@ int32_t escribir_pagina(t_pagina* pagina_pedida){
 	FILE* espacioDeDatos=abrirArchivoConTPagina(pagina_pedida);
 	int32_t posicion = ftell(espacioDeDatos);
 	log_debug(loggerDebug, "Lo posiciono en:%d", posicion);
-	int32_t resultado=fwrite(pagina_pedida->contenido, 1, strlen(pagina_pedida->contenido), espacioDeDatos);
+	int32_t resultado=fwrite(pagina_pedida->contenido, 1, string_length(pagina_pedida->contenido), espacioDeDatos);
 	log_debug(loggerDebug, "Escribo:%d bytes", resultado);
 
 	int i;
 	int32_t resultado2=0;
-	for(i=0;i<((arch->tamanio_pagina)-(strlen(pagina_pedida->contenido)));i++){
+	for(i=0;i<((arch->tamanio_pagina)-(string_length(pagina_pedida->contenido)));i++){
 		resultado2+=fwrite("\0", 1,1, espacioDeDatos);
 	}
 	fclose(espacioDeDatos);
 	log_debug(loggerDebug, "Cierro archivo");
 	if (resultado+resultado2==arch->tamanio_pagina){
 		log_info(loggerInfo, ANSI_COLOR_GREEN"Escritura: PID: %d byte inicial: %d tamaño: %d contenido: %s"ANSI_COLOR_RESET,pagina_pedida->PID,
-				posicion, strlen(pagina_pedida->contenido),pagina_pedida->contenido);
+				posicion, string_length(pagina_pedida->contenido),pagina_pedida->contenido);
 		agregarMetrica(ESCRIBIR_PAGINA, pagina_pedida->PID);
 		return RESULTADO_OK;
 	}

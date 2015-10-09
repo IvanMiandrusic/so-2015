@@ -15,7 +15,7 @@ char* serializarPCB(PCB* pcb)
 	memcpy(pcbserializado + offset, &(pcb->PID), size_to_send);
 	offset += size_to_send;
 
-	int32_t tamanio=strlen(pcb->ruta_archivo);
+	int32_t tamanio=string_length(pcb->ruta_archivo);
 
 	size_to_send =  sizeof(u_int32_t);
 	memcpy(pcbserializado + offset, &(tamanio), size_to_send);
@@ -52,7 +52,7 @@ PCB* deserializarPCB(char* serializado)
 	memcpy(&tamanio, serializado + offset, size_entero);
 
 	offset += size_entero;
-	pcb->ruta_archivo = malloc(tamanio);
+	pcb->ruta_archivo = malloc(tamanio+1);
 	memcpy(pcb->ruta_archivo, serializado + offset, tamanio);
 	pcb->ruta_archivo[tamanio] = '\0';
 
@@ -75,11 +75,12 @@ int32_t obtener_tamanio_pcb(PCB* pcb) {
 
 int32_t obtengoSegundos(){
 	char* tiempo= temporal_get_string_time();
-	char* segundos=malloc(2);
+	char* segundos=malloc(3);
 	segundos[0]=tiempo[6];
 	segundos[1]=tiempo[7];
 	segundos[2]='\0';
 	int32_t valor=atoi(segundos);
+	free(tiempo);
 	free(segundos);
 	return valor;
 }

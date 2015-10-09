@@ -19,13 +19,15 @@ int esEspacio(char caracter){return(caracter==' ')?1:0;}
 
 int esPuntoyComa(char caracter){return(caracter==';')?1:0;}
 
-int buscarPrimerParametro(char*linea){
+int32_t buscarPrimerParametro(char*linea){
 	char* parametro=string_new();
-	while(!esPuntoyComa(*linea)){//este while sirve si llees la instruccion con el ; final
+	while(!esPuntoyComa(*linea)){//este while sirve si lees la instruccion con el ; final
 		string_append_with_format(&parametro,"%c",*linea);
 		linea++;
 	}
-	return atoi(parametro);
+	int32_t valor=atoi(parametro);
+	free(parametro);
+	return valor;
 }
 
 char* buscarSegundoParametro(char*linea){
@@ -38,8 +40,8 @@ char* buscarSegundoParametro(char*linea){
 }
 
 structEscribir buscarAmbosParametros(char*linea){
-	char*parametro1=string_new();
-	while(!esEspacio(*linea)){//este while sirve si lees la instruccion con el ; final
+	char* parametro1=string_new();
+	while(!esEspacio(*linea)){
 		string_append_with_format(&parametro1,"%c",*linea);
 		linea++;
 	}
@@ -49,6 +51,7 @@ structEscribir buscarAmbosParametros(char*linea){
 	parametros.pagina=atoi(parametro1);
 	parametros.tamanio_texto=strlen(parametro2);
 	parametros.texto=parametro2;
+	free(parametro1);
 	return parametros;
 
 }

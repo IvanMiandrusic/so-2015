@@ -33,7 +33,7 @@ t_pagina* deserializar_pedido(char* pedido_serializado){
 
 char* serializarTexto (char* texto) {
 
-	int32_t tamanio=strlen(texto);
+	int32_t tamanio=string_length(texto);
 	char* serializado=malloc(sizeof(int32_t)+tamanio);
 	u_int32_t offset = 0;
 	u_int32_t size_to_send;
