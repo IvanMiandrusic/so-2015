@@ -289,6 +289,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			enviado=_send_bytes(socketMemoria, pagina_pedida->contenido, pagina_pedida->tamanio_contenido);
 			log_debug(loggerDebug, "Se leyeron :%d bytes", pagina_pedida->tamanio_contenido);
 			if(enviado == ERROR_OPERATION) return;
+			free(pagina_pedida->contenido);
 			free(pagina_pedida);
 			free(pedido_serializado);
 			free(headerMemoria);

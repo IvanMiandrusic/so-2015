@@ -49,8 +49,8 @@ void crear_estructura_config(char* path)
     arch->puerto_memoria = config_get_int_value(archConfig, "PUERTO_MEMORIA");
     arch->cantidad_hilos = config_get_int_value(archConfig, "CANTIDAD_HILOS");
     arch->retardo = config_get_int_value(archConfig, "RETARDO");
-
 }
+
 void clean(){
 	free(tiempoAcumulado);
 	free(tiempoFinal);

@@ -264,6 +264,7 @@ void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion,int32_t id,PCB* p
 		enviado = _send_bytes(socketPlanificador,texto,tamanio_texto);
 		if(enviado == ERROR_OPERATION) return;
 		free(header);
+		free(pcb->ruta_archivo);
 		free(pcb);
 		free(pcb_serializado);
 }
