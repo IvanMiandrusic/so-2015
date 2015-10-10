@@ -359,7 +359,7 @@ int32_t limpiar_Informacion_PID(int32_t PID){
 	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "mProc %d - cantidad de fallos de pagina %d - cantidad de paginas accedidas %d" ANSI_COLOR_RESET,
 			PID, metrica_PID->page_fault, metrica_PID->accesos_memoria);
 
-	TLB_clean_by_PID(PID);
+	if(TLB_habilitada())TLB_clean_by_PID(PID);
 
 	return tabla_paginas_clean(PID);
 

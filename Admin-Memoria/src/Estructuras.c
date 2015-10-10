@@ -371,7 +371,7 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 
 	if(entradaFound != NULL){
 
-		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Acceso a Memoria Pid: - Pagina:%d->Marco:%d" ANSI_COLOR_RESET,pagina->PID, pagina->nro_pagina, entradaFound->marco);
+		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Acceso a Memoria Pid: %d - Pagina:%d->Marco:%d" ANSI_COLOR_RESET,pagina->PID, pagina->nro_pagina, entradaFound->marco);
 
 		/** Sumo acceso a ese PID **/
 		sumar_metrica(ACCESO, pagina->PID);
@@ -399,7 +399,6 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 		sumar_metrica(PF, pagina->PID);
 
 		if(resultado == FOUND) {
-			log_debug(loggerDebug, "cargue pagina del swap");
 			return TLB_buscar_pagina(codOperacion, pagina);
 		}
 
@@ -563,7 +562,7 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 	}
 
 	/** Actualizo contenido en la TLB **/
-	TLB_refresh(pagina_recibida_swap->PID, pagina_a_poner_presente);
+	if(TLB_habilitada()) TLB_refresh(pagina_recibida_swap->PID, pagina_a_poner_presente);
 
 	/** Muestro como quedaron las estructuras luego del reemplazo **/
 	mostrarEstadoActualEstructuras(pagina_recibida_swap->PID, pagina_a_poner_presente);
@@ -590,7 +589,6 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 	int32_t marco_a_devolver;
 
 	t_algoritmo_reemplazo algoritmo_reemplazo = obtener_codigo_algoritmo(arch->algoritmo_reemplazo);
-	log_debug(loggerDebug, "El algoritmo de reemplazo es: %d", algoritmo_reemplazo);
 	t_list* paginasConPresencia=obtengoPaginasConPresencia(paginas_PID);
 
 	if((algoritmo_reemplazo == FIFO) || (algoritmo_reemplazo == LRU)) {
@@ -645,10 +643,8 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 			}else if(esClase2(i,paginasConPresencia)){
 				if(esClase3(indiceMejorPagina,paginasConPresencia)) indiceMejorPagina=i;
 				paginaObtenida->bitUso=0;
-				//paginaObtenida->tiempo_referencia=get_actual_time_integer();
 			}else if(esClase3(i,paginasConPresencia)){
 				paginaObtenida->bitUso=0;
-				//paginaObtenida->tiempo_referencia=get_actual_time_integer();
 			}
 			i++;
 			if (list_size(paginasConPresencia)==(i)){
@@ -852,5 +848,5 @@ void mostrarEstadoActualEstructuras(int32_t PID, TPagina* pagina) {
 				}
 	}
 
-	list_iterate(TLB_tabla, mostrarEntradaTLB);
+	if(TLB_habilitada())list_iterate(TLB_tabla, mostrarEntradaTLB);
 }
