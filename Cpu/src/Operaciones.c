@@ -217,6 +217,7 @@ void ejecutar(int32_t id, PCB* pcb){
 				fclose(prog);
 				return ;
 			}
+			free(respuesta);
 		} else finalizado = TRUE;
 		if (quantum > 0){
 					ultimoQuantum ++;
@@ -264,6 +265,7 @@ void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion,int32_t id,PCB* p
 		if(enviado == ERROR_OPERATION) return;
 		free(header);
 		free(pcb);
+		free(pcb_serializado);
 }
 
 t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
