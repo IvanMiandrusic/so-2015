@@ -105,10 +105,10 @@ int32_t reemplazar_pagina(int32_t, t_list*);
 int32_t obtener_frame_libre();
 t_resultado_busqueda asignar_pagina(t_pagina*);
 
-bool esClase0(int ,t_list*);
-bool esClase1(int ,t_list*);
-bool esClase2(int ,t_list*);
-bool esClase3(int ,t_list*);
+bool esClase0(int ,int);
+bool esClase1(int ,int);
+bool esClase2(int ,int);
+bool esClase3(int ,int);
 t_list* obtengoPaginasConPresencia(t_list* );
 
 /** Utils **/

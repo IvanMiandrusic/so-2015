@@ -632,18 +632,30 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		int i=0;
 		bool encontre_pagina_a_ausentar=false;
 		TPagina* paginaObtenida=list_get(paginasConPresencia,i);
+
 		int indiceMejorPagina=i;
+		int mejorBitUso=paginaObtenida->bitUso;
+		int mejorModificada=paginaObtenida->modificada;
 
 		while(encontre_pagina_a_ausentar==false){
-			if(esClase0(i,paginasConPresencia)){
+			if(esClase0(paginaObtenida->bitUso,paginaObtenida->modificada)){
 				indiceMejorPagina=i;
 				encontre_pagina_a_ausentar=true;
-			}else if (esClase1(i,paginasConPresencia)){
-				if(esClase2(indiceMejorPagina,paginasConPresencia) || esClase3(indiceMejorPagina,paginasConPresencia)) indiceMejorPagina=i;
-			}else if(esClase2(i,paginasConPresencia)){
-				if(esClase3(indiceMejorPagina,paginasConPresencia)) indiceMejorPagina=i;
+				i--;
+			}else if (esClase1(paginaObtenida->bitUso,paginaObtenida->modificada)){
+				if(esClase2(mejorBitUso,mejorModificada) || esClase3(mejorBitUso,mejorModificada)){
+					mejorBitUso=0;
+					mejorModificada=1;
+					indiceMejorPagina=i;
+				}
+			}else if(esClase2(paginaObtenida->bitUso,paginaObtenida->modificada)){
+				if(esClase3(mejorBitUso,mejorModificada)){
+					mejorBitUso=1;
+					mejorModificada=0;
+					indiceMejorPagina=i;
+				}
 				paginaObtenida->bitUso=0;
-			}else if(esClase3(i,paginasConPresencia)){
+			}else if(esClase3(paginaObtenida->bitUso,paginaObtenida->modificada)){
 				paginaObtenida->bitUso=0;
 			}
 			i++;
@@ -655,7 +667,7 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		}
 
 		TPagina* mejorPagina=list_get(paginasConPresencia,indiceMejorPagina);
-		printf("la mejor pagina es: %d",mejorPagina->pagina );
+		printf("la mejor pagina es: %d\n",mejorPagina->pagina );
 		int asd;
 		for (asd=0;asd<list_size(paginasConPresencia);asd++){
 			TPagina* pagina=list_get(paginasConPresencia, asd);
@@ -690,24 +702,20 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 
 }
 
-bool esClase0(int indice,t_list* paginasConPresencia){
-	TPagina* pagina=list_get(paginasConPresencia,indice);
-	return pagina->bitUso==0 && pagina->modificada==0;
+bool esClase0(int bitUso,int modificada){
+	return bitUso==0 && modificada==0;
 }
 
-bool esClase1(int indice,t_list* paginasConPresencia){
-	TPagina* pagina=list_get(paginasConPresencia,indice);
-	return pagina->bitUso==0 && pagina->modificada==1;
+bool esClase1(int bitUso,int modificada){
+	return bitUso==0 && modificada==1;
 }
 
-bool esClase2(int indice,t_list* paginasConPresencia){
-	TPagina* pagina=list_get(paginasConPresencia,indice);
-	return pagina->bitUso==1 && pagina->modificada==0;
+bool esClase2(int bitUso,int modificada){
+	return bitUso==1 && modificada==0;
 }
 
-bool esClase3(int indice,t_list* paginasConPresencia){
-	TPagina* pagina=list_get(paginasConPresencia,indice);
-	return pagina->bitUso==1 && pagina->modificada==1;
+bool esClase3(int bitUso,int modificada){
+	return bitUso==1 && modificada==1;
 }
 
 t_algoritmo_reemplazo obtener_codigo_algoritmo(char* algoritmo) {
