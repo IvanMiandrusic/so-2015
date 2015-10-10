@@ -633,29 +633,39 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 
 		int i=0;
 		bool encontre_pagina_a_ausentar=false;
-		TPagina* mejorPagina=list_get(paginasConPresencia,i);
-		if(esClase0(mejorPagina)){
-			encontre_pagina_a_ausentar=true;
-			log_debug(loggerDebug, ANSI_COLOR_BOLDBLUE"frame a reemplazar %d"ANSI_COLOR_RESET,mejorPagina->marco);
-		}
+		TPagina* paginaObtenida=list_get(paginasConPresencia,i);
+		int indiceMejorPagina=i;
+
 		while(encontre_pagina_a_ausentar==false){
-			i++;
-			TPagina* paginaObtenida=list_get(paginasConPresencia,i);
-			if(esClase0(paginaObtenida)){
-				mejorPagina=paginaObtenida;
+			if(esClase0(i,paginasConPresencia)){
+				indiceMejorPagina=i;
 				encontre_pagina_a_ausentar=true;
-			}else if (esClase1(paginaObtenida)){
-				if(esClase2(mejorPagina) || esClase3(mejorPagina) ) mejorPagina=paginaObtenida;
-			}else if(esClase2(paginaObtenida)){
-				if(esClase3(mejorPagina)) mejorPagina=paginaObtenida;
+			}else if (esClase1(i,paginasConPresencia)){
+				if(esClase2(indiceMejorPagina,paginasConPresencia) || esClase3(indiceMejorPagina,paginasConPresencia)) indiceMejorPagina=i;
+			}else if(esClase2(i,paginasConPresencia)){
+				if(esClase3(indiceMejorPagina,paginasConPresencia)) indiceMejorPagina=i;
 				paginaObtenida->bitUso=0;
-				paginaObtenida->tiempo_referencia=get_actual_time_integer();
-			}else if(esClase3(paginaObtenida)){
+				//paginaObtenida->tiempo_referencia=get_actual_time_integer();
+			}else if(esClase3(i,paginasConPresencia)){
 				paginaObtenida->bitUso=0;
-				paginaObtenida->tiempo_referencia=get_actual_time_integer();
+				//paginaObtenida->tiempo_referencia=get_actual_time_integer();
 			}
-				if (list_size(paginasConPresencia)==(i+1)) encontre_pagina_a_ausentar=true;
+			i++;
+			if (list_size(paginasConPresencia)==(i)){
+				encontre_pagina_a_ausentar=true;
+			}else{
+				paginaObtenida=list_get(paginasConPresencia,i);
+			}
 		}
+
+		TPagina* mejorPagina=list_get(paginasConPresencia,indiceMejorPagina);
+		printf("la mejor pagina es: %d",mejorPagina->pagina );
+		int asd;
+		for (asd=0;asd<list_size(paginasConPresencia);asd++){
+			TPagina* pagina=list_get(paginasConPresencia, asd);
+			printf(ANSI_COLOR_BOLDBLUE"\nNro: %d, marco:%d, tiempo:%d, bitUso:%d, modificada:%d \n"ANSI_COLOR_RESET, pagina->pagina, pagina->marco, pagina->tiempo_referencia,pagina->bitUso,pagina->modificada);
+		}
+
 		log_info(loggerInfo, "Por algoritmo %s, deja de estar en memoria la pagina %d", arch->algoritmo_reemplazo, mejorPagina->pagina);
 
 		/** Escribo pagina en swap (si esta modificada) **/
@@ -684,19 +694,23 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 
 }
 
-bool esClase0(TPagina* pagina){
+bool esClase0(int indice,t_list* paginasConPresencia){
+	TPagina* pagina=list_get(paginasConPresencia,indice);
 	return pagina->bitUso==0 && pagina->modificada==0;
 }
 
-bool esClase1(TPagina* pagina){
+bool esClase1(int indice,t_list* paginasConPresencia){
+	TPagina* pagina=list_get(paginasConPresencia,indice);
 	return pagina->bitUso==0 && pagina->modificada==1;
 }
 
-bool esClase2(TPagina* pagina){
+bool esClase2(int indice,t_list* paginasConPresencia){
+	TPagina* pagina=list_get(paginasConPresencia,indice);
 	return pagina->bitUso==1 && pagina->modificada==0;
 }
 
-bool esClase3(TPagina* pagina){
+bool esClase3(int indice,t_list* paginasConPresencia){
+	TPagina* pagina=list_get(paginasConPresencia,indice);
 	return pagina->bitUso==1 && pagina->modificada==1;
 }
 
