@@ -42,11 +42,9 @@ typedef struct tiempo {
 }t_time;
 
 typedef enum tipos_metricas{
-		MOSTRAR_METRICAS=1,
-		TIEMPO_EXEC=2,
-		TIEMPO_ESP=3,
-		TIEMPO_RSP=4
-
+		TIEMPO_EXEC=1,
+		TIEMPO_ESP=2,
+		TIEMPO_RSP=3
 }tipos_metricas;
 
 typedef enum estados_cpu {
@@ -160,6 +158,8 @@ t_time* calculoDefinitivo(t_time* , t_time* );
 int32_t adaptarHora(int32_t );
 void limpiarCpuById(int32_t );
 void mostrarContenidoListas();
+Metricas* obtenerMetrica(int32_t);
+void mostrarMetricas(int32_t);
 
 /** Closures **/
 bool estaLibre(CPU_t* cpu);
