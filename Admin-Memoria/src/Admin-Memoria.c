@@ -73,31 +73,6 @@ void ifSigusr2() {
 	log_info(loggerInfo, ANSI_COLOR_BLUE "Sigurs2: Señal de limpieza de memoria recibida"ANSI_COLOR_RESET);
 	limpiar_MP();
 	log_info(loggerInfo, ANSI_COLOR_BLUE "Limpieza de memoria realizada"ANSI_COLOR_RESET);
-
-	/** Mostrar entradas tabla_paginas dsps de limpiar MP **/
-	void mostrar_tabla_PID(void* arg) {
-
-		t_paginas_proceso* entrada = (t_paginas_proceso*) arg;
-
-		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Tabla de Paginas del mProc %d" ANSI_COLOR_RESET,entrada->PID);
-
-		void mostrarEntradaTablaPaginas(TPagina* entrada) {
-
-		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Pagina %d - Marco %d - Uso %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
-				entrada->pagina,
-				entrada->marco,
-				entrada->bitUso,
-				entrada->modificada,
-				entrada->presente,
-				entrada->tiempo_referencia);
-		}
-
-		t_list* tabla_paginas_PID = obtener_tabla_paginas_by_PID(entrada->PID);
-		list_iterate(tabla_paginas_PID, mostrarEntradaTablaPaginas);
-
-	}
-
-	list_iterate(tabla_Paginas, mostrar_tabla_PID);
 }
 
 void ifSigpoll() {
@@ -146,7 +121,7 @@ void limpiar_MP() {
 			/** Si esta modificada, escribir en swap **/
 			if(entrada->modificada == 1)
 				escribir_pagina_modificada_en_swap(paginas_PID->PID, entrada);
-
+			entrada->bitUso=0;
 			entrada->marco = 0;
 			entrada->modificada = 0;
 			entrada->tiempo_referencia = 0;
