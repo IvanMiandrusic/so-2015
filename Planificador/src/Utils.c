@@ -59,6 +59,7 @@ char* get_actual_time() {
 					get_minutes(time),
 					get_seconds(time));
 
+	free(time);
 	return locale_time;
 }
 

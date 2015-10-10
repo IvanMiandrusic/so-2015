@@ -116,9 +116,9 @@ void inicializoSemaforos() {
 void crearArchivoDeLog() {
 	char* pathLog = "Planificador.log";
 	char* archLog = "Planificador";
-	loggerInfo = log_create(pathLog, archLog, 0, LOG_LEVEL_INFO);
-	loggerError = log_create(pathLog, archLog, 0, LOG_LEVEL_ERROR);
-	loggerDebug = log_create(pathLog, archLog, 0, LOG_LEVEL_DEBUG);
+	loggerInfo = log_create(pathLog, archLog, false, LOG_LEVEL_INFO);
+	loggerError = log_create(pathLog, archLog, false, LOG_LEVEL_ERROR);
+	loggerDebug = log_create(pathLog, archLog, false, LOG_LEVEL_DEBUG);
 }
 
 PCB* generarPCB(int32_t PID, char* rutaArchivo) {
@@ -286,7 +286,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 		/** Actualizar rendimiento de la CPU **/
 		bool findCpu(void* parametro) {
 			CPU_t* unaCpu = (CPU_t*) parametro;
-			return unaCpu->socketCPU->fd == socketCPU->fd; //todo, porque compara fd y no id?
+			return unaCpu->ID == cpu_id;
 		}
 		CPU_t* cpu = list_find(colaCPUs, findCpu);
 		cpu->rendimiento = tiempo_uso_cpu;
@@ -307,7 +307,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 }
 
 void limpiarCpuById(int32_t cpu_id) {
-	//todo
+
 	bool findCpu(void* parametro) {
 		CPU_t* unaCpu = (CPU_t*) parametro;
 		return unaCpu->ID == cpu_id;

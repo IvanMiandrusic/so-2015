@@ -45,7 +45,7 @@ char* get_actual_time() {
 					get_hours(time),
 					get_minutes(time),
 					get_seconds(time));
-	free(time);					//todo- chequear si esta bien... son las 12 puede fallar
+	free(time);
 	return locale_time;
 }
 

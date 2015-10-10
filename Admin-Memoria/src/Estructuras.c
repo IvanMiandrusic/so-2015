@@ -183,8 +183,6 @@ void TLB_refresh(int32_t PID, TPagina* pagina_a_actualizar) {
 	sem_wait(&sem_mutex_tlb);
 	list_replace_and_destroy_element(TLB_tabla, 0, nueva_entrada, free);
 	sem_post(&sem_mutex_tlb);
-	TLB_hit--;
-	TLB_accesos--;
 }
 
 void TLB_sort() {
