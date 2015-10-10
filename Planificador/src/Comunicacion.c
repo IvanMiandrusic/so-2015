@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include "Comunicacion.h"
 
-//Aca irian todas las funciones de serializar/deserializar los envios
+/** Funciones de SERIALIZAR/DESERIALIZAR PCB **/
 
 PCB* deserializarPCB(char* pedidoserializado){
 
@@ -48,30 +48,30 @@ char* serializarPCB(PCB* unPCB){
 	int32_t offset = 0;
 	int32_t size_to_send;
 
-		size_to_send = sizeof(int32_t);
-		memcpy(serializado + offset, &(unPCB->PID), size_to_send);
-		offset += size_to_send;
+	size_to_send = sizeof(int32_t);
+	memcpy(serializado + offset, &(unPCB->PID), size_to_send);
+	offset += size_to_send;
 
-		int32_t tamanio=strlen(unPCB->ruta_archivo);
+	int32_t tamanio=strlen(unPCB->ruta_archivo);
 
-		size_to_send =  sizeof(u_int32_t);
-		memcpy(serializado + offset, &(tamanio), size_to_send);
-		offset += size_to_send;
+	size_to_send =  sizeof(u_int32_t);
+	memcpy(serializado + offset, &(tamanio), size_to_send);
+	offset += size_to_send;
 
-		size_to_send = tamanio;
-		memcpy(serializado + offset, unPCB->ruta_archivo, size_to_send);
-		offset += size_to_send;
+	size_to_send = tamanio;
+	memcpy(serializado + offset, unPCB->ruta_archivo, size_to_send);
+	offset += size_to_send;
 
-		size_to_send = sizeof(int32_t);
-		memcpy(serializado + offset, &(unPCB->estado), size_to_send);
-		offset += size_to_send;
+	size_to_send = sizeof(int32_t);
+	memcpy(serializado + offset, &(unPCB->estado), size_to_send);
+	offset += size_to_send;
 
-		size_to_send = sizeof(int32_t);
-		memcpy(serializado + offset, &(unPCB->siguienteInstruccion), size_to_send);
-		offset += size_to_send;
+	size_to_send = sizeof(int32_t);
+	memcpy(serializado + offset, &(unPCB->siguienteInstruccion), size_to_send);
+	offset += size_to_send;
 
 
-		return serializado;
+	return serializado;
 
 }
 

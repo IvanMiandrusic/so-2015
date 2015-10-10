@@ -72,43 +72,43 @@ void inicializoSemaforos() {
 
 	int32_t semMutexColaListos = sem_init(&semMutex_colaListos, 0, 1);
 	if (semMutexColaListos == -1)
-		log_error(loggerError,
-				"No pudo crearse el semaforo Mutex de Cola listos");
+		log_error(loggerError, ANSI_COLOR_BOLDRED
+				"No pudo crearse el semaforo Mutex de Cola listos" ANSI_COLOR_RESET);
 
 	int32_t semMutexColaBlock = sem_init(&semMutex_colaBlock, 0, 1);
 	if (semMutexColaBlock == -1)
-		log_error(loggerError,
-				"No pudo crearse el semaforo Mutex de Cola Block");
+		log_error(loggerError, ANSI_COLOR_BOLDRED
+				"No pudo crearse el semaforo Mutex de Cola Block" ANSI_COLOR_RESET);
 
 	int32_t semMutexColaExec = sem_init(&semMutex_colaExec, 0, 1);
 	if (semMutexColaExec == -1)
-		log_error(loggerError,
-				"No pudo crearse el semaforo Mutex de Cola Exec");
+		log_error(loggerError, ANSI_COLOR_BOLDRED
+				"No pudo crearse el semaforo Mutex de Cola Exec" ANSI_COLOR_RESET);
 
 	int32_t semMutexColaFinalizados = sem_init(&semMutex_colaFinalizados, 0, 1);
 	if (semMutexColaFinalizados == -1)
-		log_error(loggerError,
-				"No pudo crearse el semaforo Mutex de Cola Finalizados");
+		log_error(loggerError, ANSI_COLOR_BOLDRED
+				"No pudo crearse el semaforo Mutex de Cola Finalizados" ANSI_COLOR_RESET);
 
 	int32_t semMutexCpu = sem_init(&semMutex_colaCPUs, 0, 1);
 	if (semMutexCpu == -1)
-		log_error(loggerError,
-				"No pudo crearse el semaforo Mutex de Colas CPU");
+		log_error(loggerError, ANSI_COLOR_BOLDRED
+				"No pudo crearse el semaforo Mutex de Colas CPU" ANSI_COLOR_RESET);
 
 	int32_t semMutexAFinalizar = sem_init(&semMutex_colaMetricas, 0, 1);
 	if (semMutexAFinalizar == -1)
-		log_error(loggerError,
-				"No pudo crearse el semaforo Mutex de Colas AFinalizar");
+		log_error(loggerError, ANSI_COLOR_BOLDRED
+				"No pudo crearse el semaforo Mutex de Colas a Finalizar" ANSI_COLOR_RESET);
 
 	int32_t semMutexRetardos = sem_init(&sem_list_retardos, 0, 1);
 	if (semMutexRetardos == -1)
-		log_error(loggerError,
-				"No pudo crearse el semaforo Mutex de lista retardos");
+		log_error(loggerError, ANSI_COLOR_BOLDRED
+				"No pudo crearse el semaforo Mutex de lista retardos" ANSI_COLOR_RESET);
 
 	int32_t semIO = sem_init(&sem_io, 0, 0);
 	if (semIO == -1)
-		log_error(loggerError,
-				"No pudo crearse el semaforo para manejar la IO");
+		log_error(loggerError, ANSI_COLOR_BOLDRED
+				"No pudo crearse el semaforo para manejar la IO" ANSI_COLOR_RESET);
 }
 
 /*Se crea un archivo de log donde se registra to-do */
@@ -176,7 +176,6 @@ void cleanAll() {
 	clean_socket(socketServidor);
 }
 
-/*Este metodo podria ser generico para ambos algoritmos, lo que varia seria el manejo de la "cola de listos"*/
 void administrarPath(char* filePath) {
 
 	idParaPCB++;
@@ -243,16 +242,17 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 				ANSI_COLOR_YELLOW"Se conecto una CPU nueva con id %d y socket %d"ANSI_COLOR_RESET,
 				nuevaCPU->ID, nuevaCPU->socketCPU->fd);
 		/** Envio el quantum a la CPU **/
-		header_t* header_quantum = _create_header(ENVIO_QUANTUM,
-				sizeof(int32_t));
+		header_t* header_quantum = _create_header(ENVIO_QUANTUM,sizeof(int32_t));
 		int32_t enviado = _send_header(socketCPU, header_quantum);
-		if (enviado == ERROR_OPERATION)
-			return;
+		if (enviado == ERROR_OPERATION)return;
 		enviado = _send_bytes(socketCPU, &(arch->quantum), sizeof(int32_t));
-		if (enviado == ERROR_OPERATION)
-			return;
+		if (enviado == ERROR_OPERATION)return;
+
 		log_debug(loggerDebug, "Quantum enviado exitosamente a la CPU");
+		free(header_quantum);
+
 		asignarPCBaCPU();
+
 		break;
 	}
 	case TERMINO_RAFAGA: {
@@ -275,14 +275,10 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 		int32_t tiempo_uso_cpu;
 		recibido = _receive_bytes(socketCPU, &tiempo_uso_cpu, sizeof(int32_t));
 		if (recibido == ERROR_OPERATION) {
-			log_error(loggerError,
-					ANSI_COLOR_RED
-					"Fallo al recibir tiempo_uso_cpu (Utilizacion_CPU)"ANSI_COLOR_RESET);
+			log_error(loggerError,ANSI_COLOR_BOLDRED "Fallo al recibir tiempo_uso_cpu (Utilizacion_CPU)"ANSI_COLOR_RESET);
 			return;
 		}
-		log_debug(loggerDebug,
-				"Recibi de la cpu con id: %d, el porcentaje: %d%%", cpu_id,
-				tiempo_uso_cpu);
+		log_debug(loggerDebug,"Recibi de la cpu con id: %d, el porcentaje: %d%%", cpu_id, tiempo_uso_cpu);
 		/** Actualizar rendimiento de la CPU **/
 		bool findCpu(void* parametro) {
 			CPU_t* unaCpu = (CPU_t*) parametro;
@@ -294,9 +290,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 	}
 	case CPU_DIE: {
 		limpiarCpuById(cpu_id);
-		log_info(loggerInfo,
-		ANSI_COLOR_BOLDMAGENTA"La CPU con ID: %d se Desconecto"ANSI_COLOR_RESET,
-				cpu_id);
+		log_info(loggerInfo,ANSI_COLOR_BOLDMAGENTA "La CPU con ID: %d se Desconecto"ANSI_COLOR_RESET, cpu_id);
 		break;
 	}
 	default: {
@@ -322,8 +316,7 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 	int32_t tiempo;
 	if (cod_Operacion == INSTRUCCION_IO) {
 		//recibe el tiempo de I/O
-		int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo),
-				sizeof(int32_t));
+		int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo), sizeof(int32_t));
 		if (recibido_tiempo == ERROR_OPERATION) return;
 		log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO: %d", tiempo);
 	}
@@ -350,20 +343,17 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 	resultado_operaciones[tamanio_resultado_operaciones]='\0';
 	log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU: %s", resultado_operaciones);
 	/** Loggeo resultado operaciones **/
-	log_info(loggerInfo, "Recibido el proceso id: %d, ejecuto: %s", pcb->PID, resultado_operaciones);
+	log_info(loggerInfo, ANSI_COLOR_BOLDMAGENTA "Recibido el proceso id: %d, ejecuto: %s" ANSI_COLOR_RESET, pcb->PID, resultado_operaciones);
 
-	/** operar la respuesta **/
+	/** Operar la respuesta **/
 	if (cod_Operacion == INSTRUCCION_IO) {
 		calcularMetrica(pcb->PID, TIEMPO_EXEC);
-		log_info(loggerInfo,
-		ANSI_COLOR_YELLOW"El proceso: %d pidio una I/O"ANSI_COLOR_RESET,
-				pcb->PID);
+		log_info(loggerInfo, ANSI_COLOR_YELLOW"El proceso: %d pidio una I/O"ANSI_COLOR_RESET, pcb->PID);
 		operarIO(cpu_id, tiempo, pcb);
 	}
 	if (cod_Operacion == TERMINO_RAFAGA) {
 		calcularMetrica(pcb->PID, TIEMPO_EXEC);
-		log_info(loggerInfo,
-				ANSI_COLOR_BOLDWHITE "Termina rafaga del proceso con ruta: %s e ID: %d con respuesta:%s" ANSI_COLOR_RESET,
+		log_info(loggerInfo, ANSI_COLOR_BOLDWHITE "Termina rafaga del proceso con ruta: %s e ID: %d con respuesta:%s" ANSI_COLOR_RESET,
 				pcb->ruta_archivo, pcb->PID, resultado_operaciones);
 		liberarCPU(cpu_id);
 		sacarDeExec(pcb->PID);
@@ -377,6 +367,7 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 		liberarCPU(cpu_id);
 		asignarPCBaCPU();
 	}
+
 	free(resultado_operaciones);
 }
 
@@ -387,8 +378,7 @@ void liberarCPU(int32_t cpu_id) {
 	}
 	CPU_t* cpu_encontrada = list_find(colaCPUs, getCpuByID);
 	cpu_encontrada->estado = LIBRE;
-	log_debug(loggerDebug, "Cambio de estado (LIBRE) de la cpu con id %d",
-			cpu_encontrada->ID);
+	log_debug(loggerDebug, "Cambio de estado (LIBRE) de la cpu con id %d", cpu_encontrada->ID);
 
 }
 
@@ -627,8 +617,7 @@ void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb) {
 	pcb_found->estado = BLOQUEADO;
 	pcb_found->siguienteInstruccion = pcb->siguienteInstruccion;
 	agregarPcbAColaBlock(pcb_found);
-	log_debug(loggerDebug,
-			"Cambio de estado (block) y de lista del pcb con id %d", pcb->PID);
+	log_debug(loggerDebug, "Cambio de estado (block) y de lista del pcb con id %d", pcb->PID);
 
 	sem_post(&sem_io);
 	/** Cambio estado CPU a LIBRE **/
@@ -666,7 +655,7 @@ void procesar_IO() {
 		pcb_to_sleep->estado = LISTO;
 		agregarPcbAColaListos(pcb_to_sleep);
 
-		PCB* pcb = list_remove(colaBlock, 0); //se guarda en la var inecesariamente??
+		PCB* pcb = list_remove(colaBlock, 0); // Todo se guarda en la var inecesariamente??
 
 		/** Se asigna un nuevo PCB a la cpu q se libera **/
 		asignarPCBaCPU();
@@ -692,17 +681,14 @@ void cambiarAUltimaInstruccion(PCB* pcb) {
 
 	FILE* programa = fopen(pcb->ruta_archivo, "r");
 	if (programa == NULL) {
-		log_error(loggerError,
-				ANSI_COLOR_BOLDRED
-				"Error al intentar abrir la ruta_archivo del pcb con id: %d"ANSI_COLOR_RESET,
+		log_error(loggerError, ANSI_COLOR_BOLDRED "Error al intentar abrir la ruta_archivo del pcb con id: %d"ANSI_COLOR_RESET,
 				pcb->PID);
 		return;
 	}
 	fseek(programa, TAM_FINALIZAR, SEEK_END);
 	int32_t posicion = ftell(programa);
 	if (posicion < 0) {
-		log_error(loggerError,
-				"Error en la posicion devuelta por ftell para cambiar la instruccion");
+		log_error(loggerError, ANSI_COLOR_BOLDRED "Error en la posicion devuelta por ftell para cambiar la instruccion" ANSI_COLOR_RESET);
 	}
 	pcb->siguienteInstruccion = posicion;
 	fclose(programa);
@@ -792,8 +778,7 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb, int32_t pcbID,
 	int32_t enviado = send_msg(CPU->socketCPU, tipo, paquete_serializado,
 			tamanio_pcb); //le envia el tipo de Envio
 	if (enviado == ERROR_OPERATION) {
-		log_error(loggerError,
-		ANSI_COLOR_BOLDRED"Fallo en el envio de PCB"ANSI_COLOR_RESET);
+		log_error(loggerError, ANSI_COLOR_BOLDRED"Fallo en el envio de PCB"ANSI_COLOR_RESET);
 		return;
 	}
 	CPU->estado = OCUPADO;
@@ -858,12 +843,12 @@ void sacarDeExec(int32_t pcbID) {
 
 int main(void) {
 
-	/*Se genera el archivo de log, to-do lo que sale por pantalla */
+	/*Se genera el archivo de log */
 	crearArchivoDeLog();
 
 	/*Tratamiento del ctrl+c en el proceso */
 	if (signal(SIGINT, ifProcessDie) == SIG_ERR)
-		log_error(loggerError, "Error con la señal SIGINT");
+		log_error(loggerError, ANSI_COLOR_BOLDRED "Error con la señal SIGINT" ANSI_COLOR_RESET);
 
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = "../Planificador.config";
@@ -881,7 +866,7 @@ int main(void) {
 	int32_t result = listen_connections(socketServidor);
 
 	if (result == ERROR_OPERATION) {
-		log_error(loggerError, "Error al escuchar conexiones");
+		log_error(loggerError, ANSI_COLOR_BOLDRED "Error al escuchar conexiones" ANSI_COLOR_RESET);
 		exit(EXIT_FAILURE);
 	}
 
@@ -892,8 +877,7 @@ int main(void) {
 	resultado_creacion_hilos = pthread_create(&server_thread, NULL,
 			servidor_conexiones, NULL);
 	if (resultado_creacion_hilos != 0) {
-		log_error(loggerError,
-				"Error al crear el hilo del servidor de conexiones");
+		log_error(loggerError, ANSI_COLOR_BOLDRED "Error al crear el hilo del servidor de conexiones" ANSI_COLOR_RESET);
 		abort();
 	} else {
 		log_info(loggerInfo,
@@ -904,7 +888,7 @@ int main(void) {
 	resultado_creacion_hilos = pthread_create(&consola_thread, NULL,
 			consola_planificador, NULL);
 	if (resultado_creacion_hilos != 0) {
-		log_error(loggerError, "Error al crear el hilo de la consola");
+		log_error(loggerError, ANSI_COLOR_BOLDRED "Error al crear el hilo de la consola" ANSI_COLOR_RESET);
 		exit(EXIT_FAILURE);
 	} else {
 		log_info(loggerInfo, "Se creo exitosamente el hilo de la consola");
@@ -914,7 +898,7 @@ int main(void) {
 	resultado_creacion_hilos = pthread_create(&io_thread, NULL, procesar_IO,
 	NULL);
 	if (resultado_creacion_hilos != 0) {
-		log_error(loggerError, "Error al crear el hilo de IO");
+		log_error(loggerError, ANSI_COLOR_BOLDRED "Error al crear el hilo de IO" ANSI_COLOR_RESET);
 		exit(EXIT_FAILURE);
 	} else {
 		log_info(loggerInfo, "Se creo exitosamente el hilo de IO");
