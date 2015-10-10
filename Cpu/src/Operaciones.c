@@ -292,7 +292,7 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 	int32_t recibido = _receive_header(socketMemoria, header_de_memoria);
 	if(recibido == ERROR_OPERATION) return NULL;
 	t_respuesta* response= malloc(sizeof(t_respuesta));
-	if(get_operation_code(header_de_memoria) == 2) {
+	if(get_operation_code(header_de_memoria) == M_ERROR) {
 		response->id=ERROR;
 		response->texto=string_new();
 		response->retardo = 0;
@@ -337,7 +337,7 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 	int32_t recibi_longPagina = _receive_bytes(socketMemoria, &longPagina, sizeof(int32_t));
 	if(recibi_longPagina == ERROR_OPERATION) return NULL;
 
-	char* contenido_pagina = malloc(longPagina);
+	char* contenido_pagina = malloc(longPagina+1);
 	recibido = _receive_bytes(socketMemoria, contenido_pagina, longPagina);
 	contenido_pagina[longPagina]='\0';
 

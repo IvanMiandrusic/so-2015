@@ -52,7 +52,7 @@ t_pagina* deserializar_pedido(char* pedido_serializado){
 	offset += sizeof(int32_t);
 	memcpy(&(pagina_solicitada->tamanio_contenido), pedido_serializado+offset, sizeof(int32_t));
 
-	pagina_solicitada->contenido=malloc(pagina_solicitada->tamanio_contenido);
+	pagina_solicitada->contenido=malloc(1 + pagina_solicitada->tamanio_contenido);
 	offset += sizeof(int32_t);
 	memcpy(pagina_solicitada->contenido, pedido_serializado+offset, pagina_solicitada->tamanio_contenido);
 	pagina_solicitada->contenido[pagina_solicitada->tamanio_contenido]= '\0';

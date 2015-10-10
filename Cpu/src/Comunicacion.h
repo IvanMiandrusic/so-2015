@@ -29,7 +29,7 @@
 
 /** Codigos de operacion en las recepciones desde la memoria **/
 #define OK 1
-#define ERROR 2
+#define M_ERROR 2
 #define CONTENIDO_PAGINA 3
 
 PCB* deserializarPCB(char*);
