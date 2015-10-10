@@ -87,6 +87,7 @@ void dump(){
 			offset=i*arch->tamanio_marco;
 			memcpy(texto, mem_principal+offset, arch->tamanio_marco);
 			log_info(loggerInfo, "Marco:%d; contenido:%s", i, texto);
+			free(texto);
 		}
 		abort();
 	}
@@ -259,6 +260,7 @@ void thread_request(void* arg) {
 		break;
 	}
 	}
+	free(headerCpu);
 	log_debug(loggerDebug, ANSI_COLOR_BOLDCYAN "Pedido procesado" ANSI_COLOR_RESET);
 
 }
@@ -390,7 +392,7 @@ void iniciar_proceso(sock_t* socketCpu) {
 	header_t* headerNuevo=_create_empty_header();
 	recibido=_receive_header(socketSwap,headerNuevo);
 	resultado_operacion=get_operation_code(headerNuevo);
-
+	free(headerNuevo);
 	if (resultado_operacion == RESULTADO_ERROR) {
 		header_t* headerCpu = _create_header(ERROR, 0);
 		enviado = _send_header(socketCpu, headerCpu);
@@ -425,9 +427,8 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
 	if(cod_Operacion==LEER)log_info(loggerInfo, "Debo leer la pagina:%d, del proceso: %d", pagina_pedida->nro_pagina, pagina_pedida->PID);
 	if(cod_Operacion==ESCRIBIR)log_info(loggerInfo, "Se tiene que escribir del proceso:%d la pagina:%d con:%s", pagina_pedida->PID, pagina_pedida->nro_pagina, pagina_pedida->contenido);
-
 	t_resultado_busqueda resultado=buscar_pagina(cod_Operacion, pagina_pedida);
-
+	free(pedido_serializado);
 	int32_t enviado;
 	if (resultado==NOT_FOUND) {
 
@@ -440,7 +441,7 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 		if(enviado == ERROR_OPERATION) return;
 
 		free(headerCpu);
-
+		free(pagina_pedida);
 		if(cod_Operacion==LEER)log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo leer la pagina" ANSI_COLOR_RESET);
 		if(cod_Operacion==ESCRIBIR)log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo escribir la pagina" ANSI_COLOR_RESET);
 
@@ -452,11 +453,13 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 			enviado = _send_bytes(socketCpu, &tamanio, sizeof(int32_t));
 			enviado = _send_bytes(socketCpu, pagina_pedida->contenido, tamanio);
 			free(headerCpu);
+			free(pagina_pedida);
 			log_debug(loggerDebug,"Se leyo la pagina correctamente");
 		}else{
 			header_t* headerCpu = _create_header(OK, 0);
 			enviado = _send_header(socketCpu, headerCpu);
 			free(headerCpu);
+			free(pagina_pedida);
 			log_debug(loggerDebug, "Se escribio la pagina correctamente");
 		}
 	}
@@ -496,7 +499,7 @@ void finalizar_proceso_error(int32_t PID) {
 	if (recibido == ERROR_OPERATION) return;
 
 	log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion);
-
+	free(headerNuevo);
 	/** Libero el espacio ocupado en memoria por el pid finalizado **/
 	limpiar_Informacion_PID(PID);
 

@@ -289,6 +289,8 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			enviado=_send_bytes(socketMemoria, pagina_pedida->contenido, pagina_pedida->tamanio_contenido);
 			log_debug(loggerDebug, "Se leyeron :%d bytes", pagina_pedida->tamanio_contenido);
 			if(enviado == ERROR_OPERATION) return;
+			free(pagina_pedida);
+			free(pedido_serializado);
 			free(headerMemoria);
 			break;
 		}
@@ -313,6 +315,8 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 				if(enviado == ERROR_OPERATION) return;
 				free(headerMemoria);
 				}
+			free(pedido_serializado);
+			free(pagina_pedida);
 			break;
 		}
 
@@ -344,6 +348,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 				log_info(loggerInfo, ANSI_COLOR_GREEN"Se reservo el espacio solicitado" ANSI_COLOR_RESET);
 				free(headerMemoria);
 			}
+			//free(pedido_memoria);
 			break;
 		}
 
@@ -375,8 +380,8 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 		}
 
 		}
-
 	}
+	free(header);
 }
 
 int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
@@ -520,7 +525,6 @@ FILE* abrirArchivoConTPagina(t_pagina* pagina_pedida){
 
 void leer_pagina(t_pagina* pagina_pedida){
 	log_debug(loggerDebug, "leer pid:%d, pag:%d", pagina_pedida->PID, pagina_pedida->nro_pagina);
-	char* texto=malloc(arch->tamanio_pagina);
 	FILE* espacioDeDatos=abrirArchivoConTPagina(pagina_pedida);
 	log_debug(loggerDebug, "Se abre el espacio de datos");
 	int32_t posicion=ftell(espacioDeDatos);

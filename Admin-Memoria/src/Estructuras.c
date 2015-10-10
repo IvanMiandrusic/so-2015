@@ -402,7 +402,7 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 
 		if(resultado == FOUND) {
 			log_debug(loggerDebug, "cargue pagina del swap");
-			return buscar_pagina(codOperacion, pagina);
+			return TLB_buscar_pagina(codOperacion, pagina);
 		}
 
 		return NOT_FOUND;
