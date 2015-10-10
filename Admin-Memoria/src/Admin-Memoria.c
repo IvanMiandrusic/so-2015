@@ -51,19 +51,53 @@ void ifProcessDie() {
 
 void ifSigusr1() {
 	log_info(loggerInfo, ANSI_COLOR_BLUE "Sigusr1: Señal de TLB Flush recibida"ANSI_COLOR_RESET);
-	sem_wait(&sem_mutex_tlb);
 	TLB_flush();
-	sem_post(&sem_mutex_tlb);
 	log_info(loggerInfo, ANSI_COLOR_BLUE "TLB Flush realizado"ANSI_COLOR_RESET);
+
+	/** Mostrar entradas TLB dsps de flush **/
+
+	void mostrar_entradas(void* parametro) {
+		TLB* entrada = (TLB*) parametro;
+		log_debug(loggerDebug, "Entrada: pid %d, pagina %d, marco %d, presente %d, "
+				"modificada %d, tiempoReferecencia %d", entrada->PID, entrada->pagina, entrada->marco,
+				entrada->presente, entrada->modificada, entrada->tiempo_referencia);
+	}
+
+	sem_wait(&sem_mutex_tlb);
+	list_iterate(TLB_tabla, mostrar_entradas);
+	sem_post(&sem_mutex_tlb);
 }
 
 
 void ifSigusr2() {
 	log_info(loggerInfo, ANSI_COLOR_BLUE "Sigurs2: Señal de limpieza de memoria recibida"ANSI_COLOR_RESET);
-	sem_wait(&sem_mutex_tabla_paginas);
 	limpiar_MP();
-	sem_post(&sem_mutex_tabla_paginas);
 	log_info(loggerInfo, ANSI_COLOR_BLUE "Limpieza de memoria realizada"ANSI_COLOR_RESET);
+
+	/** Mostrar entradas tabla_paginas dsps de limpiar MP **/
+	void mostrar_tabla_PID(void* arg) {
+
+		t_paginas_proceso* entrada = (t_paginas_proceso*) arg;
+
+		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Tabla de Paginas del mProc %d" ANSI_COLOR_RESET,entrada->PID);
+
+		void mostrarEntradaTablaPaginas(TPagina* entrada) {
+
+		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Pagina %d - Marco %d - Uso %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
+				entrada->pagina,
+				entrada->marco,
+				entrada->bitUso,
+				entrada->modificada,
+				entrada->presente,
+				entrada->tiempo_referencia);
+		}
+
+		t_list* tabla_paginas_PID = obtener_tabla_paginas_by_PID(entrada->PID);
+		list_iterate(tabla_paginas_PID, mostrarEntradaTablaPaginas);
+
+	}
+
+	list_iterate(tabla_Paginas, mostrar_tabla_PID);
 }
 
 void ifSigpoll() {
@@ -121,9 +155,10 @@ void limpiar_MP() {
 		list_iterate(paginas_PID->paginas, clean_from_MP);
 	}
 
-
+	sem_wait(&sem_mutex_tabla_paginas);
 	list_iterate(tabla_Paginas, clean_by_PID);
-	log_info(loggerInfo, ANSI_COLOR_GREEN "Memoria limpiada con exito" ANSI_COLOR_RESET);
+	sem_post(&sem_mutex_tabla_paginas);
+	log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Memoria limpiada con exito" ANSI_COLOR_RESET);
 
 }
 
