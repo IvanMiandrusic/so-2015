@@ -224,9 +224,9 @@ void ejecutar(int32_t id, PCB* pcb){
 			}
 	}
 	log_info(loggerInfo, "Rafaga terminada del PID: %d", pcb->PID);
-	free(log_acciones);
 	fclose(prog);
 	enviar_Header_ID_Retardo_PCB_Texto (TERMINO_RAFAGA,id,pcb,log_acciones,0);
+	free(log_acciones);
 }
 
 void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion,int32_t id,PCB* pcb,char* texto, int32_t retardo){
