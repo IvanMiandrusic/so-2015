@@ -196,23 +196,25 @@ void ejecutar(int32_t id, PCB* pcb){
 			string_append(&log_acciones, respuesta->texto);
 			pcb->siguienteInstruccion=ftell(prog);
 			log_debug(loggerDebug, "Analice y ejecute una linea, la proxima tiene PC en:%d", pcb->siguienteInstruccion);
-			free(respuesta);
 			if(respuesta->id==FINALIZAR){
 				enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_OK,id,pcb,log_acciones,0);
 				ultimoQuantum = quantum;
 				free(log_acciones);
+				free(respuesta);
 				fclose(prog);
 				return ;
 			}
 			if(respuesta->id==ENTRADASALIDA){
 				enviar_Header_ID_Retardo_PCB_Texto (SOLICITUD_IO,id,pcb,log_acciones,respuesta->retardo);
 				free(log_acciones);
+				free(respuesta);
 				fclose(prog);
 				return ;
 			}
 			if(respuesta->id==ERROR){
 				enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_ERROR,id,pcb,log_acciones,0);
 				free(log_acciones);
+				free(respuesta);
 				fclose(prog);
 				return ;
 			}
