@@ -324,43 +324,33 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 		//recibe el tiempo de I/O
 		int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo),
 				sizeof(int32_t));
-		if (recibido_tiempo == ERROR_OPERATION)
-			return;
-		log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO: %d",
-				tiempo);
+		if (recibido_tiempo == ERROR_OPERATION) return;
+		log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO: %d", tiempo);
 	}
 
 	/** tamaño pcb **/
 	int32_t tamanio_pcb;
 	int32_t recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
-	if (recibido == ERROR_OPERATION)
-		return;
+	if (recibido == ERROR_OPERATION) return;
 	log_debug(loggerDebug, "Recibo tamanio:%d", tamanio_pcb);
 	char* pcb_serializado = malloc(tamanio_pcb);
 	recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
-	if (recibido == ERROR_OPERATION)
-		return;
+	if (recibido == ERROR_OPERATION) return;
 	log_debug(loggerDebug, "Recibo un pcb desde la cpu");
 	PCB* pcb = deserializarPCB(pcb_serializado);
+	free(pcb_serializado);
 	/** recibo el char* de resultados **/
 	int32_t tamanio_resultado_operaciones;
-	recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones,
-			sizeof(int32_t));
-	if (recibido == ERROR_OPERATION)
-		return;
-	log_debug(loggerDebug,
-			"Recibo el resultado de operaciones de la CPU tamanio: %d",
-			tamanio_resultado_operaciones);
-	char* resultado_operaciones = malloc(tamanio_resultado_operaciones);
-	recibido = _receive_bytes(socketCPU, resultado_operaciones,
-			tamanio_resultado_operaciones);
-	if (recibido == ERROR_OPERATION)
-		return;
-	log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU: %s",
-			resultado_operaciones);
+	recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
+	if (recibido == ERROR_OPERATION) return;
+	log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU tamanio: %d", tamanio_resultado_operaciones);
+	char* resultado_operaciones = malloc(1+tamanio_resultado_operaciones);
+	recibido = _receive_bytes(socketCPU, resultado_operaciones,	tamanio_resultado_operaciones);
+	if (recibido == ERROR_OPERATION) return;
+	resultado_operaciones[tamanio_resultado_operaciones]='\0';
+	log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU: %s", resultado_operaciones);
 	/** Loggeo resultado operaciones **/
-	log_info(loggerInfo, "Recibido el proceso id: %d, ejecuto: %s", pcb->PID,
-			resultado_operaciones);
+	log_info(loggerInfo, "Recibido el proceso id: %d, ejecuto: %s", pcb->PID, resultado_operaciones);
 
 	/** operar la respuesta **/
 	if (cod_Operacion == INSTRUCCION_IO) {
@@ -387,6 +377,7 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 		liberarCPU(cpu_id);
 		asignarPCBaCPU();
 	}
+	free(resultado_operaciones);
 }
 
 void liberarCPU(int32_t cpu_id) {
@@ -738,12 +729,13 @@ void asignarPCBaCPU() {
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
 		enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, ENVIO_PCB);
 		log_info(loggerInfo,
-				ANSI_COLOR_BOLDYELLOW"El Proc con ruta: %s e ID: %d entro en ejecucion medriante un algoritmo %s"ANSI_COLOR_RESET,
+				ANSI_COLOR_BOLDYELLOW"El Proc con ruta: %s e ID: %d entro en ejecucion mediante un algoritmo %s"ANSI_COLOR_RESET,
 				pcbAEnviar->ruta_archivo, pcbAEnviar->PID, arch->algoritmo);
 		/** Pongo el PCB en ejecucion **/
 		calcularMetrica(pcbAEnviar->PID, TIEMPO_ESP);
 		agregarPcbAColaExec(pcbAEnviar);
 		mostrarContenidoListas();
+		free(paquete);
 	}
 
 }

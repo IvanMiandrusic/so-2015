@@ -180,9 +180,8 @@ void ejecutar(int32_t id, PCB* pcb){
 	FILE* prog = fopen(pcb->ruta_archivo, "r");
 	if (prog==NULL)
 	{
-		string_append_with_format(&log_acciones, "No se pudo encontrar la ruta del archivo del proceso con id: %d", pcb->PID);
+		string_append_with_format(&log_acciones, "No se pudo encontrar la ruta del archivo del proceso con id: %d; ", pcb->PID);
 		log_error (loggerError, ANSI_COLOR_RED "CPU: %d - Error al abrir la ruta del archivo del proceso:%d"ANSI_COLOR_RESET, id, pcb->PID);
-		fclose(prog);
 		enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_ERROR,id,pcb,log_acciones,0);
 		return;
 	}
@@ -296,13 +295,13 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 		response->id=ERROR;
 		response->texto=string_new();
 		response->retardo = 0;
-		string_append_with_format(&response->texto, "mProc %d - Fallo ",pcb->PID);
+		string_append_with_format(&response->texto, "mProc %d - Fallo ;",pcb->PID);
 		log_error(loggerError,ANSI_COLOR_RED "CPU: %d - mProc %d - Fallo" ANSI_COLOR_RESET,id, pcb->PID);
 	}else {
 		response->id=INICIAR;
 		response->texto=string_new();
 		response->retardo = 0;
-		string_append_with_format(&response->texto, "mProc %d - Iniciado ",pcb->PID);
+		string_append_with_format(&response->texto, "mProc %d - Iniciado ;",pcb->PID);
 		log_info(loggerInfo,ANSI_COLOR_YELLOW "CPU: %d - mProc %d - Iniciado " ANSI_COLOR_RESET,id, pcb->PID);
 	}
 
@@ -347,14 +346,14 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 	response->id=LEER;
 	response->texto=string_new();
 	response->retardo = 0;
-	string_append_with_format(&response->texto, "mProc %d - Pagina %d leida: %s ",pcb->PID, numDePagina, contenido_pagina);
+	string_append_with_format(&response->texto, "mProc %d - Pagina %d leida: %s ;",pcb->PID, numDePagina, contenido_pagina);
 	log_info(loggerInfo,ANSI_COLOR_GREEN "CPU: %d - mProc %d - Pagina %d leida: %s "ANSI_COLOR_RESET,id, pcb->PID, numDePagina, contenido_pagina);
 	}
 	else{
 		response->id=ERROR;
 		response->texto=string_new();
 		response->retardo = 0;
-		string_append_with_format(&response->texto, "Error en el mProc %d - Pagina %d no leida: %s ",pcb->PID, numDePagina, contenido_pagina);
+		string_append_with_format(&response->texto, "Error en el mProc %d - Pagina %d no leida: %s ;",pcb->PID, numDePagina, contenido_pagina);
 		log_error(loggerError, ANSI_COLOR_RED "CPU:%d - Error en el mProc %d - Pagina %d NO leida: %s " ANSI_COLOR_RESET,id, pcb->PID, numDePagina, contenido_pagina);
 	}
 	free(contenido_pagina);
@@ -391,13 +390,13 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 		response->id=ESCRIBIR;
 		response->texto=string_new();
 		response->retardo = 0;
-		string_append_with_format(&response->texto, "mProc %d - Pagina %d escrita: %s ", pcb->PID,numDePagina, texto);
+		string_append_with_format(&response->texto, "mProc %d - Pagina %d escrita: %s ;", pcb->PID,numDePagina, texto);
 		log_info(loggerInfo, ANSI_COLOR_CYAN "CPU: %d - mProc %d - Pagina %d escrita: %s " ANSI_COLOR_RESET,id, pcb->PID,numDePagina, texto);
 	} else {
 		response->id=ERROR;
 		response->texto=string_new();
 		response->retardo = 0;
-		string_append_with_format(&response->texto, "Error en el mProc %d - Pagina %d NO escrita: %s ", pcb->PID,numDePagina, texto);
+		string_append_with_format(&response->texto, "Error en el mProc %d - Pagina %d NO escrita: %s ;", pcb->PID,numDePagina, texto);
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - Error en el mProc %d - Pagina %d NO escrita: %s "ANSI_COLOR_RESET, id, pcb->PID,numDePagina, texto);
 	}
 	free(header_de_memoria);
@@ -413,7 +412,7 @@ t_respuesta* mAnsisOp_IO(int32_t id, PCB* pcb,int32_t tiempo){
 	response->id=ENTRADASALIDA;
 	response->texto=string_new();
 	response->retardo = tiempo;
-	string_append_with_format(&response->texto, "mProc %d en entrada-salida de tiempo %d ", id,tiempo);
+	string_append_with_format(&response->texto, "mProc %d en entrada-salida de tiempo %d ;", id,tiempo);
 	log_info(loggerInfo, ANSI_COLOR_BLUE "CPU:%d - mProc %d en entrada-salida de tiempo %d " ANSI_COLOR_RESET, id,tiempo);
 	return response;
 }
@@ -442,13 +441,13 @@ t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 	response->id=FINALIZAR;
 	response->texto=string_new();
 	response->retardo = 0;
-	string_append_with_format(&response->texto, "mProc %d Finalizado ", pcb->PID);
+	string_append_with_format(&response->texto, "mProc %d Finalizado ;", pcb->PID);
 	log_info(loggerInfo, ANSI_COLOR_BOLDMAGENTA "CPU:%d - mProc %d Finalizado "ANSI_COLOR_RESET, id, pcb->PID);
 	}else{
 		response->id=ERROR;
 		response->texto=string_new();
 		response->retardo = 0;
-		string_append_with_format(&response->texto, "Error al finalizar el mProc %d ", pcb->PID);
+		string_append_with_format(&response->texto, "Error al finalizar el mProc %d ;", pcb->PID);
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - Error al finalizar el mProc %d " ANSI_COLOR_RESET,id, pcb->PID);
 	}
 	free(respuestaMem);
