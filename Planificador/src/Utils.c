@@ -6,6 +6,7 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <commons/string.h>
 #include "Utils.h"
 
 char* convertToString(int32_t num) {
@@ -72,3 +73,20 @@ int32_t get_actual_time_integer() {
 	return valor;
 }
 
+char* generate_absolute_path(char* filePath) {
+
+	/** Creo un pipe para obtener el path absoluto **/
+	FILE *pipeFile;
+	char path[100];
+	char* command = string_new();
+	string_append_with_format(&command, "locate %s", filePath);
+	pipeFile = popen(command, "r");
+	if (pipeFile == NULL) perror("A pipe error has occurred");
+	while (fgets(path, 100, pipeFile) != NULL){}
+	char* path_absoluto = string_new();
+	int32_t tamanio = string_length(path);
+	memcpy(path_absoluto, path, tamanio-1);
+	path_absoluto[tamanio-1] = '\0';
+	pclose(pipeFile);
+	return path_absoluto;
+}

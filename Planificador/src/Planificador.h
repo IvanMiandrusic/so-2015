@@ -69,7 +69,6 @@ typedef struct estructura_metricas{
 	int32_t horasRsp;
 	int32_t minRsp;
 	int32_t seg_Resp;
-	int32_t resp;
 
 }Metricas;
 

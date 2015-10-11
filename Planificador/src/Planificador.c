@@ -209,7 +209,6 @@ Metricas* iniciarMetricas(int32_t PID) {
 	misMetricas->horasRsp = 0;
 	misMetricas->minRsp = 0;
 	misMetricas->seg_Resp = 0;
-	misMetricas->resp = 0;
 	return misMetricas;
 }
 
@@ -434,7 +433,9 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 			metrica->horasEjec = metrica->minEjec / 60;
 			metrica->minEjec = min;
 		}
+		free(t_horaEjec);
 		free(resultado);
+		free(t_horaActual);
 		return;
 	}
 	if (tipo == TIEMPO_ESP) {
@@ -459,14 +460,22 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 		return;
 	}
 	if(tipo==TIEMPO_RSP){
+		log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "La hora de creacion de la metrica del mProc %d es %d"
+				ANSI_COLOR_RESET, ID, metrica->hora_de_Creacion);
+
 		t_time* t_horaCreacion = obtengoTiempo(metrica->hora_de_Creacion);
+		log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "La hora de creacion para calcular tiempo respuesta es %d:%d:%d"
+				ANSI_COLOR_RESET, t_horaCreacion->horas, t_horaCreacion->minutos, t_horaCreacion->segundos);
+		log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "La hora actual para calcular el tiempo respuesta es %d:%d:%d"
+								ANSI_COLOR_RESET, t_horaActual->horas, t_horaActual->minutos, t_horaActual->segundos);
+
 		t_time* respuestaRSP = calculoDefinitivo(t_horaActual,t_horaCreacion);
 		metrica->horasRsp = respuestaRSP->horas;
 		metrica->minRsp = respuestaRSP->minutos;
 		metrica->seg_Resp = respuestaRSP->segundos;
-		metrica->resp = 1;						//TODO ¿Utilidad?
 		free(t_horaCreacion);
 		free(respuestaRSP);
+		free(t_horaActual);
 	}
 }
 
