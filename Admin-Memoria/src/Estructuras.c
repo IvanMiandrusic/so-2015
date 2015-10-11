@@ -172,7 +172,9 @@ void TLB_refresh(int32_t PID, TPagina* pagina_a_actualizar) {
 	/** Ordeno la TLB segun tiempo de ultima referencia **/
 	TLB_sort();
 	log_debug(loggerDebug, "Cargo en TLB pid: %d, pagina:%d, presencia:%d", PID, pagina_a_actualizar->pagina, pagina_a_actualizar->presente);
-	TLB* nueva_entrada = malloc(sizeof(TLB));
+	sem_wait(&sem_mutex_tlb);
+	TLB* nueva_entrada=list_get(TLB_tabla,0);
+	sem_post(&sem_mutex_tlb);
 	nueva_entrada->PID = PID;
 	nueva_entrada->marco = pagina_a_actualizar->marco;
 	nueva_entrada->pagina = pagina_a_actualizar->pagina;
@@ -180,9 +182,6 @@ void TLB_refresh(int32_t PID, TPagina* pagina_a_actualizar) {
 	nueva_entrada->presente = pagina_a_actualizar->presente;
 	nueva_entrada->tiempo_referencia = pagina_a_actualizar->tiempo_referencia;
 
-	sem_wait(&sem_mutex_tlb);
-	list_replace_and_destroy_element(TLB_tabla, 0, nueva_entrada, free);
-	sem_post(&sem_mutex_tlb);
 }
 
 void TLB_sort() {
@@ -379,7 +378,7 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 		/** Si es LRU me interesa saber en que instante se referencia la pag en MP **/
 		if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
 			entradaFound->tiempo_referencia = get_actual_time_integer();
-
+		entradaFound->bitUso=1;
 		/** Hago el retardo si encuentra la pagina en la tabla de paginas **/
 		sleep(arch->retardo);
 
