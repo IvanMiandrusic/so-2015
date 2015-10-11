@@ -86,7 +86,7 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t, t_pagina*);
 void TLB_refresh(int32_t, TPagina*);
 void TLB_sort();
 void TLB_clean_by_PID(int32_t);
-void TLB_clean_by_page(TPagina*);
+void TLB_clean_by_page(int32_t, TPagina*);
 bool TLB_exist(TPagina*);
 
 /** Funciones tabla_paginas y MP **/

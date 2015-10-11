@@ -463,12 +463,14 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 			enviado = _send_bytes(socketCpu, &tamanio, sizeof(int32_t));
 			enviado = _send_bytes(socketCpu, pagina_pedida->contenido, tamanio);
 			free(headerCpu);
+			free(pagina_pedida->contenido);
 			free(pagina_pedida);
 			log_debug(loggerDebug,"Se leyo la pagina correctamente");
 		}else{
 			header_t* headerCpu = _create_header(OK, 0);
 			enviado = _send_header(socketCpu, headerCpu);
 			free(headerCpu);
+			free(pagina_pedida->contenido);
 			free(pagina_pedida);
 			log_debug(loggerDebug, "Se escribio la pagina correctamente");
 		}

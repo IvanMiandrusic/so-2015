@@ -224,11 +224,11 @@ bool TLB_exist(TPagina* pagina) {
 	return list_any_satisfy(TLB_tabla, page_exist);
 }
 
-void TLB_clean_by_page(TPagina* pagina) {
+void TLB_clean_by_page(int32_t PID, TPagina* pagina) {
 
 	void limpiar_entrada(void* parametro){
 		TLB* entrada = (TLB*) parametro;
-		if (entrada->pagina == pagina->pagina){
+		if (entrada->pagina == pagina->pagina && entrada->PID== PID){
 			entrada->PID=0;
 			entrada->marco=0;
 			entrada->modificada=0;
@@ -547,17 +547,17 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 
 	int32_t offset=marco_libre * arch->tamanio_marco;
 	if(pagina_recibida_swap->contenido==NULL){
-		log_debug(loggerDebug, "Tengo contenido nulo");
 		char* texto=string_repeat('\0', arch->tamanio_marco);
 		memcpy(mem_principal+offset,texto,arch->tamanio_marco);
+		free(texto);
 	}else{
-		log_debug(loggerDebug, "Tengo contenido no nulo:%s", pagina_recibida_swap->contenido);
 		int32_t diferencia= arch->tamanio_marco-pagina_recibida_swap->tamanio_contenido;
 		log_debug(loggerDebug, "La diferencia sería:%d (%d - %d", diferencia, arch->tamanio_marco,pagina_recibida_swap->tamanio_contenido );
 		char* texto=string_repeat('\0', diferencia);
 		string_append(&(pagina_recibida_swap->contenido), texto);
 		log_debug(loggerDebug,"Resultado del append:%s", pagina_recibida_swap->contenido);
 		memcpy(mem_principal+offset,pagina_recibida_swap->contenido,arch->tamanio_marco);
+		free(texto);
 	}
 
 	/** Actualizo contenido en la TLB **/
@@ -607,8 +607,8 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		pagina_a_ausentar->tiempo_referencia = 0;
 
 		/** Puede que este en la TLB esa pagina que se ausente **/
-		if(TLB_exist(pagina_a_ausentar))
-			TLB_clean_by_page(pagina_a_ausentar);
+		if(TLB_exist(pagina_a_ausentar)) TLB_clean_by_page(PID,pagina_a_ausentar);
+
 		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Se reemplaza por algoritmo %s, deja de estar en memoria la pagina %d del mProc %d" ANSI_COLOR_RESET, arch->algoritmo_reemplazo, pagina_a_ausentar->pagina, PID);
 
 		/** Escribo pagina en swap (si esta modificada) **/
@@ -674,6 +674,10 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		}
 
 		log_info(loggerInfo, "Por algoritmo %s, deja de estar en memoria la pagina %d", arch->algoritmo_reemplazo, mejorPagina->pagina);
+
+		/** Puede que este en la TLB esa pagina que se ausente **/
+				if(TLB_exist(mejorPagina)) TLB_clean_by_page(PID,mejorPagina);
+				log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Se reemplaza por algoritmo %s, deja de estar en memoria la pagina %d del mProc %d" ANSI_COLOR_RESET, arch->algoritmo_reemplazo, mejorPagina->pagina, PID);
 
 		/** Escribo pagina en swap (si esta modificada) **/
 		if(mejorPagina->modificada == 1) {
