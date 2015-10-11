@@ -826,7 +826,8 @@ void agregarColaCPUs(CPU_t* cpu) {
 
 void sacarDeExec(int32_t pcbID) {
 
-	bool getPcbByID(PCB* unPCB) {
+	bool getPcbByID(void* arg) {
+		PCB* unPCB = (PCB*) arg;
 		return unPCB->PID == pcbID;
 	}
 	sem_wait(&semMutex_colaExec);

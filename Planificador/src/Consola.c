@@ -100,9 +100,13 @@ void correrPath(char* comando) {
 	/** Obtengo el parametro del comando **/
 	char* filePath = string_duplicate(comando_parametro[1]);
 
-	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a iniciar un mProc nuevo con mCod %s" ANSI_COLOR_RESET "\n", filePath);
-	log_info(loggerInfo, "Se procede a iniciar un mProc nuevo con mCod %s", filePath);
-	administrarPath(filePath);
+	char* absolute_path = generate_absolute_path(filePath);
+
+	if(absolute_path == NULL) return;
+
+	printf(ANSI_COLOR_BOLDYELLOW "Se procedera a iniciar un mProc nuevo con mCod %s" ANSI_COLOR_RESET "\n", absolute_path);
+	log_info(loggerInfo, "Se procede a iniciar un mProc nuevo con mCod %s", absolute_path);
+	administrarPath(absolute_path);
 	asignarPCBaCPU();
 }
 

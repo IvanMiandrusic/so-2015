@@ -75,26 +75,52 @@ int32_t get_actual_time_integer() {
 
 char* generate_absolute_path(char* filePath) {
 
-	/** Creo un pipe para obtener el path absoluto **/
-	FILE *pipeFile;
-	fflush(pipeFile);
-	char path[100];
+	/** Creo el comando locate para encontrar el path del archivo en el FS y redirecciono salida en archivo **/
 	char* command = string_new();
-	string_append_with_format(&command, "locate %s", filePath);
-	pipeFile = popen(command, "r");
-	if (pipeFile == NULL) perror("A pipe error has occurred");
-	while (fgets(path, 100, pipeFile) != NULL){}
-	if(path[0]=='/') {						//el locate encontro el mCod
-		char* path_absoluto = string_new();
-		int32_t tamanio = string_length(path);
-		memcpy(path_absoluto, path, tamanio-1);			//le saco el \n de mas
-		path_absoluto[tamanio-1] = '\0';
-		pclose(pipeFile);
-		return path_absoluto;
-	}
-	if(path[0]!='/') {					//el locate no encontro el mCod
-		pclose(pipeFile);
+	string_append_with_format(&command, "locate -i -l 1 %s > locate.out", filePath);
+
+	/** Ejecuto el comando **/
+	system(command);
+
+	/** Abro archivo para leer el path **/
+	FILE* output_file = fopen("locate.out", "r");
+	if(NULL == output_file)
+	{
+		log_error(loggerError, ANSI_COLOR_BOLDRED "Un error ocurrio al abrir el archivo con el path" ANSI_COLOR_RESET);
+		printf(ANSI_COLOR_BOLDRED "Un error ocurrio al abrir el archivo con el path" ANSI_COLOR_RESET);
 		return NULL;
 	}
 
+	/** Obtengo el tamaño del contenido **/
+	fseek(output_file, 0, SEEK_END);
+	int32_t fsize = ftell(output_file);
+	if(fsize < 0) {
+		log_error(loggerError, ANSI_COLOR_BOLDRED "Un error ocurrio para saber tamaño del archivo con el path" ANSI_COLOR_RESET);
+		printf(ANSI_COLOR_BOLDRED "Un error ocurrio para saber tamaño del archivo con el path" ANSI_COLOR_RESET);
+		return NULL;
+	}
+	fseek(output_file, 0, SEEK_SET);
+
+	/** Leo el contenido (el path absoluto) **/
+	char* absolute_path = malloc(fsize);
+	int32_t read = fread(absolute_path, fsize, 1, output_file);
+	if(read == 0) {
+		log_error(loggerError, ANSI_COLOR_BOLDRED "Un error ocurrio al leer el archivo con el path" ANSI_COLOR_RESET);
+		printf(ANSI_COLOR_BOLDRED "Un error ocurrio al leer el archivo con el path" ANSI_COLOR_RESET);
+		return NULL;
+	}
+
+	/** Cierro el archivo **/
+	if(!fclose(output_file)){
+		log_error(loggerError, ANSI_COLOR_BOLDGREEN "Exito al cerrar el archivo con el path" ANSI_COLOR_RESET);
+	}
+	else {
+		log_error(loggerError, ANSI_COLOR_BOLDRED "Un error ocurrio al cerrar el archivo con el path" ANSI_COLOR_RESET);
+		printf(ANSI_COLOR_BOLDRED "Un error ocurrio al cerrar el archivo con el path" ANSI_COLOR_RESET);
+		return NULL;
+	}
+
+	absolute_path[fsize-1] = '\0';
+
+	return absolute_path;
 }
