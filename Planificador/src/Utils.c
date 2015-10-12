@@ -106,7 +106,7 @@ char* generate_absolute_path(char* filePath) {
 	int32_t read = fread(absolute_path, fsize, 1, output_file);
 	if(read == 0) {
 		log_error(loggerError, ANSI_COLOR_BOLDRED "Un error ocurrio al leer el archivo con el path" ANSI_COLOR_RESET);
-		printf(ANSI_COLOR_BOLDRED "Un error ocurrio al leer el archivo con el path" ANSI_COLOR_RESET);
+		printf(ANSI_COLOR_BOLDRED "El path del mCod ingresado es incorrecto" ANSI_COLOR_RESET);
 		return NULL;
 	}
 

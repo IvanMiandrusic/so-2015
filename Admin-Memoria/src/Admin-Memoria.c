@@ -188,11 +188,16 @@ void limpiar_estructuras_memoria(){
 }
 
 
-/*Main.- Queda a criterio del programador definir si requiere parametros para la invocación */
-int main(void) {
+/** MAIN **/
+int main(int argc, char** argv) {
+
+	if(argc!=2) {
+		printf(ANSI_COLOR_BOLDRED "Cantidad erronea de parametros. Este proceso recibe un parametro\n" ANSI_COLOR_RESET);
+		return EXIT_FAILURE;
+	}
 
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
-		crearArchivoDeLog();
+	crearArchivoDeLog();
 
 	/*Tratamiento del ctrl+c en el proceso */
 	if (signal(SIGINT, ifProcessDie) == SIG_ERR)
@@ -208,7 +213,7 @@ int main(void) {
 			log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGPOLL" ANSI_COLOR_RESET);
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "../Admin-Memoria.config";
+	char* path = argv[1];
 	crear_estructura_config(path);
 
 	/*Se inicializan todos los semaforos necesarios */

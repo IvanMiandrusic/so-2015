@@ -203,14 +203,19 @@ void graficoCompactar(){
 	log_info(loggerInfo, ANSI_COLOR_GREEN"Compactacion finalizada por fragmentacion externa"ANSI_COLOR_RESET);
 }
 
-int main(void) {
+int main(int argc, char** argv) {
+
+	if(argc!=2) {
+		printf(ANSI_COLOR_BOLDRED "Cantidad erronea de parametros. Este proceso recibe un parametro \n" ANSI_COLOR_RESET);
+		return EXIT_FAILURE;
+	}
 
 	/*Tratamiento del ctrl+c en el proceso */
 	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError, ANSI_COLOR_RED"Error con la señal SIGINT"ANSI_COLOR_RESET);
 
 
 	/*Se genera el struct con los datos del archivo de config.- */
-	char* path = "../Admin-Swap.config";
+	char* path = argv[1];
     crear_estructura_config(path);
 
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
