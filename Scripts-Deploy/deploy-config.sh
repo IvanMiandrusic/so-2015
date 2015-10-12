@@ -43,6 +43,8 @@ read PROCESS_ID
 
 echo "PROCEED TO INSTALL SELECTED PROCESS"
 
+cd $GIT_LOC/Scripts-Deploy
+
 case $PROCESS_ID in
 1 )
 	chmod +x planificador.sh
