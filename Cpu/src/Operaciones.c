@@ -194,7 +194,6 @@ void ejecutar(int32_t id, PCB* pcb){
 			sleep(arch->retardo);
 			string_append(&log_acciones, respuesta->texto);
 			pcb->siguienteInstruccion=ftell(prog);
-			log_debug(loggerDebug, "Analice y ejecute una linea, la proxima tiene PC en:%d", pcb->siguienteInstruccion);
 			if(respuesta->id==FINALIZAR){
 				enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_OK,id,pcb,log_acciones,0);
 				ultimoQuantum = quantum;
@@ -217,8 +216,16 @@ void ejecutar(int32_t id, PCB* pcb){
 				fclose(prog);
 				return ;
 			}
+			log_debug(loggerDebug, "Analice y ejecute una linea, la proxima tiene PC en:%d", pcb->siguienteInstruccion);
 			free(respuesta);
-		} else finalizado = TRUE;
+		} else {
+			finalizado = TRUE;
+			enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_OK,id,pcb,log_acciones,0);
+			ultimoQuantum = quantum;
+			free(log_acciones);
+			fclose(prog);
+			return ;
+		}
 		if (quantum > 0){
 					ultimoQuantum ++;
 					if (ultimoQuantum > quantum)finalizado = TRUE;
