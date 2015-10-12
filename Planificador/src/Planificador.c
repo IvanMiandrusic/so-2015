@@ -532,14 +532,17 @@ t_time* obtengoTiempo(int32_t tiempo) {
 }
 
 void agregarPidParaFinalizar(int32_t pcbID) {
-	bool getPcbByID(PCB* unPCB) {
-		return unPCB->PID == pcbID;
+	bool getPcbByID(void* unPCB) {
+		PCB* pcb = (PCB*) unPCB;
+		return pcb->PID == pcbID;
 	}
-	bool getIDMetricas(Metricas* metrica) {
-		return ((metrica->PID == pcbID) && (metrica->finalizado == 1));
+	bool getIDMetricas(void* metrica) {
+		Metricas* unaMetrica = (Metricas*) metrica;
+		return ((unaMetrica->PID == pcbID) && (unaMetrica->finalizado == 1));
 	}
-	bool getMetrica(Metricas* metrica) {
-		return ((metrica->PID == pcbID) && (metrica->finalizado == 0));
+	bool getMetrica(void* metrica) {
+		Metricas* unaMetrica = (Metricas*) metrica;
+		return ((unaMetrica->PID == pcbID) && (unaMetrica->finalizado == 0));
 	}
 
 	if (list_any_satisfy(colaFinalizados, getPcbByID)
@@ -560,8 +563,9 @@ void agregarPidParaFinalizar(int32_t pcbID) {
 
 void finalizarPCB(int32_t pcbID, int32_t tipo) {
 
-	bool getPcbByID(PCB* unPCB) {
-		return unPCB->PID == pcbID;
+	bool getPcbByID(void* unPCB) {
+		PCB* pcb = (PCB*) unPCB;
+		return pcb->PID == pcbID;
 	}
 	PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
 	if (tipo == RESULTADO_OK) {
@@ -583,8 +587,9 @@ void finalizarPCB(int32_t pcbID, int32_t tipo) {
 }
 
 void removerMetrica(int32_t ID) {
-	bool getPcbByID(Metricas* unaMetrica) {
-		return (unaMetrica->PID == ID);
+	bool getPcbByID(void* unaMetrica) {
+		Metricas* metrica = (Metricas*) unaMetrica;
+		return (metrica->PID == ID);
 	}
 	sem_wait(&semMutex_colaMetricas);
 	list_remove_by_condition(colaMetricas, getPcbByID);
@@ -592,8 +597,9 @@ void removerMetrica(int32_t ID) {
 }
 
 void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb) {
-	bool getPcbByID(PCB* unPCB) {
-		return unPCB->PID == pcb->PID;
+	bool getPcbByID(void* unPCB) {
+		PCB* miPcb = (PCB*) unPCB;
+		return miPcb->PID == pcb->PID;
 	}
 	retardo* retardo_nuevo = malloc(sizeof(retardo));
 	retardo_nuevo->ID = pcb->PID;
@@ -627,8 +633,9 @@ void procesar_IO() {
 
 		sem_wait(&sem_io);
 		PCB* pcb_to_sleep = list_get(colaBlock, 0);
-		bool getRetardoByID(retardo* unPCB) {
-			return unPCB->ID == pcb_to_sleep->PID;
+		bool getRetardoByID(void* unPCB) {
+			retardo* retard = (retardo*) unPCB;
+			return (retard->ID == pcb_to_sleep->PID);
 		}
 
 		log_debug(loggerDebug, "Saco el pcb con id: %d", pcb_to_sleep->PID);
@@ -661,8 +668,9 @@ int32_t obtener_tamanio_pcb(PCB* pcb) {
 
 bool hay_cpu_libre() {
 
-	bool estaLibre(CPU_t* cpu) {
-		return cpu->estado == LIBRE;
+	bool estaLibre(void* cpu) {
+		CPU_t* unaCpu = (CPU_t*) cpu;
+		return unaCpu->estado == LIBRE;
 	}
 
 	return list_any_satisfy(colaCPUs, estaLibre);
@@ -690,9 +698,10 @@ void asignarPCBaCPU() {
 	if (hay_cpu_libre() && !list_is_empty(colaListos)) {
 		PCB* pcbAEnviar = list_remove(colaListos, 0);
 
-		bool getPcbByID(Metricas* unaMetrica) {
-			return ((unaMetrica->PID == pcbAEnviar->PID)
-					&& (unaMetrica->finalizado == 1));
+		bool getPcbByID(void* unaMetrica) {
+			Metricas* metrica = (Metricas*) unaMetrica;
+			return ((metrica->PID == pcbAEnviar->PID)
+					&& (metrica->finalizado == 1));
 		}
 
 		if (list_any_satisfy(colaMetricas, getPcbByID)) {
@@ -747,8 +756,9 @@ void mostrarContenidoListas() {
 
 CPU_t* obtener_cpu_libre() {
 
-	bool estaLibre(CPU_t* cpu) {
-		return cpu->estado == LIBRE;
+	bool estaLibre(void* cpu) {
+		CPU_t* unaCpu = (CPU_t*) cpu;
+		return unaCpu->estado == LIBRE;
 	}
 
 	CPU_t* cpu_encontrada = list_find(colaCPUs, estaLibre);
