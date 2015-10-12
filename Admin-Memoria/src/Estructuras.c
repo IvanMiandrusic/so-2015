@@ -810,7 +810,9 @@ void mostrarEstadoActualEstructuras(int32_t PID, TPagina* pagina) {
 	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Estado actual de estructuras en memoria" ANSI_COLOR_RESET);
 	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Tabla de Paginas del mProc %d" ANSI_COLOR_RESET,PID);
 
-	void mostrarEntradaTablaPaginas(TPagina* entrada) {
+	void mostrarEntradaTablaPaginas(void* arg) {
+
+		TPagina* entrada = (TPagina*) arg;
 
 			if(entrada->pagina == pagina->pagina) {
 				log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Pagina %d - Marco %d - Uso %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
