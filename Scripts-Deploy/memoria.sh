@@ -50,4 +50,4 @@ cd $GIT_TP_LOC/$ADMIN_MEMORIA
 
 clear
 
-./$ADMIN_MEMORIA Admin-Memoria.conf
+./$ADMIN_MEMORIA Admin-Memoria.config

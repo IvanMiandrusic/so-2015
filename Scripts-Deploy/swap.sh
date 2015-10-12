@@ -39,4 +39,4 @@ cd $GIT_TP_LOC/$ADMIN_SWAP
 
 clear
 
-./$ADMIN_SWAP Admin-Swap.conf
+./$ADMIN_SWAP Admin-Swap.config

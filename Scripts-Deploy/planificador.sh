@@ -22,11 +22,10 @@ echo "ALGORITMO_PLANIFICACION=$ALGORITMO_PLANIFICACION">>  $GIT_TP_LOC/$PLANIFIC
 echo "QUANTUM=$QUANTUM">>  $GIT_TP_LOC/$PLANIFICADOR/Planificador.config
 
 #Execute Planificador
+clear
 
 echo "EXECUTING PLANIFICADOR"
 
 cd $GIT_TP_LOC/$PLANIFICADOR
 
-clear
-
-./$PLANIFICADOR Planificador.conf
+./$PLANIFICADOR Planificador.config
