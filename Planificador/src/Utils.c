@@ -85,7 +85,8 @@ char* generate_absolute_path(char* filePath) {
 		return absolute_path;
 	}
 	else {
-		perror(ANSI_COLOR_BOLDRED "The mCod no fue encontrado" ANSI_COLOR_RESET);
+		perror(ANSI_COLOR_BOLDRED "The mCod no fue encontrado");
+		printf(ANSI_COLOR_RESET);
 		return NULL;
 	}
 }
