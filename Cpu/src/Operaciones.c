@@ -97,7 +97,8 @@ void* thread_Cpu(void* id){
 	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
 	if(connect_to_server(socket_Memoria)!=SUCCESS_OPERATION){
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - No se puedo conectar con la memoria, se aborta el proceso" ANSI_COLOR_RESET, thread_id);
-		ifProcessDie();
+	envioDie(thread_id);
+        return;	
 	}
 	log_debug(loggerDebug, "Conectado con la memoria cpu:%d", thread_id);
 	sockets->socketMemoria->fd = socket_Memoria->fd;
@@ -108,7 +109,8 @@ void* thread_Cpu(void* id){
 	int32_t resultado_uso = pthread_create(&CPUuse, NULL, thread_Use, (void*) thread_id );
 	if (resultado_uso != 0) {
 		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de uso de CPU número:%d"ANSI_COLOR_RESET, id);
-		ifProcessDie();
+		envioDie(thread_id);
+        return;	
 	}
 
 
