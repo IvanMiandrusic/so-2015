@@ -43,11 +43,10 @@ echo "RETARDO_MEMORIA=$RETARDO_MEMORIA">>  $GIT_TP_LOC/$ADMIN_MEMORIA/Admin-Memo
 echo "ALGORITMO_REEMPLAZO=$ALGORITMO_REEMPLAZO">> $GIT_TP_LOC/$ADMIN_MEMORIA/Admin-Memoria.config
 
 #Execute Admin-Memoria
+clear
 
 echo "EXECUTING ADMIN_MEMORIA"
 
 cd $GIT_TP_LOC/$ADMIN_MEMORIA
-
-clear
 
 ./$ADMIN_MEMORIA Admin-Memoria.config

@@ -31,11 +31,10 @@ echo "CANTIDAD_HILOS=$CANTIDAD_HILOS">>  $GIT_TP_LOC/$CPUS/cpu.config
 echo "RETARDO=$RETARDO">>  $GIT_TP_LOC/$CPUS/cpu.config
 
 #Execute CPU
+clear
 
 echo "EXECUTING CPU"
 
 cd $GIT_TP_LOC/$CPUS
-
-clear
 
 ./$CPUS cpu.config

@@ -32,11 +32,10 @@ echo "RETARDO_SWAP=$RETARDO_SWAP">> $GIT_TP_LOC/$ADMIN_SWAP/Admin-Swap.config
 echo "RETARDO_COMPACTACION=$RETARDO_COMPACTACION">>  $GIT_TP_LOC/$ADMIN_SWAP/Admin-Swap.config
 
 #Execute SWAP
+clear
 
 echo "EXECUTING SWAP"
 
 cd $GIT_TP_LOC/$ADMIN_SWAP
-
-clear
 
 ./$ADMIN_SWAP Admin-Swap.config
