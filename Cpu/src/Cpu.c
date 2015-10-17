@@ -38,7 +38,6 @@ int32_t* tiempoAcumulado;
 int32_t* estado;
 sem_t sem_mutex;
 
-
 void crear_estructura_config(char* path)
 {
     t_config* archConfig = config_create(path);
@@ -68,20 +67,17 @@ void ifProcessDie(){
 
 	/** Si el proceso muere, debo avisar al planificador que me limpie de su lista de cpus **/
 	int32_t i;
-	for(i=0; i<arch->cantidad_hilos; i++){
 
+	for(i=0; i < arch->cantidad_hilos; i++){
 		header_t* header_control_c = _create_header(CPU_DIE, sizeof(int32_t));
 		sock_t* socketPlanificador = getSocketPlanificador(i);
-
 		int32_t enviado = _send_header(socketPlanificador, header_control_c);
 		if(enviado == ERROR_OPERATION)return;
-
-		enviado = _send_bytes(socketPlanificador, &i, get_message_size(header_control_c));
+		enviado = _send_bytes(socketPlanificador, &i, sizeof(int32_t));
 		if(enviado == ERROR_OPERATION)return;
-
 	}
 	clean();
-	exit(1);
+	exit(0);
 }
 
 /*Función donde se inicializan los semaforos */

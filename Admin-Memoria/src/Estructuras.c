@@ -458,7 +458,10 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap
 		}
 		header_t* header_resultado_swap = _create_empty_header();
 		recibido = _receive_header(socketSwap, header_resultado_swap);
-		if(recibido == ERROR_OPERATION) return SEARCH_ERROR;
+		if(recibido == ERROR_OPERATION) {
+			log_info(loggerInfo, ANSI_COLOR_BOLDRED "Se perdio la conexion con el Swap"ANSI_COLOR_RESET);
+			return SEARCH_ERROR;
+		}
 
 
 
@@ -470,11 +473,11 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap
 				pagina_Nueva->PID=pagina->PID;
 				pagina_Nueva->nro_pagina=pagina->nro_pagina;
 				recibido = _receive_bytes(socketSwap, &(pagina_Nueva->tamanio_contenido), sizeof(int32_t));
-				if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
+				if (recibido == ERROR_OPERATION) return SEARCH_ERROR;
 				if(pagina_Nueva->tamanio_contenido>0){
 					pagina_Nueva->contenido = malloc(1 + pagina_Nueva->tamanio_contenido);
 					recibido = _receive_bytes(socketSwap, pagina_Nueva->contenido, pagina_Nueva->tamanio_contenido);
-					if (enviado == ERROR_OPERATION) return SEARCH_ERROR;
+					if (recibido == ERROR_OPERATION) return SEARCH_ERROR;
 					pagina_Nueva->contenido[pagina_Nueva->tamanio_contenido]='\0';
 				}else{
 					pagina_Nueva->contenido=NULL;
