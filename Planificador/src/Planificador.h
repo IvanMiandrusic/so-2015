@@ -23,8 +23,6 @@
 #include <commons/temporal.h>
 #include "libsocket.h"
 
-
-
 typedef enum estados_pcb {
        LISTO=1,
        EJECUCION=2,
@@ -118,7 +116,6 @@ extern t_list* colaExec;
 extern t_list* colaFinalizados;
 extern t_list* colaCPUs;
 extern t_list* retardos_PCB;
-extern int32_t correspondeCalculoTResp;
 
 void crear_estructura_config(char*);
 void ifProcessDie();
