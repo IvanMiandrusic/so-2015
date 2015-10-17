@@ -209,6 +209,7 @@ Metricas* iniciarMetricas(int32_t PID) {
 	misMetricas->horasRsp = 0;
 	misMetricas->minRsp = 0;
 	misMetricas->seg_Resp = 0;
+	misMetricas->correspondeCalculoTResp = true;
 	return misMetricas;
 }
 
@@ -343,6 +344,7 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 	if (cod_Operacion == INSTRUCCION_IO) {
 		log_info(loggerInfo, ANSI_COLOR_YELLOW"El proceso: %d pidio una I/O"ANSI_COLOR_RESET, pcb->PID);
 		operarIO(cpu_id, tiempo, pcb);
+		calcularMetrica(pcb->PID, TIEMPO_RSP);
 	}
 	if (cod_Operacion == TERMINO_RAFAGA) {
 		log_info(loggerInfo, ANSI_COLOR_BOLDWHITE "Termina rafaga del proceso con ruta: %s e ID: %d con respuesta:%s" ANSI_COLOR_RESET,
@@ -355,7 +357,6 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 		asignarPCBaCPU();
 	}
 	if (cod_Operacion == RESULTADO_ERROR || cod_Operacion == RESULTADO_OK) {
-		mostrarMetricas(pcb->PID);
 		finalizarPCB(pcb->PID, cod_Operacion);
 		liberarCPU(cpu_id);
 		asignarPCBaCPU();
@@ -460,6 +461,7 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 		return;
 	}
 	if(tipo==TIEMPO_RSP){
+		if(metrica->correspondeCalculoTResp){
 		log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "La hora de creacion de la metrica del mProc %d es %d"
 				ANSI_COLOR_RESET, ID, metrica->hora_de_Creacion);
 
@@ -473,9 +475,11 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 		metrica->horasRsp = respuestaRSP->horas;
 		metrica->minRsp = respuestaRSP->minutos;
 		metrica->seg_Resp = respuestaRSP->segundos;
+		metrica->correspondeCalculoTResp = false;
 		free(t_horaCreacion);
 		free(respuestaRSP);
 		free(t_horaActual);
+		}
 	}
 }
 
@@ -581,7 +585,9 @@ void finalizarPCB(int32_t pcbID, int32_t tipo) {
 				ANSI_COLOR_BOLDRED"Se Finalizo con error el PID: %d y ruta: %s"ANSI_COLOR_RESET,
 				pcbID, pcb_found->ruta_archivo);
 	}
+	calcularMetrica(pcb_found->PID, TIEMPO_RSP);
 	agregarPcbAColaFinalizados(pcb_found);
+	mostrarMetricas(pcb_found->PID);
 	removerMetrica(pcb_found->PID);
 	return;
 }
@@ -719,7 +725,6 @@ void asignarPCBaCPU() {
 				pcbAEnviar->ruta_archivo, pcbAEnviar->PID, arch->algoritmo);
 		/** Pongo el PCB en ejecucion **/
 		if(pcbAEnviar->siguienteInstruccion==0)	{
-			calcularMetrica(pcbAEnviar->PID, TIEMPO_RSP);
 			calcularMetrica(pcbAEnviar->PID, TIEMPO_ESP);
 		}
 		if(pcbAEnviar->siguienteInstruccion>0)  calcularMetrica(pcbAEnviar->PID, TIEMPO_ESP);
