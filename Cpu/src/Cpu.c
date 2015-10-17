@@ -67,19 +67,17 @@ void ifProcessDie(){
 
 	/** Si el proceso muere, debo avisar al planificador que me limpie de su lista de cpus **/
 	int32_t i;
-
 	for(i=0; i < arch->cantidad_hilos; i++){
-   envioDie(id);
-}
-			clean();
+		envioDie(i);
+	}
+	clean();
 	exit(0);
 }
 
 
 
-Void envioDie (int32_t id){
-
-header_t* header_control_c = _create_header(CPU_DIE, sizeof(int32_t));
+void envioDie (int32_t id){
+		header_t* header_control_c = _create_header(CPU_DIE, sizeof(int32_t));
 		sock_t* socketPlanificador = getSocketPlanificador(id);
 		int32_t enviado = _send_header(socketPlanificador, header_control_c);
 		if(enviado == ERROR_OPERATION)return;

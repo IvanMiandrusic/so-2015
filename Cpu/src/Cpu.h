@@ -37,7 +37,7 @@ void ifProcessDie();
 void inicializoSemaforos();
 void crearArchivoDeLog();
 void clean();
-void EnvioDie(int32_t);
+void envioDie(int32_t);
 
 
 #endif /* CPU_H_ */
