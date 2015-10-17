@@ -69,16 +69,24 @@ void ifProcessDie(){
 	int32_t i;
 
 	for(i=0; i < arch->cantidad_hilos; i++){
-		header_t* header_control_c = _create_header(CPU_DIE, sizeof(int32_t));
-		sock_t* socketPlanificador = getSocketPlanificador(i);
-		int32_t enviado = _send_header(socketPlanificador, header_control_c);
-		if(enviado == ERROR_OPERATION)return;
-		enviado = _send_bytes(socketPlanificador, &i, sizeof(int32_t));
-		if(enviado == ERROR_OPERATION)return;
-	}
-	clean();
+   envioDie(id);
+}
+			clean();
 	exit(0);
 }
+
+
+
+Void envioDie (int32_t id){
+
+header_t* header_control_c = _create_header(CPU_DIE, sizeof(int32_t));
+		sock_t* socketPlanificador = getSocketPlanificador(id);
+		int32_t enviado = _send_header(socketPlanificador, header_control_c);
+		if(enviado == ERROR_OPERATION)return;
+		enviado = _send_bytes(socketPlanificador, &id, sizeof(int32_t));
+		if(enviado == ERROR_OPERATION)return;
+}
+
 
 /*Función donde se inicializan los semaforos */
 
