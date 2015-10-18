@@ -67,14 +67,10 @@ void ifProcessDie(){
 
 	/** Si el proceso muere, debo avisar al planificador que me limpie de su lista de cpus **/
 	int32_t i;
-	for(i=0; i < arch->cantidad_hilos; i++){
-		envioDie(i);
-	}
+	for(i=0; i < arch->cantidad_hilos; i++){ envioDie(i);}
 	clean();
 	exit(0);
 }
-
-
 
 void envioDie (int32_t id){
 		header_t* header_control_c = _create_header(CPU_DIE, sizeof(int32_t));
@@ -85,11 +81,9 @@ void envioDie (int32_t id){
 		if(enviado == ERROR_OPERATION)return;
 }
 
-
 /*Función donde se inicializan los semaforos */
 
 void inicializoSemaforos(){
-
 	//Abajo, una inicialización ejemplo, sem_init(&semaforo, flags, valor) con su validacion
 	int32_t semMutex = sem_init(&sem_mutex,0,1);
 	if(semMutex==-1)log_error(loggerError,"No pudo crearse el semaforo Mutex");
@@ -116,7 +110,6 @@ int main(int argc, char** argv) {
 	/*Tratamiento del ctrl+c en el proceso */
 	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGINT" ANSI_COLOR_RESET);
 
-
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = argv[1];
 	crear_estructura_config(path);
@@ -125,15 +118,13 @@ int main(int argc, char** argv) {
 	tiempoFinal=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 	tiempoAcumulado=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
 	estado=malloc(sizeof(int32_t)* (arch->cantidad_hilos));
+
 	/*Se genera el archivo de log, to-do lo que sale por pantalla */
 	crearArchivoDeLog();
 	log_info(loggerInfo, "Se cargaron correctamente los parametros de configuración");
 
-
 	/*Se inicializan todos los semaforos necesarios */
 	inicializoSemaforos();
-
-
 
 	/*Creo los hilos necesarios para la ejecución*/
 	int32_t i;
@@ -149,7 +140,7 @@ int main(int argc, char** argv) {
     	if (resultado != 0) {
     		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de ejecucion CPU número: %d"ANSI_COLOR_RESET, i);
     		abort();
-    	}else{log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Se creo exitosamente el hilo de ejecucion CPU número: %d"ANSI_COLOR_RESET, i);}
+    	}else{log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "Se creo exitosamente la CPU número: %d"ANSI_COLOR_RESET, i);}
 
     }
 	for(i=0;i<cantidad_hilos;i++){ // espera a que terminen los hilos para terminar el proceso
@@ -157,6 +148,4 @@ int main(int argc, char** argv) {
 	}
 	clean();
 	return EXIT_SUCCESS;
-
 }
-

@@ -19,12 +19,8 @@ int32_t quantum;
 
 void* thread_Use(void* thread_id){
 	int32_t id = (void*)thread_id;
-	tiempoAcumulado[id]=0;
-	tiempoInicial[id]=0;
-	tiempoFinal[id]=0;
-	int32_t toAnterior;
-	int32_t tfAnterior;
-	int32_t porcentaje;
+	tiempoAcumulado[id]=0;tiempoInicial[id]=0;tiempoFinal[id]=0;			//inicializo
+	int32_t toAnterior;int32_t tfAnterior;int32_t porcentaje;				//defino variables necesarias
 	sock_t* socketPlanificador=getSocketPlanificador(id);
 	int32_t finalizar=1;
 	while(finalizar){finalizar=obtengoSegundos();}
@@ -32,7 +28,6 @@ void* thread_Use(void* thread_id){
 		if(estado[id]==1){					//si esta ejecutando
 			tiempoAcumulado[id]+=60-tiempoInicial[id];
 		}
-
 		porcentaje=tiempoAcumulado[id]*10/6;
 		if(tiempoFinal[id]==tfAnterior && tiempoInicial[id]==toAnterior){
 			if(estado[id]==1) {				//si en un minuto no cambio y esta ejecutando
@@ -50,12 +45,11 @@ void* thread_Use(void* thread_id){
 		int32_t enviado = _send_header (socketPlanificador, header_uso_cpu);
 		if(enviado == ERROR_OPERATION ) exit(1);
 		enviado = _send_bytes(socketPlanificador,&id,sizeof(int32_t));
-		if(enviado == ERROR_OPERATION)  exit(1);
+		if(enviado == ERROR_OPERATION ) exit(1);
 		enviado = _send_bytes(socketPlanificador,&porcentaje,sizeof(int32_t));
 		if(enviado == ERROR_OPERATION ) exit(1);
 		free(header_uso_cpu);
-		toAnterior=tiempoInicial[id];
-		tfAnterior=tiempoFinal[id];
+		toAnterior=tiempoInicial[id];tfAnterior=tiempoFinal[id];
 		sleep(60);
 	}
 	return NULL;
@@ -64,6 +58,7 @@ void* thread_Use(void* thread_id){
 void* thread_Cpu(void* id){
 
 	int32_t thread_id = (void*) id;
+
 	sock_t* socket_Planificador=create_client_socket(arch->ip_planificador,arch->puerto_planificador);
 	int32_t resultado = connect_to_server(socket_Planificador);
 	if(resultado == ERROR_OPERATION ) {
@@ -75,6 +70,7 @@ void* thread_Cpu(void* id){
 	/*Me guardo en mi list de sockets los fd*/
 	t_sockets* sockets=list_get(socketsCPU, thread_id);
 	sockets->socketPlanificador->fd = socket_Planificador->fd;
+
 	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
 	if(connect_to_server(socket_Memoria)!=SUCCESS_OPERATION){
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - No se puedo conectar con la memoria, se aborta el proceso" ANSI_COLOR_RESET, thread_id);
@@ -86,19 +82,13 @@ void* thread_Cpu(void* id){
 	//enviarle al planificador NUEVA_CPU y su id;
 	header_t* header_nueva_cpu = _create_header(NUEVA_CPU, sizeof(int32_t));
 	int32_t enviado =_send_header (socket_Planificador, header_nueva_cpu);
-
-	if (enviado !=SUCCESS_OPERATION)
-	{
+	if (enviado !=SUCCESS_OPERATION){
 		log_error(loggerError, ANSI_COLOR_RED "Se perdio la conexion con el Planificador de la cpu: %d" ANSI_COLOR_RESET, thread_id);
-		return NULL;
-	}
-
+		return NULL;}
 	enviado = _send_bytes(socket_Planificador, &thread_id,sizeof(int32_t));
-	if (enviado !=SUCCESS_OPERATION)
-	{
+	if (enviado !=SUCCESS_OPERATION){
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - Se perdio la conexion con el Planificador" ANSI_COLOR_RESET, thread_id);
-		return NULL;
-	}
+		return NULL;}
 	free(header_nueva_cpu);
 
 	pthread_t CPUuse;
@@ -112,11 +102,9 @@ void* thread_Cpu(void* id){
 	int32_t finalizar = 1;
 	int32_t resul_Mensaje_Recibido;
 	header_t* header_planificador = _create_empty_header() ;
-	while (finalizar == 1)
-	{
+	while (finalizar == 1)	{
 		resul_Mensaje_Recibido = _receive_header(socket_Planificador, header_planificador);
-		if (resul_Mensaje_Recibido !=SUCCESS_OPERATION )
-		{
+		if (resul_Mensaje_Recibido !=SUCCESS_OPERATION ) {
 			log_error(loggerError, ANSI_COLOR_RED "CPU_ID:%d - Se perdio la conexion con el Planificador" ANSI_COLOR_RESET, thread_id);
 			finalizar = 0;
 			break;
@@ -131,8 +119,7 @@ void* thread_Cpu(void* id){
 void tipo_Cod_Operacion (int32_t id, header_t* header){
 
 	sock_t* socketPlanificador=getSocketPlanificador(id);
-	switch (get_operation_code(header))
-	{
+	switch (get_operation_code(header)) {
 	case ENVIO_QUANTUM:{
 		int32_t recibido = _receive_bytes(socketPlanificador, &quantum, sizeof(int32_t));
 		log_debug(loggerDebug,"CPU:%d recibio de Planificador codOperacion %d QUANTUM: %d",id, get_operation_code(header), quantum);
@@ -160,7 +147,7 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 		}
 		estado[id]=0;
 		break;
-	}
+		}
 	}
 }
 
@@ -170,8 +157,7 @@ void ejecutar(int32_t id, PCB* pcb){
 	char cadena[100];
 	char* log_acciones=string_new();
 	FILE* prog = fopen(pcb->ruta_archivo, "r");
-	if (prog==NULL)
-	{
+	if (prog==NULL)	{
 		string_append_with_format(&log_acciones, "No se pudo encontrar la ruta del archivo del proceso con id: %d; ", pcb->PID);
 		log_error (loggerError, ANSI_COLOR_RED "CPU: %d - Error al abrir la ruta del archivo del proceso:%d"ANSI_COLOR_RESET, id, pcb->PID);
 		enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_ERROR,id,pcb,log_acciones,0);
@@ -180,8 +166,7 @@ void ejecutar(int32_t id, PCB* pcb){
 	int32_t finalizado=FALSE;
 	while(finalizado == FALSE){
 		fseek(prog, pcb->siguienteInstruccion, SEEK_SET);
-		if(fgets(cadena, 100, prog) != NULL)
-		{
+		if(fgets(cadena, 100, prog) != NULL){
 			t_respuesta* respuesta=analizadorLinea(id,pcb,cadena);
 			sleep(arch->retardo);
 			if(respuesta==NULL){
@@ -314,7 +299,6 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 		string_append_with_format(&response->texto, "mProc %d - Iniciado ;",pcb->PID);
 		log_info(loggerInfo,ANSI_COLOR_YELLOW "CPU: %d - mProc %d - Iniciado " ANSI_COLOR_RESET,id, pcb->PID);
 	}
-
 	free(header_de_memoria);
 	return response;
 }

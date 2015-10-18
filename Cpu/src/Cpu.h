@@ -39,5 +39,4 @@ void crearArchivoDeLog();
 void clean();
 void envioDie(int32_t);
 
-
 #endif /* CPU_H_ */
