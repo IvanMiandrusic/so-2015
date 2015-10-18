@@ -70,6 +70,18 @@ void* thread_Cpu(void* id){
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - Error al conectar al planificador" ANSI_COLOR_RESET, thread_id);
 		return NULL;
 	}
+	log_debug(loggerDebug, "Conectado con el planificador la cpu: %d", thread_id);
+
+	/*Me guardo en mi list de sockets los fd*/
+	t_sockets* sockets=list_get(socketsCPU, thread_id);
+	sockets->socketPlanificador->fd = socket_Planificador->fd;
+	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
+	if(connect_to_server(socket_Memoria)!=SUCCESS_OPERATION){
+		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - No se puedo conectar con la memoria, se aborta el proceso" ANSI_COLOR_RESET, thread_id);
+        return NULL;
+	}
+	log_debug(loggerDebug, "Conectado con la memoria cpu:%d", thread_id);
+	sockets->socketMemoria->fd = socket_Memoria->fd;
 
 	//enviarle al planificador NUEVA_CPU y su id;
 	header_t* header_nueva_cpu = _create_header(NUEVA_CPU, sizeof(int32_t));
@@ -87,21 +99,7 @@ void* thread_Cpu(void* id){
 		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - Se perdio la conexion con el Planificador" ANSI_COLOR_RESET, thread_id);
 		return NULL;
 	}
-	log_debug(loggerDebug, "Conectado con el planificador la cpu: %d", thread_id);
 	free(header_nueva_cpu);
-
-	/*Me guardo en mi list de sockets los fd*/
-	t_sockets* sockets=list_get(socketsCPU, thread_id);
-	sockets->socketPlanificador->fd = socket_Planificador->fd;
-	sock_t* socket_Memoria=create_client_socket(arch->ip_memoria,arch->puerto_memoria);
-	if(connect_to_server(socket_Memoria)!=SUCCESS_OPERATION){
-		log_error(loggerError, ANSI_COLOR_RED "CPU: %d - No se puedo conectar con la memoria, se aborta el proceso" ANSI_COLOR_RESET, thread_id);
-		envioDie(thread_id);
-        return NULL;
-	}
-	log_debug(loggerDebug, "Conectado con la memoria cpu:%d", thread_id);
-	sockets->socketMemoria->fd = socket_Memoria->fd;
-
 
 	pthread_t CPUuse;
 	int32_t resultado_uso = pthread_create(&CPUuse, NULL, thread_Use, (void*) thread_id );
@@ -110,7 +108,6 @@ void* thread_Cpu(void* id){
 		envioDie(thread_id);
         return NULL;
 	}
-
 
 	int32_t finalizar = 1;
 	int32_t resul_Mensaje_Recibido;
@@ -150,17 +147,12 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 			log_debug(loggerDebug, "Error al recibir el PCB del planificador");
 			return;
 		}
-		log_debug(loggerDebug, "Recibio el PCB correctamente");
 		PCB* pcb = deserializarPCB (pedido_serializado);
 		free(pedido_serializado);
-		int32_t inicial;
-		int32_t final;
-		inicial=obtengoSegundos();
-		tiempoInicial[id]=inicial;
-		estado[id]=1;
+		int32_t inicial;int32_t final;
+		inicial=obtengoSegundos();	tiempoInicial[id]=inicial;estado[id]=1;
 		ejecutar(id, pcb);
-		final=obtengoSegundos();
-		tiempoFinal[id]=final;
+		final=obtengoSegundos(); tiempoFinal[id]=final;
 		if(final>inicial){
 			tiempoAcumulado[id]+=(final-inicial);
 		}else if(final<inicial){
@@ -169,7 +161,6 @@ void tipo_Cod_Operacion (int32_t id, header_t* header){
 		estado[id]=0;
 		break;
 	}
-
 	}
 }
 
