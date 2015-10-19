@@ -275,7 +275,8 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 		if(recibido == ERROR_OPERATION) return;
 		if(recibido == SOCKET_CLOSED) {
 			socketMemoria = accept_connection(socketServidor);
-			return;
+			set_operation_code(header, 5);
+
 		}
 
 		switch(get_operation_code(header)) {
@@ -353,7 +354,6 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 				log_info(loggerInfo, ANSI_COLOR_GREEN"Se reservo el espacio solicitado" ANSI_COLOR_RESET);
 				free(headerMemoria);
 			}
-			//free(pedido_memoria);
 			break;
 		}
 
@@ -380,8 +380,13 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			break;
 		}
 
+		case RECONEXION : {
+			log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Se conecto una nueva instancia de la memoria" ANSI_COLOR_RESET);
+			break;
+		}
+
 		default: {
-				log_error(loggerError, ANSI_COLOR_RED "Se recibió un codigo de operación no valido"ANSI_COLOR_RESET);
+				log_error(loggerError, ANSI_COLOR_BOLDRED "Se recibió un codigo de operación no valido"ANSI_COLOR_RESET);
 		}
 
 		}

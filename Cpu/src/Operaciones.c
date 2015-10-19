@@ -169,7 +169,10 @@ void ejecutar(int32_t id, PCB* pcb){
 		if(fgets(cadena, 100, prog) != NULL){
 			t_respuesta* respuesta=analizadorLinea(id,pcb,cadena);
 			sleep(arch->retardo);
+			log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "El analizador linea me dio la respuesta %p" ANSI_COLOR_RESET, respuesta);
 			if(respuesta==NULL){
+				log_error(loggerError, ANSI_COLOR_BOLDRED "Ocurrio un error al ejecutar el mProc %d, "
+						"se dara por finalizado.."ANSI_COLOR_RESET, pcb->PID);
 				string_append_with_format(&log_acciones, " mProc %d - Error al ejecutar", pcb->PID);
 				enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_ERROR,id,pcb,log_acciones,0);
 				free(log_acciones);
@@ -229,6 +232,8 @@ void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion,int32_t id,PCB* p
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcb);
 		header_t* header;
 
+		log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "%s" ANSI_COLOR_RESET, texto);
+
 		if (Cod_Operacion == SOLICITUD_IO){ //Si es IO hay que enviar el retardo y cambia el tamaño de envio
 		header = _create_header(Cod_Operacion, 4* sizeof(int32_t)+ tamanio_pcb+tamanio_texto);
 		}else{
@@ -272,11 +277,11 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 	log_debug(loggerDebug, "Envie el header INICIAR con %d bytes",header_A_Memoria->size_message);
 
 	int32_t enviado = _send_header(socketMemoria, header_A_Memoria);
-	if(enviado == ERROR_OPERATION ) return NULL;
+	if(enviado == ERROR_OPERATION) return NULL;
 	enviado = _send_bytes(socketMemoria,&pcb->PID, sizeof (int32_t));
-	if(enviado == ERROR_OPERATION ) return NULL;
+	if(enviado == ERROR_OPERATION) return NULL;
 	enviado = _send_bytes(socketMemoria,&cantDePaginas, sizeof (int32_t));
-	if(enviado == ERROR_OPERATION ) return NULL;
+	if(enviado == ERROR_OPERATION) return NULL;
 	log_debug(loggerDebug, "Envie el id %d, con %d paginas",pcb->PID, cantDePaginas);
 	free(header_A_Memoria);
 

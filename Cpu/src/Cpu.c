@@ -110,6 +110,9 @@ int main(int argc, char** argv) {
 	/*Tratamiento del ctrl+c en el proceso */
 	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGINT" ANSI_COLOR_RESET);
 
+	/** Chequeamos si la conexion se rompe del otro lado **/
+	if (signal(SIGPIPE, ifProcessDie) == SIG_ERR) log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGPIPE" ANSI_COLOR_RESET);
+
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = argv[1];
 	crear_estructura_config(path);

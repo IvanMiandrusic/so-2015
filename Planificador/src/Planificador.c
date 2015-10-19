@@ -738,23 +738,23 @@ void asignarPCBaCPU() {
 void mostrarContenidoListas() {
 	void mostrarElementos(void* parametro) {
 		PCB* unPCB = (PCB*) parametro;
-		log_info(loggerInfo, ANSI_COLOR_BLUE"ID: %d   Ruta: %s"ANSI_COLOR_RESET,
+		log_info(loggerInfo, ANSI_COLOR_CYAN"ID: %d   Ruta: %s"ANSI_COLOR_RESET,
 				unPCB->PID, unPCB->ruta_archivo);
 	}
 	log_info(loggerInfo,
-	ANSI_COLOR_BOLDBLUE"La cola de Listos contiene:"ANSI_COLOR_RESET);
+	ANSI_COLOR_BOLDCYAN"La cola de Listos contiene:"ANSI_COLOR_RESET);
 	list_iterate(colaListos, mostrarElementos);
 
 	log_info(loggerInfo,
-	ANSI_COLOR_BOLDBLUE"La cola de Ejec contiene:"ANSI_COLOR_RESET);
+			ANSI_COLOR_BOLDCYAN"La cola de Ejec contiene:"ANSI_COLOR_RESET);
 	list_iterate(colaExec, mostrarElementos);
 
 	log_info(loggerInfo,
-			ANSI_COLOR_BOLDBLUE"La cola de Bloqueados contiene:"ANSI_COLOR_RESET);
+			ANSI_COLOR_BOLDCYAN"La cola de Bloqueados contiene:"ANSI_COLOR_RESET);
 	list_iterate(colaBlock, mostrarElementos);
 
 	log_info(loggerInfo,
-			ANSI_COLOR_BOLDBLUE"La cola de Finalizados contiene:"ANSI_COLOR_RESET);
+			ANSI_COLOR_BOLDCYAN"La cola de Finalizados contiene:"ANSI_COLOR_RESET);
 	list_iterate(colaFinalizados, mostrarElementos);
 
 }

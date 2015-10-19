@@ -22,6 +22,7 @@ typedef struct pedido_cpu {
 #define ESCRIBIR_PAGINA 2
 #define RESERVAR_ESPACIO 3
 #define BORRAR_ESPACIO 4
+#define RECONEXION 5
 
 /** Codigos de operacion en las recepciones desde el swap **/
 #define CONTENIDO_PAGINA 1

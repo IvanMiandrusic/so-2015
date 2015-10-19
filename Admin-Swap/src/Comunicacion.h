@@ -21,6 +21,7 @@
 #define ESCRIBIR_PAGINA 2
 #define RESERVAR_ESPACIO 3
 #define BORRAR_ESPACIO 4
+#define RECONEXION 5
 
 typedef struct pagina {
 	int32_t nro_pagina;
