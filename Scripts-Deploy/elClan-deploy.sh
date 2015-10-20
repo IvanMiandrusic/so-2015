@@ -5,7 +5,7 @@ PKG_OK=$(dpkg-query -W --showformat='${Status}\n' git|grep "install ok installed
 
 echo Checking for git: $PKG_OK
 
-if [ "" == "$PKG_OK" ]; then
+if [ -z "$PKG_OK" ]; then
   echo "NO git IS INSTALLED. SETTING UP GIT."
   sudo apt-get --force-yes --yes install git
 
@@ -26,8 +26,18 @@ ADMIN_MEMORIA=Admin-Memoria
 ADMIN_SWAP=Admin-Swap
 SCRIPTS=Scripts-Deploy
 
-#Install commons libraries
-#/bin/bash ./commons-install.sh
+# Check if commons are installed
+LIB_OK=$(ldconfig -p | grep libcommons.so)
+
+echo Checking for so-commons-library: $LIB_OK
+
+if [ -z "$LIB_OK" ]; then
+  echo "so-commons-library IS NOT INSTALLED, PROCEEDING TO SETTING IT UP"
+  /bin/sh ./commons-install.sh
+
+else
+	echo "so-commons-library IS ALREADY INSTALLED"
+fi
 
 #Compile all and then clean output folders
 echo "¿QUE PROCESO DESEA LEVANTAR?"

@@ -1,14 +1,13 @@
-#!bin/bash
+#!/bin/sh
 
 #Clone commons library
+GIT_TP_LOC=~/git/tp-2015-2c-elclan/
 
-cd $HOME
+cd $GIT_TP_LOC
 
 git clone https://github.com/sisoputnfrba/so-commons-library.git
 
-GIT_LOC=~/git/
-
-cd $GIT_LOC/so-commons-library
+cd so-commons-library/
 
 #Install library
 
