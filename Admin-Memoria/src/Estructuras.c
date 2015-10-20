@@ -394,6 +394,10 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 		log_debug(loggerDebug, "No se encontro en la tabla de paginas, se pide al swap, pagina id:%d nro:%d", pagina->PID, pagina->nro_pagina);
 		t_resultado_busqueda resultado = pedido_pagina_swap(pagina, LEER_PAGINA);
 
+		/** Si hubo un error, se desconecto el swap **/
+		if(resultado == SEARCH_ERROR)
+			swap_shutdown();
+
 		/** Ocurre un PF en la memoria **/
 		sumar_metrica(PF, pagina->PID);
 
@@ -459,11 +463,8 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap
 		header_t* header_resultado_swap = _create_empty_header();
 		recibido = _receive_header(socketSwap, header_resultado_swap);
 		if(recibido == ERROR_OPERATION) {
-			log_info(loggerInfo, ANSI_COLOR_BOLDRED "Se perdio la conexion con el Swap"ANSI_COLOR_RESET);
 			return SEARCH_ERROR;
 		}
-
-
 
 		if(operacion_swap==LEER_PAGINA) {
 
@@ -619,6 +620,10 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 
 			t_resultado_busqueda resultado = escribir_pagina_modificada_en_swap(PID, pagina_a_ausentar);
 
+			/** Si hubo error, se desconecto el swap **/
+			if(resultado == SEARCH_ERROR)
+				swap_shutdown();
+
 			/** Le saco el bit de modificada **/
 			if(resultado == FOUND)
 				pagina_a_ausentar->modificada = 0;
@@ -696,6 +701,10 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 
 			log_debug(loggerDebug, "Debo reemplzar la pagina del pid:%d", PID);
 			t_resultado_busqueda resultado = pedido_pagina_swap(pagina_a_escribir, ESCRIBIR_PAGINA);
+
+			/** Si hubo un error, se desconecto el swap **/
+			if(resultado == SEARCH_ERROR)
+				swap_shutdown();
 
 			/** Le saco el bit de modificada **/
 			if(resultado == FOUND)

@@ -60,8 +60,7 @@ void crear_estructura_config(char* path) {
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie() {
-	log_info(loggerInfo,
-			ANSI_COLOR_BOLDBLUE"Se dio de baja el proceso Planificador"ANSI_COLOR_RESET);
+	log_info(loggerInfo, ANSI_COLOR_BOLDBLUE "Se dara de baja el proceso PLANIFICADOR"ANSI_COLOR_RESET);
 	cleanAll();
 	exit(EXIT_FAILURE);
 }
@@ -318,28 +317,35 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 
 	/** tamaño pcb **/
 	int32_t tamanio_pcb;
+
 	int32_t recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
 	if (recibido == ERROR_OPERATION) return;
 	log_debug(loggerDebug, "Recibo tamanio:%d", tamanio_pcb);
+
 	char* pcb_serializado = malloc(tamanio_pcb);
 	recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
 	if (recibido == ERROR_OPERATION) return;
 	log_debug(loggerDebug, "Recibo un pcb desde la cpu");
+
 	PCB* pcb = deserializarPCB(pcb_serializado);
 	free(pcb_serializado);
+
 	/** recibo el char* de resultados **/
 	int32_t tamanio_resultado_operaciones;
 	recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
 	if (recibido == ERROR_OPERATION) return;
 	log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU tamanio: %d", tamanio_resultado_operaciones);
+
 	char* resultado_operaciones = malloc(1+tamanio_resultado_operaciones);
 	recibido = _receive_bytes(socketCPU, resultado_operaciones,	tamanio_resultado_operaciones);
 	if (recibido == ERROR_OPERATION) return;
 	resultado_operaciones[tamanio_resultado_operaciones]='\0';
 	log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU: %s", resultado_operaciones);
+
 	/** Loggeo resultado operaciones **/
 	log_info(loggerInfo, ANSI_COLOR_BOLDMAGENTA "Recibido el proceso id: %d, ejecuto: %s" ANSI_COLOR_RESET, pcb->PID, resultado_operaciones);
 	calcularMetrica(pcb->PID, TIEMPO_EXEC);
+
 	/** Operar la respuesta **/
 	if (cod_Operacion == INSTRUCCION_IO) {
 		log_info(loggerInfo, ANSI_COLOR_YELLOW"El proceso: %d pidio una I/O"ANSI_COLOR_RESET, pcb->PID);
@@ -783,7 +789,7 @@ void enviarPCB(char* paquete_serializado, int32_t tamanio_pcb, int32_t pcbID,
 		log_debug(loggerDebug, "No encontre ninguna CPU");
 
 
-// Asigno el pcbID a la CPU_t
+	/** Asigno el pcbID a la CPU_t **/
 	CPU->pcbID = pcbID;
 
 	int32_t enviado = send_msg(CPU->socketCPU, tipo, paquete_serializado,
@@ -891,8 +897,7 @@ int main(int argc, char** argv) {
 	int32_t resultado_creacion_hilos;
 
 	pthread_t server_thread;
-	resultado_creacion_hilos = pthread_create(&server_thread, NULL,
-			servidor_conexiones, NULL);
+	resultado_creacion_hilos = pthread_create(&server_thread, NULL,	servidor_conexiones, NULL);
 	if (resultado_creacion_hilos != 0) {
 		log_error(loggerError, ANSI_COLOR_BOLDRED "Error al crear el hilo del servidor de conexiones" ANSI_COLOR_RESET);
 		abort();
@@ -902,8 +907,7 @@ int main(int argc, char** argv) {
 	}
 
 	pthread_t consola_thread;
-	resultado_creacion_hilos = pthread_create(&consola_thread, NULL,
-			consola_planificador, NULL);
+	resultado_creacion_hilos = pthread_create(&consola_thread, NULL, consola_planificador, NULL);
 	if (resultado_creacion_hilos != 0) {
 		log_error(loggerError, ANSI_COLOR_BOLDRED "Error al crear el hilo de la consola" ANSI_COLOR_RESET);
 		exit(EXIT_FAILURE);
@@ -912,8 +916,7 @@ int main(int argc, char** argv) {
 	}
 
 	pthread_t io_thread;
-	resultado_creacion_hilos = pthread_create(&io_thread, NULL, procesar_IO,
-	NULL);
+	resultado_creacion_hilos = pthread_create(&io_thread, NULL, procesar_IO, NULL);
 	if (resultado_creacion_hilos != 0) {
 		log_error(loggerError, ANSI_COLOR_BOLDRED "Error al crear el hilo de IO" ANSI_COLOR_RESET);
 		exit(EXIT_FAILURE);

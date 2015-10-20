@@ -43,7 +43,7 @@ void crear_estructura_config(char* path)
 
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie(){
-	log_error(loggerError, ANSI_COLOR_BLUE "Se da por finalizado el proceso Swap"ANSI_COLOR_RESET);
+	log_info(loggerInfo, ANSI_COLOR_BOLDBLUE "Se dara de baja el proceso SWAP"ANSI_COLOR_RESET);
 	limpiar_estructuras_swap();
 	exit(1);
 }

@@ -64,6 +64,7 @@ void crear_estructuras_memoria();
 void limpiar_estructuras_memoria();
 
 /** Funciones de señales **/
+void swap_shutdown();
 void ifProcessDie();
 void ifSigusr1();
 void ifSigusr2();

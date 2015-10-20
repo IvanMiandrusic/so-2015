@@ -40,9 +40,15 @@ void crear_estructura_config(char* path) {
 	arch->algoritmo_reemplazo = config_get_string_value(archConfig, "ALGORITMO_REEMPLAZO");
 }
 
+/** Funcion que es llamada cuando pierdo la conexion con el swap **/
+void swap_shutdown() {
+	log_error(loggerError, ANSI_COLOR_BOLDRED "Se perdio la conexion con el proceso SWAP" ANSI_COLOR_RESET);
+	ifProcessDie();
+}
+
 /* Función que es llamada cuando ctrl+c */
 void ifProcessDie() {
-	log_info(loggerInfo, ANSI_COLOR_BLUE "Se dara de baja el proceso Memoria"ANSI_COLOR_RESET);
+	log_info(loggerInfo, ANSI_COLOR_BOLDBLUE "Se dara de baja el proceso MEMORIA"ANSI_COLOR_RESET);
 	limpiar_estructuras_memoria();
 	exit(EXIT_FAILURE);
 }
@@ -211,6 +217,9 @@ int main(int argc, char** argv) {
 
 	if (signal(SIGPOLL, ifSigpoll) == SIG_ERR)
 			log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGPOLL" ANSI_COLOR_RESET);
+
+	/** Chequeamos si la conexion se rompe del lado swap **/
+	if (signal(SIGPIPE, swap_shutdown) == SIG_ERR) log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGPIPE" ANSI_COLOR_RESET);
 
 	/*Se genera el struct con los datos del archivo de config.- */
 	char* path = argv[1];

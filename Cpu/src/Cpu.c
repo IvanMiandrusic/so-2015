@@ -66,6 +66,7 @@ void clean(){
 void ifProcessDie(){
 
 	/** Si el proceso muere, debo avisar al planificador que me limpie de su lista de cpus **/
+	log_info(loggerInfo, ANSI_COLOR_BOLDBLUE "Se dara de baja el proceso CPU"ANSI_COLOR_RESET);
 	int32_t i;
 	for(i=0; i < arch->cantidad_hilos; i++){ envioDie(i);}
 	clean();
@@ -110,7 +111,7 @@ int main(int argc, char** argv) {
 	/*Tratamiento del ctrl+c en el proceso */
 	if(signal(SIGINT, ifProcessDie) == SIG_ERR ) log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGINT" ANSI_COLOR_RESET);
 
-	/** Chequeamos si la conexion se rompe del otro lado **/
+	/** Chequeamos si la conexion se rompe del lado memoria **/
 	if (signal(SIGPIPE, ifProcessDie) == SIG_ERR) log_error(loggerError, ANSI_COLOR_RED "Error con la señal SIGPIPE" ANSI_COLOR_RESET);
 
 	/*Se genera el struct con los datos del archivo de config.- */
