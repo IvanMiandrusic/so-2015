@@ -37,3 +37,4 @@
 .directory
 *.log
 */Debug/
+*/cspec/
