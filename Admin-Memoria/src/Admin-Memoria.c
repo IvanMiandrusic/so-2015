@@ -417,7 +417,8 @@ void iniciar_proceso(sock_t* socketCpu) {
 	recibido=_receive_header(socketSwap,headerNuevo);
 	resultado_operacion=get_operation_code(headerNuevo);
 	free(headerNuevo);
-	if (resultado_operacion == RESULTADO_ERROR) {
+
+	if (resultado_operacion == RESULTADO_ERROR || recibido == ERROR_OPERATION || recibido == SOCKET_CLOSED) {
 		header_t* headerCpu = _create_header(ERROR, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);

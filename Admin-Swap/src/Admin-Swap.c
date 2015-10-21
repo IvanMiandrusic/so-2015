@@ -331,8 +331,7 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			recibido = _receive_bytes(socketMemoria, &(pedido_memoria->pid), sizeof(int32_t));
 			if (recibido == ERROR_OPERATION)return;
 
-			recibido = _receive_bytes(socketMemoria, &(pedido_memoria->cantidad_paginas),
-					sizeof(int32_t));
+			recibido = _receive_bytes(socketMemoria, &(pedido_memoria->cantidad_paginas),sizeof(int32_t));
 			if (recibido == ERROR_OPERATION)return;
 
 			log_debug(loggerDebug, "Recibi este pedido: %d y cant paginas %d", pedido_memoria->pid, pedido_memoria->cantidad_paginas);
@@ -400,8 +399,9 @@ int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 		log_info(loggerInfo, "Proceso mProc (id%d) rechazado por falta de espacio", pedido_pid->pid);
 		return RESULTADO_ERROR;
 	}
-	bool tieneEspacio(NodoLibre* nodo)
+	bool tieneEspacio(void* parametro)
 		{
+		NodoLibre* nodo = (NodoLibre*)parametro;
 				return nodo->paginas>=pedido_pid->cantidad_paginas;
 		}
 	sem_wait(&sem_mutex_libre);
@@ -427,8 +427,9 @@ int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 	int32_t nuevoComienzo=nodoNuevo->comienzo+nodoNuevo->paginas;
 	int32_t nuevoCantPag=nodoLibre->paginas-nodoNuevo->paginas;
 
-	bool findNodo(NodoLibre* nodoABorrar)
+	bool findNodo(void* parametro)
 	{
+		NodoLibre* nodoABorrar = (NodoLibre*)parametro;
 		return nodoABorrar->comienzo == nodoLibre->comienzo && nodoABorrar->paginas == nodoLibre->paginas;
 	}
 
@@ -455,25 +456,25 @@ int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 
 int32_t borrarEspacio(int32_t PID){
 
-	bool find_by_PID(NodoOcupado* nodo)
+	bool find_by_PID(void* parametro)
 			{
+		NodoOcupado* nodo = (NodoOcupado*) parametro;
 				return nodo->PID==PID;
 			}
-
 	NodoOcupado* procesoRemovido = list_remove_by_condition(espacioOcupado, find_by_PID);
 	if (procesoRemovido==NULL) return RESULTADO_ERROR;
-	bool find_by_ConditionInitial(NodoLibre* espacioAnterior)
+	bool find_by_ConditionInitial(void* parametro)
 				{
+		NodoLibre* espacioAnterior = (NodoLibre*) parametro;
 					return espacioAnterior->comienzo+espacioAnterior->paginas==procesoRemovido->comienzo;
 				}
-
 	NodoLibre* nodoAnterior=list_find(espacioLibre, find_by_ConditionInitial);
 
-	bool find_by_ConditionFinal(NodoLibre* espacioPosterior)
+	bool find_by_ConditionFinal(void* parametro)
 					{
+					NodoLibre* espacioPosterior = (NodoLibre*) parametro;
 						return espacioPosterior->comienzo==procesoRemovido->comienzo+procesoRemovido->paginas;
 					}
-
 	NodoLibre* nodoPosterior=list_find(espacioLibre, find_by_ConditionFinal);
 	NodoLibre* nuevoNodo=malloc(sizeof(NodoLibre));
 
@@ -500,8 +501,9 @@ int32_t borrarEspacio(int32_t PID){
 	log_info(loggerInfo, ANSI_COLOR_GREEN"Proceso mProc liberado: PID: %d byte inicial: %d tamaño: %d"ANSI_COLOR_RESET,procesoRemovido->PID,
 				(procesoRemovido->comienzo)*(arch->tamanio_pagina),(procesoRemovido->paginas)*(arch->tamanio_pagina));
 
-	bool findById(t_metrica* unaMetrica)
+	bool findById(void* parametro)
 		{
+		t_metrica* unaMetrica =(t_metrica*) parametro;
 			return unaMetrica->PID==procesoRemovido->PID;
 		}
 	t_metrica* metrica=list_remove_by_condition(metricas, findById);
@@ -513,8 +515,9 @@ int32_t borrarEspacio(int32_t PID){
 
 FILE* abrirArchivoConTPagina(t_pagina* pagina_pedida){
 
-	bool find_by_PID(NodoOcupado* nodo)
+	bool find_by_PID(void* parametro)
 		{
+		NodoOcupado* nodo = (NodoOcupado*)parametro;
 			return nodo->PID==pagina_pedida->PID;
 		}
 	NodoOcupado* nodoProceso=list_find(espacioOcupado, find_by_PID);
@@ -556,8 +559,9 @@ void leer_pagina(t_pagina* pagina_pedida){
 
 void agregarMetrica(int32_t codigo, int32_t PID){
 
-	bool findById(t_metrica* unaMetrica)
+	bool findById(void* parametro)
 	{
+		t_metrica* unaMetrica = (t_metrica*) parametro;
 		return unaMetrica->PID==PID;
 	}
 	t_metrica* metrica=list_find(metricas, findById);
