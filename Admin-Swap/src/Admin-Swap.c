@@ -275,8 +275,8 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 		if(recibido == ERROR_OPERATION) return;
 		if(recibido == SOCKET_CLOSED) {
 			socketMemoria = accept_connection(socketServidor);
-			set_operation_code(header, 5);
-
+			//set_operation_code(header, 5);
+			header->cod_op=5;
 		}
 
 		switch(get_operation_code(header)) {
