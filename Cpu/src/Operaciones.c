@@ -179,7 +179,6 @@ void ejecutar(int32_t id, PCB* pcb){
 				fclose(prog);
 				ifProcessDie();
 			}
-			log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "El analizador linea me dio la respuesta %p" ANSI_COLOR_RESET, respuesta);
 			string_append(&log_acciones, respuesta->texto);
 			pcb->siguienteInstruccion=ftell(prog);
 			if(respuesta->id==FINALIZAR){
