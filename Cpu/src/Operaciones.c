@@ -169,7 +169,6 @@ void ejecutar(int32_t id, PCB* pcb){
 		if(fgets(cadena, 100, prog) != NULL){
 			t_respuesta* respuesta=analizadorLinea(id,pcb,cadena);
 			sleep(arch->retardo);
-			log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "El analizador linea me dio la respuesta %p" ANSI_COLOR_RESET, respuesta);
 			if(respuesta==NULL){
 				log_error(loggerError, ANSI_COLOR_BOLDRED "Ocurrio un error al ejecutar el mProc %d, "
 						"se dara por finalizado.."ANSI_COLOR_RESET, pcb->PID);
@@ -180,6 +179,7 @@ void ejecutar(int32_t id, PCB* pcb){
 				fclose(prog);
 				ifProcessDie();
 			}
+			log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "El analizador linea me dio la respuesta %p" ANSI_COLOR_RESET, respuesta);
 			string_append(&log_acciones, respuesta->texto);
 			pcb->siguienteInstruccion=ftell(prog);
 			if(respuesta->id==FINALIZAR){

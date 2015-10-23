@@ -297,14 +297,7 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 	pedido->tam_msj = header->size_message;
 	log_debug(loggerDebug, "Recibo una operacion");
 	thread_request(pedido);
-	/** Creo hilo para atender pedidos concurrentemente **/
-//	pthread_t atencion_pedido;
-//
-//	int32_t resultado_pedido = pthread_create(&atencion_pedido, NULL, thread_request, pedido);
-//	if (resultado_pedido != 0) {
-//		log_error(loggerError, ANSI_COLOR_RED "Error al crear el hilo de pedido de cpu" ANSI_COLOR_RESET);
-//		abort();
-//	}
+
 
 }
 
@@ -315,7 +308,10 @@ void finalizarPid(sock_t* socketCpu){
 	int32_t PID;
 
 	int32_t recibido = _receive_bytes(socketCpu, &(PID), sizeof(int32_t));
-	if (recibido == ERROR_OPERATION) return;
+	if (recibido == ERROR_OPERATION || recibido == SOCKET_CLOSED) {
+		enviar_resultado_cpu(ERROR, socketCpu);
+		if(recibido == SOCKET_CLOSED) swap_shutdown();
+	}
 
 	t_list* paginasConPresencia=obtengoPaginasConPresencia(obtener_tabla_paginas_by_PID(PID));
 	int asd;
@@ -340,7 +336,10 @@ void finalizarPid(sock_t* socketCpu){
 	header_t* headerNuevo=_create_empty_header();
 	recibido=_receive_header(socketSwap,headerNuevo);
 	int32_t resultado_operacion=get_operation_code(headerNuevo);
-	if (recibido == ERROR_OPERATION) return;
+	if (recibido == ERROR_OPERATION || recibido == SOCKET_CLOSED) {
+		enviar_resultado_cpu(ERROR, socketCpu);
+		if(recibido == SOCKET_CLOSED) swap_shutdown();
+	}
 
 	log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion);
 	if (resultado_operacion == RESULTADO_ERROR) {
@@ -391,41 +390,46 @@ void iniciar_proceso(sock_t* socketCpu) {
 	t_pedido_cpu* pedido_cpu = malloc(sizeof(t_pedido_cpu));
 
 	recibido = _receive_bytes(socketCpu, &(pedido_cpu->pid), sizeof(int32_t));
-	if (recibido == ERROR_OPERATION) return;
+	if (recibido == ERROR_OPERATION || recibido == SOCKET_CLOSED) {
+		enviar_resultado_cpu(ERROR, socketCpu);
+		if(recibido == SOCKET_CLOSED) swap_shutdown();
+	}
 
-	recibido = _receive_bytes(socketCpu, &(pedido_cpu->cantidad_paginas),
-			sizeof(int32_t));
-	if (recibido == ERROR_OPERATION) return;
+	recibido = _receive_bytes(socketCpu, &(pedido_cpu->cantidad_paginas), sizeof(int32_t));
+	if (recibido == ERROR_OPERATION || recibido == SOCKET_CLOSED) {
+		enviar_resultado_cpu(ERROR, socketCpu);
+		if(recibido == SOCKET_CLOSED) swap_shutdown();
+	}
 
 	log_debug(loggerDebug, "Recibi el pcb %d, con %d paginas" ,pedido_cpu->pid, pedido_cpu->cantidad_paginas);
 
 	//Envio al swap para que reserve espacio
 	header_t* headerSwap = _create_header(RESERVAR_ESPACIO,	2 * sizeof(int32_t));
 	enviado = _send_header(socketSwap, headerSwap);
-	if (enviado == ERROR_OPERATION)
-		return;
+	if (enviado == ERROR_OPERATION) return;
 	free(headerSwap);
 
 	enviado = _send_bytes(socketSwap, &(pedido_cpu->pid), sizeof(int32_t));
 	if (enviado == ERROR_OPERATION) return;
 
-	enviado = _send_bytes(socketSwap, &(pedido_cpu->cantidad_paginas),
-			sizeof(int32_t));
+	enviado = _send_bytes(socketSwap, &(pedido_cpu->cantidad_paginas), sizeof(int32_t));
 	if (enviado == ERROR_OPERATION) return;
 
 	header_t* headerNuevo=_create_empty_header();
 	recibido=_receive_header(socketSwap,headerNuevo);
+
 	resultado_operacion=get_operation_code(headerNuevo);
 	free(headerNuevo);
 
 	if (resultado_operacion == RESULTADO_ERROR || recibido == ERROR_OPERATION || recibido == SOCKET_CLOSED) {
-		header_t* headerCpu = _create_header(ERROR, 0);
-		enviado = _send_header(socketCpu, headerCpu);
-		free(headerCpu);
+
+		enviar_resultado_cpu(ERROR, socketCpu);
 		log_debug(loggerDebug,ANSI_COLOR_RED"El swap informa que no se pudo asignar" ANSI_COLOR_RESET);
 		log_error(loggerError, "Error de creacion del mProc: %d", pedido_cpu->pid);
-		return;
+		if(recibido == SOCKET_CLOSED) swap_shutdown();
+
 	} else if (resultado_operacion == RESULTADO_OK) {
+
 		//Creo la tabla de paginas del PID dado
 		log_debug(loggerDebug,"El swap informa que se pudo asignar");
 		crear_tabla_pagina_PID(pedido_cpu->pid, pedido_cpu->cantidad_paginas);
@@ -447,7 +451,10 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 	char* pedido_serializado = malloc(get_message_size(header));
 
 	int32_t recibido = _receive_bytes(socketCpu, pedido_serializado, get_message_size(header));
-	if(recibido == ERROR_OPERATION) return;
+	if(recibido == ERROR_OPERATION || recibido == SOCKET_CLOSED) {
+		enviar_resultado_cpu(ERROR, socketCpu);
+		if(recibido == SOCKET_CLOSED) swap_shutdown();
+	}
 
 	t_pagina* pagina_pedida = deserializar_pedido(pedido_serializado);
 	if(cod_Operacion==LEER)log_info(loggerInfo, "Debo leer la pagina:%d, del proceso: %d", pagina_pedida->nro_pagina, pagina_pedida->PID);
@@ -458,14 +465,11 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 	if (resultado==NOT_FOUND) {
 
 		/** Finalizo el proceso con ERROR **/
-		finalizar_proceso_error(pagina_pedida->PID);
+		finalizar_proceso_error(socketCpu, pagina_pedida->PID);
 
 		/** Informo a la CPU que el proceso tuvo un ERROR **/
-		header_t* headerCpu = _create_header(ERROR, 0);
-		enviado = _send_header(socketCpu, headerCpu);
-		if(enviado == ERROR_OPERATION) return;
+		enviar_resultado_cpu(ERROR, socketCpu);
 
-		free(headerCpu);
 		free(pagina_pedida);
 		if(cod_Operacion==LEER)log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo leer la pagina" ANSI_COLOR_RESET);
 		if(cod_Operacion==ESCRIBIR)log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo escribir la pagina" ANSI_COLOR_RESET);
@@ -505,7 +509,7 @@ t_resultado_busqueda buscar_pagina(int32_t codOperacion, t_pagina* pagina_solici
 
 }
 
-void finalizar_proceso_error(int32_t PID) {
+void finalizar_proceso_error(sock_t* socketCpu, int32_t PID) {
 
 	int32_t recibido;
 
@@ -522,6 +526,10 @@ void finalizar_proceso_error(int32_t PID) {
 
 	header_t* headerNuevo=_create_empty_header();
 	recibido = _receive_header(socketSwap,headerNuevo);
+	if(recibido == ERROR_OPERATION || recibido == SOCKET_CLOSED) {
+		enviar_resultado_cpu(ERROR, socketCpu);
+		if(recibido == SOCKET_CLOSED) swap_shutdown();
+	}
 	int32_t resultado_operacion=get_operation_code(headerNuevo);
 	if (recibido == ERROR_OPERATION) return;
 
@@ -534,3 +542,12 @@ void finalizar_proceso_error(int32_t PID) {
 
 /*Aca finalizan las funciones referentes a leer o escribir pagina*/
 
+
+void enviar_resultado_cpu(int32_t resultado, sock_t* socket_cpu) {
+
+	header_t* headerCpu = _create_header(resultado, 0);
+	int32_t enviado = _send_header(socket_cpu, headerCpu);
+	if(enviado == ERROR_OPERATION) return;
+
+	free(headerCpu);
+}

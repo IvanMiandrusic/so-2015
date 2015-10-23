@@ -462,8 +462,8 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap
 		}
 		header_t* header_resultado_swap = _create_empty_header();
 		recibido = _receive_header(socketSwap, header_resultado_swap);
-		if(recibido == ERROR_OPERATION) {
-			return SEARCH_ERROR;
+		if(recibido == ERROR_OPERATION || recibido == SOCKET_CLOSED) {
+		return SEARCH_ERROR;
 		}
 
 		if(operacion_swap==LEER_PAGINA) {
