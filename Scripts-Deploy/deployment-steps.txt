@@ -7,4 +7,6 @@ Pasos para el deployment:
 - Modificar el archivo manualmente agregando la siguiente linea debajo de todo, y luego guardar y cerrar
 			export LD_LIBRARY_PATH=~/git/tp-2015-2c-elclan/lib/
 
+- Cerrar la terminar y abrirla nuevamente
+
 - Correr elClan-deploy.sh
