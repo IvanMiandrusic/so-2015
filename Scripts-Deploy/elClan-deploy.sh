@@ -33,7 +33,7 @@ echo Checking for so-commons-library: $LIB_OK
 
 if [ -z "$LIB_OK" ]; then
   echo "so-commons-library IS NOT INSTALLED, PROCEEDING TO SETTING IT UP"
-  /bin/sh ./commons-install.sh
+  /bin/sh ./commons-setup.sh
 
 else
 	echo "so-commons-library IS ALREADY INSTALLED"
