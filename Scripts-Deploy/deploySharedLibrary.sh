@@ -1,15 +1,16 @@
 #!/bin/sh
-GIT_LOC=~/git/
-GIT_SL_LOC=~/git/c-sockets-library
 
 # Clone Git Repository
-cd $GIT_LOC
-git clone https://github.com/fedecatinello/c-sockets-library.git
+#cd $HOME
+#git clone https://github.com/sisoputnfrba/tp-2015-2c-elclan.git
 
-cd $GIT_SL_LOC
+GIT_LOC=~/git/
+GIT_LIB_LOC=~/git/tp-2015-2c-elclan/lib/
 
-make all
+cd $GIT_LIB_LOC
 
 sudo nano /etc/bash.bashrc
 
-ldconfig -n $GIT_SL_LOC
+# Add   export LD_LIBRARY_PATH=~/git/tp-2015-2c-elclan/lib/   to that file
+
+ldconfig -n $GIT_LIB_LOC

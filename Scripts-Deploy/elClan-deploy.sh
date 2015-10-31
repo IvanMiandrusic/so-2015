@@ -15,10 +15,6 @@ fi
 
 echo "Compiling all processes..."
 
-# Clone Git Repository
-#cd $HOME
-#git clone https://github.com/sisoputnfrba/tp-2015-2c-elclan.git
-
 GIT_TP_LOC=~/git/tp-2015-2c-elclan/
 PLANIFICADOR=Planificador
 CPU=Cpu

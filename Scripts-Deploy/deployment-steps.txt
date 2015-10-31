@@ -1,0 +1,10 @@
+Pasos para el deployment:
+
+- Correr deploySharedLibrary.sh
+
+- Insertar contraseña de root cuando es solicitada
+
+- Modificar el archivo manualmente agregando la siguiente linea debajo de todo, y luego guardar y cerrar
+			export LD_LIBRARY_PATH=~/git/tp-2015-2c-elclan/lib/
+
+- Correr elClan-deploy.sh
