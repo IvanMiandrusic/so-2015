@@ -284,7 +284,7 @@ void thread_request(void* arg) {
 	}
 	}
 	free(headerCpu);
-	log_debug(loggerDebug, ANSI_COLOR_BOLDCYAN "Pedido procesado" ANSI_COLOR_RESET);
+	//log_debug(loggerDebug, ANSI_COLOR_BOLDCYAN "Pedido procesado" ANSI_COLOR_RESET);
 
 }
 
@@ -421,14 +421,14 @@ void iniciar_proceso(sock_t* socketCpu) {
 	if (resultado_operacion == RESULTADO_ERROR || recibido == ERROR_OPERATION || recibido == SOCKET_CLOSED) {
 
 		enviar_resultado_cpu(ERROR, socketCpu);
-		log_debug(loggerDebug,ANSI_COLOR_RED"El swap informa que no se pudo asignar" ANSI_COLOR_RESET);
+		//log_debug(loggerDebug,ANSI_COLOR_RED"El swap informa que no se pudo asignar" ANSI_COLOR_RESET);
 		log_error(loggerError, "Error de creacion del mProc: %d", pedido_cpu->pid);
 		if(recibido == SOCKET_CLOSED) swap_shutdown();
 
 	} else if (resultado_operacion == RESULTADO_OK) {
 
 		//Creo la tabla de paginas del PID dado
-		log_debug(loggerDebug,"El swap informa que se pudo asignar");
+		//log_debug(loggerDebug,"El swap informa que se pudo asignar");
 		crear_tabla_pagina_PID(pedido_cpu->pid, pedido_cpu->cantidad_paginas);
 		header_t* headerCpu = _create_header(OK, 0);
 		enviado = _send_header(socketCpu, headerCpu);
@@ -468,8 +468,8 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 		enviar_resultado_cpu(ERROR, socketCpu);
 
 		free(pagina_pedida);
-		if(cod_Operacion==LEER)log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo leer la pagina" ANSI_COLOR_RESET);
-		if(cod_Operacion==ESCRIBIR)log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo escribir la pagina" ANSI_COLOR_RESET);
+		if(cod_Operacion==LEER) log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo leer la pagina" ANSI_COLOR_RESET);
+		if(cod_Operacion==ESCRIBIR) log_debug(loggerDebug,ANSI_COLOR_RED "No se pudo escribir la pagina" ANSI_COLOR_RESET);
 
 	}else {
 		if(cod_Operacion==LEER){
@@ -519,7 +519,7 @@ void finalizar_proceso_error(sock_t* socketCpu, int32_t PID) {
 	enviado = _send_bytes(socketSwap, &(PID), sizeof(int32_t));
 	if (enviado == ERROR_OPERATION)	return;
 
-	log_debug(loggerDebug, "Envie al swap para finalizar el proceso:%d", PID);
+	//log_debug(loggerDebug, "Envie al swap para finalizar el proceso:%d", PID);
 
 	header_t* headerNuevo=_create_empty_header();
 	recibido = _receive_header(socketSwap,headerNuevo);

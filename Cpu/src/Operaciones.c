@@ -324,7 +324,7 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 	int32_t tamanio=0;
 	enviado = _send_bytes(socketMemoria,&tamanio, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION ) return NULL;
-	log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d",pcb->PID, numDePagina);
+	//log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d",pcb->PID, numDePagina);
 	free(header_A_Memoria);
 	/** Recibo header de la memoria con el codigo CONTENIDO_PAGINA o NULL **/
 	header_t* header_de_memoria = _create_empty_header();
@@ -375,7 +375,7 @@ t_respuesta* mAnsisOp_escribir(int32_t id,PCB* pcb, int32_t numDePagina, char* t
 	if(enviado == ERROR_OPERATION ) return NULL;
 	enviado = _send_bytes(socketMemoria,texto, tamanio);
 	if(enviado == ERROR_OPERATION ) return NULL;
-	log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d,y el texto %s",pcb->PID, numDePagina, texto);
+	//log_debug(loggerDebug, "Envie el id %d,el numero de pagina %d,y el texto %s",pcb->PID, numDePagina, texto);
 	free(header_A_Memoria);
 	/** Recibo header de la memoria con el resultado (OK o ERROR) **/
 	header_t* header_de_memoria = _create_empty_header();
@@ -426,7 +426,7 @@ t_respuesta* mAnsisOp_finalizar(int32_t id, PCB* pcb){
 	if(enviado == ERROR_OPERATION ) return NULL;
 	enviado = _send_bytes(socketMemoria,&pcb->PID, sizeof (int32_t));
 	if(enviado == ERROR_OPERATION ) return NULL;
-	log_debug(loggerDebug, "Envie el id %d de finalizar",pcb->PID);
+	//log_debug(loggerDebug, "Envie el id %d de finalizar",pcb->PID);
 	free(header_A_Memoria);
 
 	header_t* respuestaMem=_create_empty_header();

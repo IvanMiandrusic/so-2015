@@ -231,7 +231,7 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 	case NUEVA_CPU: {
 		/** Genero un nuevo cpu_t **/
 		CPU_t* nuevaCPU = generarCPU(cpu_id, socketCPU);
-		log_debug(loggerDebug, "Se conecto una Cpu con id: %d", cpu_id);
+		//log_debug(loggerDebug, "Se conecto una Cpu con id: %d", cpu_id);
 		agregarColaCPUs(nuevaCPU);
 		log_info(loggerDebug,
 				ANSI_COLOR_YELLOW"Se conecto una CPU nueva con id %d y socket %d"ANSI_COLOR_RESET,

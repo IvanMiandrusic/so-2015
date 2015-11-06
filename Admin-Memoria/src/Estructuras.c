@@ -515,12 +515,12 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 	}
 
 	int32_t presentes=list_count_satisfying(paginas_PID, isPresent);
-	log_debug(loggerDebug, "Tengo con presencia:%d, en una lista con :%d paginas", presentes, list_size(paginas_PID));
+	//log_debug(loggerDebug, "Tengo con presencia:%d, en una lista con :%d paginas", presentes, list_size(paginas_PID));
 
 	if(presentes < arch->maximo_marcos) {
 
 		/** Obtengo frame libre para asignar pagina **/
-		log_debug(loggerDebug, "Debo obtener frame libre");
+		//log_debug(loggerDebug, "Debo obtener frame libre");
 		marco_libre = obtener_frame_libre();
 
 		log_debug(loggerDebug, "Frame libre:%d", marco_libre);
@@ -542,7 +542,7 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 	}
 
 	TPagina* pagina_a_poner_presente = list_find(paginas_PID, findByID);
-	log_debug(loggerDebug, "Tengo pagina para cambiar:%d", pagina_a_poner_presente->pagina);
+	//log_debug(loggerDebug, "Tengo pagina para cambiar:%d", pagina_a_poner_presente->pagina);
 	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Resultado del algoritmo %s, se sustituye el marco %d"ANSI_COLOR_RESET, arch->algoritmo_reemplazo, marco_libre);
 	pagina_a_poner_presente->presente = 1;
 	pagina_a_poner_presente->marco = marco_libre;

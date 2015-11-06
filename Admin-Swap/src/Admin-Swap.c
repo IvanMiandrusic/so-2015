@@ -438,7 +438,7 @@ int32_t reservarEspacio(t_pedido_memoria* pedido_pid){
 		nodoLibre->paginas= nuevoCantPag;
 		log_debug(loggerDebug, "Creo un hueco, comienzo:%d, cantpags:%d",  nodoLibre->comienzo, nodoLibre->paginas);
 	}
-	log_debug(loggerDebug, "Creo un proceso: %d, comienzo:%d, cantpags:%d", nodoNuevo->PID, nodoNuevo->comienzo, nodoNuevo->paginas);
+	//log_debug(loggerDebug, "Creo un proceso: %d, comienzo:%d, cantpags:%d", nodoNuevo->PID, nodoNuevo->comienzo, nodoNuevo->paginas);
 	log_info(loggerInfo, ANSI_COLOR_GREEN "Proceso mProc iniciado: PID: %d byte inicial: %d tamaño: %d"ANSI_COLOR_RESET,nodoNuevo->PID,
 					(nodoNuevo->comienzo)*(arch->tamanio_pagina),(nodoNuevo->paginas)*(arch->tamanio_pagina));
 
