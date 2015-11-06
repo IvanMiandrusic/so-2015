@@ -279,7 +279,6 @@ void thread_request(void* arg) {
 		break;
 	}
 	default: {
-		log_debug(loggerDebug, "Se recibio el codigo de operacion:%d", get_operation_code(headerCpu));
 		log_error(loggerError, ANSI_COLOR_RED "Desde la cpu recibo un codigo de operacion erroneo" ANSI_COLOR_RESET);
 		break;
 	}
@@ -295,7 +294,6 @@ void procesar_pedido(sock_t* socketCpu, header_t* header) {
 	pedido->cpu_fd = socketCpu->fd;
 	pedido->operacion = header->cod_op;
 	pedido->tam_msj = header->size_message;
-	log_debug(loggerDebug, "Recibo una operacion");
 	thread_request(pedido);
 
 
@@ -341,7 +339,6 @@ void finalizarPid(sock_t* socketCpu){
 		if(recibido == SOCKET_CLOSED) swap_shutdown();
 	}
 
-	log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion);
 	if (resultado_operacion == RESULTADO_ERROR) {
 
 		log_debug(loggerDebug, "El swap informa que no pudo eliminar el pid:%d", PID);

@@ -220,14 +220,12 @@ void servidor_conexiones() {
 
 void procesarPedido(sock_t* socketCPU, header_t* header) {
 
-	log_debug(loggerDebug, "Recibo operacion:%d, tamanio:%d", header->cod_op, header->size_message);
 	int32_t recibido;
 	int32_t cpu_id;
 
 	/** Recibo el cpu_id desde la CPU **/
 	recibido = _receive_bytes(socketCPU, &(cpu_id), sizeof(int32_t));
 	if (recibido == ERROR_OPERATION) return;
-	log_debug(loggerDebug, "Recibo cpu_id:%d", cpu_id);
 
 	switch (get_operation_code(header)) {
 	case NUEVA_CPU: {
@@ -312,7 +310,6 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 		//recibe el tiempo de I/O
 		int32_t recibido_tiempo = _receive_bytes(socketCPU, &(tiempo), sizeof(int32_t));
 		if (recibido_tiempo == ERROR_OPERATION) return;
-		log_debug(loggerDebug, "Recibo un tiempo desde la cpu, para una IO: %d", tiempo);
 	}
 
 	/** tamaño pcb **/
@@ -320,12 +317,10 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 
 	int32_t recibido = _receive_bytes(socketCPU, &tamanio_pcb, sizeof(int32_t));
 	if (recibido == ERROR_OPERATION) return;
-	log_debug(loggerDebug, "Recibo tamanio:%d", tamanio_pcb);
 
 	char* pcb_serializado = malloc(tamanio_pcb);
 	recibido = _receive_bytes(socketCPU, pcb_serializado, tamanio_pcb);
 	if (recibido == ERROR_OPERATION) return;
-	log_debug(loggerDebug, "Recibo un pcb desde la cpu");
 
 	PCB* pcb = deserializarPCB(pcb_serializado);
 	free(pcb_serializado);
@@ -334,13 +329,11 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 	int32_t tamanio_resultado_operaciones;
 	recibido = _receive_bytes(socketCPU, &tamanio_resultado_operaciones, sizeof(int32_t));
 	if (recibido == ERROR_OPERATION) return;
-	log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU tamanio: %d", tamanio_resultado_operaciones);
 
 	char* resultado_operaciones = malloc(1+tamanio_resultado_operaciones);
 	recibido = _receive_bytes(socketCPU, resultado_operaciones,	tamanio_resultado_operaciones);
 	if (recibido == ERROR_OPERATION) return;
 	resultado_operaciones[tamanio_resultado_operaciones]='\0';
-	log_debug(loggerDebug, "Recibo el resultado de operaciones de la CPU: %s", resultado_operaciones);
 
 	/** Loggeo resultado operaciones **/
 	log_info(loggerInfo, ANSI_COLOR_BOLDMAGENTA "Recibido el proceso id: %d, ejecuto: %s" ANSI_COLOR_RESET, pcb->PID, resultado_operaciones);
@@ -650,13 +643,11 @@ void procesar_IO() {
 			return (retard->ID == pcb_to_sleep->PID);
 		}
 
-		log_debug(loggerDebug, "Saco el pcb con id: %d", pcb_to_sleep->PID);
 
 		/** Saco ese PID de la lista de retardos **/
 		sem_wait(&sem_list_retardos);
 		retardo* tiempo_retardo = list_remove_by_condition(retardos_PCB, getRetardoByID);
 		sem_post(&sem_list_retardos);
-		log_debug(loggerDebug, "obtengo un retardo:%d", tiempo_retardo->retardo);
 
 		/** Simulo la IO del proceso **/
 		sleep(tiempo_retardo->retardo);
@@ -773,8 +764,6 @@ CPU_t* obtener_cpu_libre() {
 	}
 
 	CPU_t* cpu_encontrada = list_find(colaCPUs, estaLibre);
-	log_debug(loggerDebug, "Encontre una cpu con id %d y socket %d",
-			cpu_encontrada->ID, cpu_encontrada->socketCPU->fd);
 	return cpu_encontrada;
 }
 

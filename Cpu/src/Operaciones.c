@@ -231,7 +231,7 @@ void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion,int32_t id,PCB* p
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcb);
 		header_t* header;
 
-		log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "%s" ANSI_COLOR_RESET, texto);
+		//log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "%s" ANSI_COLOR_RESET, texto);
 
 		if (Cod_Operacion == SOLICITUD_IO){ //Si es IO hay que enviar el retardo y cambia el tamaño de envio
 		header = _create_header(Cod_Operacion, 4* sizeof(int32_t)+ tamanio_pcb+tamanio_texto);
@@ -273,7 +273,6 @@ t_respuesta* mAnsisOp_iniciar(int32_t id, PCB* pcb, int32_t cantDePaginas){
 	/** Envio header a la memoria con INICIAR **/
 	header_t* header_A_Memoria = _create_header(M_INICIAR, 2 * sizeof(int32_t));
 
-	log_debug(loggerDebug, "Envie el header INICIAR con %d bytes",header_A_Memoria->size_message);
 
 	int32_t enviado = _send_header(socketMemoria, header_A_Memoria);
 	if(enviado == ERROR_OPERATION) return NULL;

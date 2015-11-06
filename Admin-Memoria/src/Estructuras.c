@@ -556,10 +556,8 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 		free(texto);
 	}else{
 		int32_t diferencia= arch->tamanio_marco-pagina_recibida_swap->tamanio_contenido;
-		log_debug(loggerDebug, "La diferencia sería:%d (%d - %d", diferencia, arch->tamanio_marco,pagina_recibida_swap->tamanio_contenido );
 		char* texto=string_repeat('\0', diferencia);
 		string_append(&(pagina_recibida_swap->contenido), texto);
-		log_debug(loggerDebug,"Resultado del append:%s", pagina_recibida_swap->contenido);
 		memcpy(mem_principal+offset,pagina_recibida_swap->contenido,arch->tamanio_marco);
 		free(texto);
 	}
@@ -595,7 +593,6 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 	t_list* paginasConPresencia=obtengoPaginasConPresencia(paginas_PID);
 
 	if((algoritmo_reemplazo == FIFO) || (algoritmo_reemplazo == LRU)) {
-		log_debug(loggerDebug, "Algoritmo LRU");
 
 		/** Saco primer pagina de la memoria **/
 		TPagina* pagina_obtenida = obtener_pagina_a_reemplazar(paginasConPresencia);
@@ -633,8 +630,6 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		return marco_a_devolver;
 	}
 	else if(algoritmo_reemplazo == CLOCK_MODIFICADO) {
-		log_debug(loggerDebug, "Algoritmo CLOCK-M");
-		log_debug(loggerDebug, "Cantidad de paginas con presencia:%d", list_size(paginasConPresencia));
 
 		int i=0;
 		bool encontre_pagina_a_ausentar=false;

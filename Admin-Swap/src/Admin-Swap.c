@@ -131,7 +131,6 @@ int32_t compactar(){
 
 	NodoOcupado* primerNodo=list_get(espacioOcupado, 0);
 	if(primerNodo->comienzo!=0){
-		log_debug(loggerDebug, "Debo mover el primer elemento que no arranca en 0");
 		leeryEscribir(primerNodo,0);
 		primerNodo->comienzo=0;
 	}
@@ -156,7 +155,6 @@ int32_t compactar(){
 	NodoLibre* nodoLibre=malloc(sizeof(NodoLibre));
 	nodoLibre->comienzo = nuevoComienzo;
 	nodoLibre->paginas = totalPaginas - nuevoComienzo;
-	log_debug(loggerDebug, "Creo un hueco con comienzo: %d, offset:%d", nuevoComienzo, nodoLibre->paginas);
 	sem_wait(&sem_mutex_libre);
 	list_clean_and_destroy_elements(espacioLibre, free);
 	list_add(espacioLibre, nodoLibre);
@@ -174,7 +172,6 @@ int32_t calcularEspacioLibre(){
 		NodoLibre* nodo= list_get(espacioLibre, i);
 		espacio+=nodo->paginas;
 	}
-	log_debug(loggerDebug, "El espacio libre es %d", espacio);
 	return espacio;
 }
 
@@ -337,7 +334,6 @@ void recibir_operaciones_memoria(sock_t* socketMemoria){
 			log_debug(loggerDebug, "Recibi este pedido: %d y cant paginas %d", pedido_memoria->pid, pedido_memoria->cantidad_paginas);
 
 			int32_t operacionValida= reservarEspacio(pedido_memoria);
-			log_debug (loggerDebug, "Reservo espacio con resultado: %d", operacionValida);
 			sleep(arch->retardo);
 			if (operacionValida == RESULTADO_ERROR) {
 				header_t* headerMemoria = _create_header(RESULTADO_ERROR, 0);
@@ -539,12 +535,9 @@ FILE* abrirArchivoConTPagina(t_pagina* pagina_pedida){
 void leer_pagina(t_pagina* pagina_pedida){
 	log_debug(loggerDebug, "leer pid:%d, pag:%d", pagina_pedida->PID, pagina_pedida->nro_pagina);
 	FILE* espacioDeDatos=abrirArchivoConTPagina(pagina_pedida);
-	log_debug(loggerDebug, "Se abre el espacio de datos");
 	int32_t posicion=ftell(espacioDeDatos);
-	log_debug(loggerDebug, "La posicion es:%d", posicion);
 	pagina_pedida->contenido=malloc(arch->tamanio_pagina);
 	int32_t resultado=fread(pagina_pedida->contenido, sizeof(char),arch->tamanio_pagina, espacioDeDatos);
-	log_debug(loggerDebug, "Se lee el espacio de datos");
 	fclose(espacioDeDatos);
 	if (resultado==arch->tamanio_pagina){
 		pagina_pedida->tamanio_contenido=string_length(pagina_pedida->contenido);
@@ -573,9 +566,7 @@ int32_t escribir_pagina(t_pagina* pagina_pedida){
 
 	FILE* espacioDeDatos=abrirArchivoConTPagina(pagina_pedida);
 	int32_t posicion = ftell(espacioDeDatos);
-	log_debug(loggerDebug, "Lo posiciono en:%d", posicion);
 	int32_t resultado=fwrite(pagina_pedida->contenido, 1, string_length(pagina_pedida->contenido), espacioDeDatos);
-	log_debug(loggerDebug, "Escribo:%d bytes", resultado);
 
 	int i;
 	int32_t resultado2=0;
@@ -583,7 +574,6 @@ int32_t escribir_pagina(t_pagina* pagina_pedida){
 		resultado2+=fwrite("\0", 1,1, espacioDeDatos);
 	}
 	fclose(espacioDeDatos);
-	log_debug(loggerDebug, "Cierro archivo");
 	if (resultado+resultado2==arch->tamanio_pagina){
 		log_info(loggerInfo, ANSI_COLOR_GREEN"Escritura: PID: %d byte inicial: %d tamaño: %d contenido: %s"ANSI_COLOR_RESET,pagina_pedida->PID,
 				posicion, string_length(pagina_pedida->contenido),pagina_pedida->contenido);
