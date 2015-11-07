@@ -4,7 +4,7 @@
 #cd $HOME
 #git clone https://github.com/sisoputnfrba/tp-2015-2c-elclan.git
 
-GIT_LIB_LOC=~/git/tp-2015-2c-elclan/lib/
+GIT_LIB_LOC=~/tp-2015-2c-elclan/lib/
 
 cd $GIT_LIB_LOC
 
