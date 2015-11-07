@@ -9,8 +9,8 @@ GIT_LIB_LOC=~/git/tp-2015-2c-elclan/lib/
 
 cd $GIT_LIB_LOC
 
-sudo nano /etc/bash.bashrc
+sudo nano shared_library
 
-# Add   export LD_LIBRARY_PATH=~/git/tp-2015-2c-elclan/lib/   to that file
+# Add   LD_LIBRARY_PATH=~/git/tp-2015-2c-elclan/lib/   to that file
 
-ldconfig -n $GIT_LIB_LOC
+source shared_library
