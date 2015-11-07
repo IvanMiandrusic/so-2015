@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #Clone commons library
-GIT_TP_LOC=~/git/tp-2015-2c-elclan/
+GIT_TP_LOC=~/tp-2015-2c-elclan/
 
 cd $GIT_TP_LOC
 

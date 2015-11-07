@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GIT_TP_LOC=~/git/tp-2015-2c-elclan/
+GIT_TP_LOC=~/tp-2015-2c-elclan/
 CPUS=Cpu
 
 #CONFIGURE PARAMETERS OF CPU PROCESS
