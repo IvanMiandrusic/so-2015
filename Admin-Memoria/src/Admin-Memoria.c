@@ -260,7 +260,6 @@ void thread_request(void* arg) {
 	t_atencion_pedido* pedido = (t_atencion_pedido*) arg;
 	sock_t* socketCpu = _create_socket_from_fd(pedido->cpu_fd);
 	header_t* headerCpu = _create_header(pedido->operacion, pedido->tam_msj);
-	log_info(loggerInfo, "recibo fd:%d, headerop: %d", pedido->cpu_fd, get_operation_code(headerCpu));
 	switch (get_operation_code(headerCpu)) {
 	case INICIAR: {
 		iniciar_proceso(socketCpu);
@@ -284,7 +283,6 @@ void thread_request(void* arg) {
 	}
 	}
 	free(headerCpu);
-	//log_debug(loggerDebug, ANSI_COLOR_BOLDCYAN "Pedido procesado" ANSI_COLOR_RESET);
 
 }
 
@@ -433,7 +431,6 @@ void iniciar_proceso(sock_t* socketCpu) {
 		header_t* headerCpu = _create_header(OK, 0);
 		enviado = _send_header(socketCpu, headerCpu);
 		free(headerCpu);
-		log_debug(loggerDebug, "En la memoria tambien se asigna");
 		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "mProc: %d creado, con %d paginas" ANSI_COLOR_RESET, pedido_cpu->pid, pedido_cpu->cantidad_paginas);
 	}
 
@@ -530,7 +527,6 @@ void finalizar_proceso_error(sock_t* socketCpu, int32_t PID) {
 	int32_t resultado_operacion=get_operation_code(headerNuevo);
 	if (recibido == ERROR_OPERATION) return;
 
-	log_debug(loggerDebug, "Recibo del swap la operacion: %d", resultado_operacion);
 	free(headerNuevo);
 	/** Libero el espacio ocupado en memoria por el pid finalizado **/
 	limpiar_Informacion_PID(PID);
