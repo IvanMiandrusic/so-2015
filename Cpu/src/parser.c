@@ -19,6 +19,8 @@ int esEspacio(char caracter){return(caracter==' ')?1:0;}
 
 int esPuntoyComa(char caracter){return(caracter==';')?1:0;}
 
+int esComilla(char caracter){return(caracter=='"')?1:0;}
+
 int32_t buscarPrimerParametro(char*linea){
 	char* parametro=string_new();
 	while(!esPuntoyComa(*linea)){//este while sirve si lees la instruccion con el ; final
@@ -32,10 +34,11 @@ int32_t buscarPrimerParametro(char*linea){
 
 char* buscarSegundoParametro(char*linea){
 	char* parametro2=string_new();
-	while(!esPuntoyComa(*linea)){//este while sirve si lees la instruccion con el ; final
+	while(!esComilla(*linea)){//este while sirve si lees la instruccion con el ; final
 		string_append_with_format(&parametro2,"%c",*linea);
 		linea++;
 	}
+	linea++;
 	return parametro2;
 }
 
@@ -45,6 +48,7 @@ structEscribir buscarAmbosParametros(char*linea){
 		string_append_with_format(&parametro1,"%c",*linea);
 		linea++;
 	}
+	linea++;
 	linea++;
 	char*parametro2=buscarSegundoParametro(linea);
 	structEscribir parametros;

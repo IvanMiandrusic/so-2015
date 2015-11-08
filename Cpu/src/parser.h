@@ -25,6 +25,7 @@ typedef  struct {
 int32_t analizar_operacion_asociada(char* );
 int esEspacio(char );
 int esPuntoyComa(char );
+int esComilla(char );
 int32_t buscarPrimerParametro(char*);
 char* buscarSegundoParametro(char*);
 structEscribir buscarAmbosParametros(char*);
