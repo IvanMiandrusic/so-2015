@@ -1,13 +1,8 @@
-/*
- * Comunicacion.c
- *
- *  Created on: 30/08/2015
- *      Author: federico
- */
 
 #include "Comunicacion.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 t_pagina* deserializar_pedido(char* pedido_serializado){
 		t_pagina* pagina_solicitada = malloc(sizeof(t_pagina));

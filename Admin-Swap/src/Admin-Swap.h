@@ -1,9 +1,3 @@
-/*
- * Admin-Swap.h
- *
- *  Created on: 27/8/2015
- *      Author: utnso
- */
 /*Header File*/
 #ifndef ADMIN_SWAP_H_
 #define ADMIN_SWAP_H_
