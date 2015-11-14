@@ -1,9 +1,3 @@
-/*
- * Operaciones.h
- *
- *  Created on: 28/8/2015
- *      Author: utnso
- */
 
 #ifndef OPERACIONES_H_
 #define OPERACIONES_H_

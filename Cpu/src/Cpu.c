@@ -1,16 +1,5 @@
-/*
- ============================================================================
- Name        : Cpu.c
- Author      : Fiorillo Diego
- Version     :
- Copyright   : Your copyright notice
- Description : Hello World in C, Ansi-style
- ============================================================================
- */
-
 /*Source file */
 
-/*Include para las librerias */
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>

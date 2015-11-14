@@ -1,6 +1,8 @@
 #include "Comunicacion.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <commons/string.h>
 
 //Aca irian todas las funciones de serializar/deserializar los envios
 char* serializarPCB(PCB* pcb)
@@ -15,7 +17,7 @@ char* serializarPCB(PCB* pcb)
 	memcpy(pcbserializado + offset, &(pcb->PID), size_to_send);
 	offset += size_to_send;
 
-	int32_t tamanio=string_length(pcb->ruta_archivo);
+	int32_t tamanio = string_length(pcb->ruta_archivo);
 
 	size_to_send =  sizeof(u_int32_t);
 	memcpy(pcbserializado + offset, &(tamanio), size_to_send);

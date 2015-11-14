@@ -1,9 +1,3 @@
-/*
- * parser.h
- *
- *  Created on: 31/8/2015
- *      Author: utnso
- */
 
 #ifndef SRC_PARSER_H_
 #define SRC_PARSER_H_

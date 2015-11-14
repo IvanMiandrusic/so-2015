@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "commons/string.h"
+#include <commons/string.h>
 #include "parser.h"
 
 /*FUNCIONES PRIVADAS*/
