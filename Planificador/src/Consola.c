@@ -1,9 +1,3 @@
-/*
- * Consola.c
- *
- *  Created on: 28/8/2015
- *      Author: utnso
- */
 
 #include <stdlib.h>
 #include <stdio.h>

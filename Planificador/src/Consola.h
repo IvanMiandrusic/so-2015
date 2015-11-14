@@ -1,9 +1,3 @@
-/*
- * Consola.h
- *
- *  Created on: 28/8/2015
- *      Author: utnso
- */
 
 #ifndef CONSOLA_H_
 #define CONSOLA_H_

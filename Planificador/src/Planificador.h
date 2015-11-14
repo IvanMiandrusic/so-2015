@@ -1,9 +1,3 @@
-/*
- * Planificador.h
- *
- *  Created on: 27/8/2015
- *      Author: utnso
- */
 
 #ifndef PLANIFICADOR_H_
 #define PLANIFICADOR_H_

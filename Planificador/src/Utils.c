@@ -1,9 +1,4 @@
-/*
- * Utils.c
- *
- *  Created on: 10/09/2015
- *      Author: federico
- */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <commons/string.h>

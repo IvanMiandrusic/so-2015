@@ -1,12 +1,7 @@
-/*
- * Comunicacion.c
- *
- *  Created on: 30/08/2015
- *      Author: federico
- */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "Comunicacion.h"
 
 /** Funciones de SERIALIZAR/DESERIALIZAR PCB **/

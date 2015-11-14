@@ -1,12 +1,6 @@
-/*
- * Colores.h
- *
- *  Created on: 27/8/2015
- *      Author: utnso
- */
 
-#ifndef COLORES_H_
-#define COLORES_H_
+#ifndef UTILS_H_
+#define UTILS_H_
 
 #include "Planificador.h"
 
@@ -37,4 +31,4 @@ int32_t get_actual_time_integer();
 char* generate_absolute_path(char*);
 
 
-#endif /* COLORES_H_ */
+#endif /* UTILS_H_ */
