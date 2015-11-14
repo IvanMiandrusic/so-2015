@@ -1,13 +1,8 @@
-/*
- * Comunicacion.c
- *
- *  Created on: 30/08/2015
- *      Author: federico
- */
 
 #include "Comunicacion.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 int32_t obtener_tamanio_pagina(t_pagina* pagina) {
 	return 3*sizeof(int32_t) + pagina->tamanio_contenido;

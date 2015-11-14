@@ -1,15 +1,5 @@
-/*
- ============================================================================
- Name        : Admin-Memoria.c
- Author      : Fiorillo Diego
- Version     :
- Copyright   : Your copyright notice
- Description : Hello World in C, Ansi-style
- ============================================================================
- */
 /*Source file */
 
-/*Include para las librerias */
 #include <stdio.h>
 #include <stdlib.h>
 #include "Admin-Memoria.h"
@@ -472,9 +462,12 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 		if(cod_Operacion==LEER){
 			header_t* headerCpu = _create_header(OK, sizeof(int32_t)+pagina_pedida->tamanio_contenido);
 			enviado = _send_header(socketCpu, headerCpu);
+			if(enviado == ERROR_OPERATION) return;
 			int32_t tamanio=pagina_pedida->tamanio_contenido;
 			enviado = _send_bytes(socketCpu, &tamanio, sizeof(int32_t));
+			if(enviado == ERROR_OPERATION) return;
 			enviado = _send_bytes(socketCpu, pagina_pedida->contenido, tamanio);
+			if(enviado == ERROR_OPERATION) return;
 			free(headerCpu);
 			free(pagina_pedida->contenido);
 			free(pagina_pedida);
@@ -482,6 +475,7 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 		}else{
 			header_t* headerCpu = _create_header(OK, 0);
 			enviado = _send_header(socketCpu, headerCpu);
+			if(enviado == ERROR_OPERATION) return;
 			free(headerCpu);
 			free(pagina_pedida->contenido);
 			free(pagina_pedida);
@@ -524,8 +518,8 @@ void finalizar_proceso_error(sock_t* socketCpu, int32_t PID) {
 		enviar_resultado_cpu(ERROR, socketCpu);
 		if(recibido == SOCKET_CLOSED) swap_shutdown();
 	}
-	int32_t resultado_operacion=get_operation_code(headerNuevo);
-	if (recibido == ERROR_OPERATION) return;
+	int32_t resultado_operacion = get_operation_code(headerNuevo);
+	if (resultado_operacion == RESULTADO_ERROR) return;
 
 	free(headerNuevo);
 	/** Libero el espacio ocupado en memoria por el pid finalizado **/

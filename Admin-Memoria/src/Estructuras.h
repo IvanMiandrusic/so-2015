@@ -1,9 +1,3 @@
-/*
- * Estructuras.h
- *
- *  Created on: 05/09/2015
- *      Author: federico
- */
 
 #ifndef ESTRUCTURAS_H_
 #define ESTRUCTURAS_H_

@@ -1,9 +1,3 @@
-/*
- * Admin-Memoria.h
- *
- *  Created on: 27/8/2015
- *      Author: utnso
- */
 /*Header File*/
 
 #ifndef ADMIN_MEMORIA_H_

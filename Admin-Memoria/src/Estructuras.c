@@ -1,9 +1,3 @@
-/*
- * Estructuras.c
- *
- *  Created on: 05/09/2015
- *      Author: federico
- */
 
 #include <stdio.h>
 #include <stdlib.h>
