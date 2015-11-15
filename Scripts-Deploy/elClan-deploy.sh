@@ -51,40 +51,32 @@ if [ $1 = clean ]; then
 
 case $PROCESS_ID in
 1 )
-	cd $GIT_TP_LOC/$PLANIFICADOR/src/
-	gcc -o Planificador Planificador.c Consola.c Comunicacion.c Utils.c -L"~/tp-2015-2c-elclan/lib/" -lc-sockets-library -lcommons -lpthread
-	mv $PLANIFICADOR ..
-	cd ..
+	cd $GIT_TP_LOC/$PLANIFICADOR
+	make all
 	echo "PLANIFICADOR COMPILATION FINISHED"
 	cd $GIT_TP_LOC/$SCRIPTS/
 	chmod +x planificador.sh
   	/bin/sh ./planificador.sh
 ;;
 2 )
-	cd $GIT_TP_LOC/$ADMIN_SWAP/src/
-	gcc -o Admin-Swap Admin-Swap.c Comunicacion.c -L"~/tp-2015-2c-elclan/lib/" -lc-sockets-library -lcommons -lpthread
-	mv $ADMIN_SWAP ..
-	cd ..
+	cd $GIT_TP_LOC/$ADMIN_SWAP
+	make all
 	echo "ADMIN_SWAP COMPILATION FINISHED"
 	cd $GIT_TP_LOC/$SCRIPTS/
 	chmod +x swap.sh
   	/bin/sh ./swap.sh
 ;;
 3 )
-	cd $GIT_TP_LOC/$ADMIN_MEMORIA/src/
-	gcc -o Admin-Memoria Admin-Memoria.c Estructuras.c Comunicacion.c Utils.c -L"~/tp-2015-2c-elclan/lib/" -lc-sockets-library -lcommons -lpthread
-	mv $ADMIN_MEMORIA ..
-	cd ..
+	cd $GIT_TP_LOC/$ADMIN_MEMORIA
+	make all
 	echo "ADMIN_MEMORIA COMPILATION FINISHED"
 	cd $GIT_TP_LOC/$SCRIPTS/
 	chmod +x memoria.sh
  	/bin/sh ./memoria.sh
 ;;
 4)
-	cd $GIT_TP_LOC/$CPU/src/
-	gcc -o Cpu Cpu.c Operaciones.c Comunicacion.c parser.c -L"~/tp-2015-2c-elclan/lib/" -lc-sockets-library -lcommons -lpthread
-	mv $CPU ..
-	cd ..
+	cd $GIT_TP_LOC/$CPU
+	make all
 	echo "CPU COMPILATION FINISHED"
 	cd $GIT_TP_LOC/$SCRIPTS/
 	chmod +x cpu.sh
@@ -96,40 +88,32 @@ else
 
 case $PROCESS_ID in
 1 )
-	cd $GIT_TP_LOC/$PLANIFICADOR/src/
-	gcc -o Planificador Planificador.c Consola.c Comunicacion.c Utils.c -L"~/tp-2015-2c-elclan/lib/" -lc-sockets-library -lcommons -lpthread
-	mv $PLANIFICADOR ..
-	cd ..
+	cd $GIT_TP_LOC/$PLANIFICADOR
+	make all
 	echo "PLANIFICADOR COMPILATION FINISHED"
 	cd $GIT_TP_LOC/$SCRIPTS/
 	chmod +x planificador.sh
   	/bin/sh ./planificador.sh
 ;;
 2 )
-	cd $GIT_TP_LOC/$ADMIN_SWAP/src/
-	gcc -o Admin-Swap Admin-Swap.c Comunicacion.c -L"~/tp-2015-2c-elclan/lib/" -lc-sockets-library -lcommons -lpthread
-	mv $ADMIN_SWAP ..
-	cd ..
+	cd $GIT_TP_LOC/$ADMIN_SWAP
+	make all
 	echo "ADMIN_SWAP COMPILATION FINISHED"
 	cd $GIT_TP_LOC/$SCRIPTS/
 	chmod +x swap.sh
   	/bin/sh ./swap.sh
 ;;
 3 )
-	cd $GIT_TP_LOC/$ADMIN_MEMORIA/src/
-	gcc -o Admin-Memoria Admin-Memoria.c Estructuras.c Comunicacion.c Utils.c -L"~/tp-2015-2c-elclan/lib/" -lc-sockets-library -lcommons -lpthread
-	mv $ADMIN_MEMORIA ..
-	cd ..
+	cd $GIT_TP_LOC/$ADMIN_MEMORIA
+	make all
 	echo "ADMIN_MEMORIA COMPILATION FINISHED"
 	cd $GIT_TP_LOC/$SCRIPTS/
 	chmod +x memoria.sh
  	/bin/sh ./memoria.sh
 ;;
 4)
-	cd $GIT_TP_LOC/$CPU/src/
-	gcc -o Cpu Cpu.c Operaciones.c Comunicacion.c parser.c -L"~/tp-2015-2c-elclan/lib/" -lc-sockets-library -lcommons -lpthread
-	mv $CPU ..
-	cd ..
+	cd $GIT_TP_LOC/$CPU
+	make all
 	echo "CPU COMPILATION FINISHED"
 	cd $GIT_TP_LOC/$SCRIPTS/
 	chmod +x cpu.sh

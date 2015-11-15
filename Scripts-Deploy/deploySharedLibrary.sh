@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Clone Git Repository
-#cd $HOME
+#cd ~
 #git clone https://github.com/sisoputnfrba/tp-2015-2c-elclan.git
 
 GIT_LIB_LOC=~/tp-2015-2c-elclan/lib/
