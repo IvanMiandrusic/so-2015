@@ -24,7 +24,7 @@ LIBS := -lc-sockets-library -lcommons -lpthread
 src/%.o: src/%.c
 	@echo 'Compilando archivo: $<'
 	@echo 'Invoking: GCC C Compiler'
-	gcc -I"~/tp-2015-2c-elclan/lib/" $(CFLAGS) -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	gcc -I"/home/utnso/tp-2015-2c-elclan/lib/" $(CFLAGS) -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Compilacion terminada: $<'
 	@echo ' '
 
