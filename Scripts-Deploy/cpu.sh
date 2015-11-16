@@ -7,7 +7,7 @@ CPUS=Cpu
 clear
 
 cd $GIT_TP_LOC/$CPUS
-rm cpu.config
+rm Cpu.config
 
 echo "SE VA A INICIAR EL PROCESO CPU"
 echo "INGRESE LA IP DEL PROCESO PLANIFICADOR"
@@ -37,4 +37,4 @@ echo "EXECUTING CPU"
 
 cd $GIT_TP_LOC/$CPUS
 
-./$CPUS cpu.config
+./$CPUS Cpu.config

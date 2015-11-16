@@ -23,11 +23,7 @@ ADMIN_SWAP=Admin-Swap
 SCRIPTS=Scripts-Deploy
 
 # Check if commons are installed
-LIB_OK=$(ldconfig -p | grep libcommons.so)
-
-echo Checking for so-commons-library: $LIB_OK
-
-if [ -z "$LIB_OK" ]; then
+if [ ! test -d "so-commons-library" ]; then
   echo "so-commons-library IS NOT INSTALLED, PROCEEDING TO SETTING IT UP"
   /bin/sh ./commons-setup.sh
 
