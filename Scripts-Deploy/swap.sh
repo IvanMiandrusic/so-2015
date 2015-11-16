@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GIT_TP_LOC=~/tp-2015-2c-elclan/
+GIT_TP_LOC=~/tp-2015-2c-elclan
 ADMIN_SWAP=Admin-Swap
 
 #CONFIGURE PARAMETERS OF ADMIN_SWAP PROCESS

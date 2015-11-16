@@ -39,7 +39,7 @@ dependents:
 Cpu: $(OBJS) ~/tp-2015-2c-elclan/lib/libc-sockets-library.so
 	@echo 'Compilando: $@'
 	@echo 'Invoking: GCC C Linker'
-	$(CC) -L"~/tp-2015-2c-elclan/lib/" -o "Cpu" $(OBJS) $(LIBS)
+	$(CC) -L"/home/utnso/tp-2015-2c-elclan/lib/" -o "Cpu" $(OBJS) $(LIBS)
 	@echo 'Compilacion terminada: $@'
 	@echo ' '
 
@@ -50,4 +50,4 @@ clean:
 
 .PHONY: all clean dependents
 .SECONDARY:
-/home/federico/git/c-sockets-library/Debug/libc-sockets-library.so:
+~/tp-2015-2c-elclan/lib/libc-sockets-library.so:

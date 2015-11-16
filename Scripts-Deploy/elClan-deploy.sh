@@ -15,7 +15,7 @@ fi
 
 echo "Compiling all processes..."
 
-GIT_TP_LOC=~/tp-2015-2c-elclan/
+GIT_TP_LOC=~/tp-2015-2c-elclan
 PLANIFICADOR=Planificador
 CPU=Cpu
 ADMIN_MEMORIA=Admin-Memoria
