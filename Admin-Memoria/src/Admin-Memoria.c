@@ -152,7 +152,7 @@ void crearArchivoDeLog() {
 	char* archLog = "MEM_Admin";
 	loggerInfo = log_create(pathLog, archLog, 1, LOG_LEVEL_INFO);
 	loggerError = log_create(pathLog, archLog, 1, LOG_LEVEL_ERROR);
-	loggerDebug = log_create(pathLog, archLog, 1, LOG_LEVEL_DEBUG);
+	loggerDebug = log_create(pathLog, archLog, 0, LOG_LEVEL_DEBUG);
 }
 
 void crear_estructuras_memoria() {
@@ -386,8 +386,6 @@ void iniciar_proceso(sock_t* socketCpu) {
 		if(recibido == SOCKET_CLOSED) swap_shutdown();
 	}
 
-	log_debug(loggerDebug, "Recibi el pcb %d, con %d paginas" ,pedido_cpu->pid, pedido_cpu->cantidad_paginas);
-
 	//Envio al swap para que reserve espacio
 	header_t* headerSwap = _create_header(RESERVAR_ESPACIO,	2 * sizeof(int32_t));
 	enviado = _send_header(socketSwap, headerSwap);
@@ -409,14 +407,12 @@ void iniciar_proceso(sock_t* socketCpu) {
 	if (resultado_operacion == RESULTADO_ERROR || recibido == ERROR_OPERATION || recibido == SOCKET_CLOSED) {
 
 		enviar_resultado_cpu(ERROR, socketCpu);
-		//log_debug(loggerDebug,ANSI_COLOR_RED"El swap informa que no se pudo asignar" ANSI_COLOR_RESET);
 		log_error(loggerError, "Error de creacion del mProc: %d", pedido_cpu->pid);
 		if(recibido == SOCKET_CLOSED) swap_shutdown();
 
 	} else if (resultado_operacion == RESULTADO_OK) {
 
 		//Creo la tabla de paginas del PID dado
-		//log_debug(loggerDebug,"El swap informa que se pudo asignar");
 		crear_tabla_pagina_PID(pedido_cpu->pid, pedido_cpu->cantidad_paginas);
 		header_t* headerCpu = _create_header(OK, 0);
 		enviado = _send_header(socketCpu, headerCpu);

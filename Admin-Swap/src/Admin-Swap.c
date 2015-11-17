@@ -56,7 +56,7 @@ void crearArchivoDeLog() {
 	char* archLog = "SWAP-Admin";
 	loggerInfo = log_create(pathLog, archLog, 1, LOG_LEVEL_INFO);
 	loggerError = log_create(pathLog, archLog, 1, LOG_LEVEL_ERROR);
-	loggerDebug = log_create(pathLog, archLog, 1, LOG_LEVEL_DEBUG);
+	loggerDebug = log_create(pathLog, archLog, 0, LOG_LEVEL_DEBUG);
 }
 
 /*Se crean las estructuras necesarias para manejar el Swap*/
