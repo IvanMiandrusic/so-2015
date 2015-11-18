@@ -239,7 +239,7 @@ void TLB_clean_by_page(int32_t PID, TPagina* pagina) {
 void MP_create() {
 	int32_t tamanio=(arch->cantidad_marcos) * (arch->tamanio_marco);
 	mem_principal = malloc(tamanio);
-	//La limpio
+	//Arranco con la memoria limpia
 	char* texto=string_repeat('\0', tamanio);
 	memcpy(mem_principal,texto,tamanio);
 }
@@ -480,6 +480,8 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap
 				}else{
 					pagina_Nueva->contenido=NULL;
 				}
+				pagina->tamanio_contenido=pagina_Nueva->tamanio_contenido;
+				memcpy(pagina->contenido,pagina_Nueva->contenido,pagina_Nueva->tamanio_contenido);
 
 				log_info(loggerInfo, ANSI_COLOR_BOLDCYAN "Exito al leer pagina en el swap: tamanio:%d, contenido:%s" ANSI_COLOR_RESET, pagina_Nueva->tamanio_contenido, pagina_Nueva->contenido);
 
