@@ -241,7 +241,7 @@ void MP_create() {
 	mem_principal = malloc(tamanio);
 	//La limpio
 	char* texto=string_repeat('\0', tamanio);
-	memcpy(mem_principal,texto,arch->tamanio_marco);
+	memcpy(mem_principal,texto,tamanio);
 }
 
 void MP_destroy() {
