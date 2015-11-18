@@ -221,7 +221,6 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 	case NUEVA_CPU: {
 		/** Genero un nuevo cpu_t **/
 		CPU_t* nuevaCPU = generarCPU(cpu_id, socketCPU);
-		//log_debug(loggerDebug, "Se conecto una Cpu con id: %d", cpu_id);
 		agregarColaCPUs(nuevaCPU);
 		log_info(loggerDebug,
 				ANSI_COLOR_YELLOW"Se conecto una CPU nueva con id %d y socket %d"ANSI_COLOR_RESET,
@@ -233,7 +232,6 @@ void procesarPedido(sock_t* socketCPU, header_t* header) {
 		enviado = _send_bytes(socketCPU, &(arch->quantum), sizeof(int32_t));
 		if (enviado == ERROR_OPERATION)return;
 
-		log_debug(loggerDebug, "Quantum enviado exitosamente a la CPU");
 		free(header_quantum);
 		asignarPCBaCPU();
 		break;
@@ -362,7 +360,7 @@ void liberarCPU(int32_t cpu_id) {
 	}
 	CPU_t* cpu_encontrada = list_find(colaCPUs, getCpuByID);
 	cpu_encontrada->estado = LIBRE;
-	log_debug(loggerDebug, "Cambio de estado (LIBRE) de la cpu con id %d", cpu_encontrada->ID);
+
 
 }
 
@@ -451,14 +449,8 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 	}
 	if(tipo==TIEMPO_RSP){
 		if(metrica->correspondeCalculoTResp){
-		log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "La hora de creacion de la metrica del mProc %d es %d"
-				ANSI_COLOR_RESET, ID, metrica->hora_de_Creacion);
 
 		t_time* t_horaCreacion = obtengoTiempo(metrica->hora_de_Creacion);
-		log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "La hora de creacion para calcular tiempo respuesta es %d:%d:%d"
-				ANSI_COLOR_RESET, t_horaCreacion->horas, t_horaCreacion->minutos, t_horaCreacion->segundos);
-		log_debug(loggerDebug, ANSI_COLOR_BOLDWHITE "La hora actual para calcular el tiempo respuesta es %d:%d:%d"
-								ANSI_COLOR_RESET, t_horaActual->horas, t_horaActual->minutos, t_horaActual->segundos);
 
 		t_time* respuestaRSP = calculoDefinitivo(t_horaActual,t_horaCreacion);
 		metrica->horasRsp = respuestaRSP->horas;
@@ -604,14 +596,12 @@ void operarIO(int32_t cpu_id, int32_t tiempo, PCB* pcb) {
 	sem_wait(&sem_list_retardos);
 	list_add(retardos_PCB, retardo_nuevo);
 	sem_post(&sem_list_retardos);
-	log_debug(loggerDebug, "guardo en bloqueado pid: %d, tiempo: %d", pcb->PID, tiempo);
 
 	/** PCB de Listos a Bloqueado **/
 	PCB* pcb_found = list_remove_by_condition(colaExec, getPcbByID);
 	pcb_found->estado = BLOQUEADO;
 	pcb_found->siguienteInstruccion = pcb->siguienteInstruccion;
 	agregarPcbAColaBlock(pcb_found);
-	log_debug(loggerDebug, "Cambio de estado (block) y de lista del pcb con id %d", pcb->PID);
 
 	sem_post(&sem_io);
 	/** Cambio estado CPU a LIBRE **/
