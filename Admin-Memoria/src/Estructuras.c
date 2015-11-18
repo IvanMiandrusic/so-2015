@@ -237,8 +237,11 @@ void TLB_clean_by_page(int32_t PID, TPagina* pagina) {
 /** FUNCIONES DE TABLA DE PAGINAS Y MP **/
 
 void MP_create() {
-
-	mem_principal = malloc((arch->cantidad_marcos) * (arch->tamanio_marco));
+	int32_t tamanio=(arch->cantidad_marcos) * (arch->tamanio_marco);
+	mem_principal = malloc(tamanio);
+	//La limpio
+	char* texto=string_repeat('\0', tamanio);
+	memcpy(mem_principal,texto,arch->tamanio_marco);
 }
 
 void MP_destroy() {

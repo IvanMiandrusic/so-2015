@@ -13,7 +13,7 @@ void consola_planificador(){
 		int32_t operacionAsociada;
 
 		while(finalizar){
-		printf(ANSI_COLOR_BOLDCYAN "INGRESE EL COMANDO QUE DESE EJECUTAR: " ANSI_COLOR_RESET);
+		printf(ANSI_COLOR_BOLDCYAN "INGRESE EL COMANDO QUE DESEE EJECUTAR: " ANSI_COLOR_RESET);
 		scanf("%[^\n]s", comandoSeleccionado);
 		printf("\n");
 
