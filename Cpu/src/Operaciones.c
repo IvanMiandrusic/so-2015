@@ -168,7 +168,7 @@ void ejecutar(int32_t id, PCB* pcb){
 		fseek(prog, pcb->siguienteInstruccion, SEEK_SET);
 		if(fgets(cadena, 100, prog) != NULL){
 			t_respuesta* respuesta=analizadorLinea(id,pcb,cadena);
-			sleep(arch->retardo);
+			usleep(arch->retardo);
 			if(respuesta==NULL){
 				log_error(loggerError, ANSI_COLOR_BOLDRED "Ocurrio un error al ejecutar el mProc %d, "
 						"se dara por finalizado.."ANSI_COLOR_RESET, pcb->PID);
