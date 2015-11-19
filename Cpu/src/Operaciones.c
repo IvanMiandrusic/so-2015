@@ -410,7 +410,7 @@ t_respuesta* mAnsisOp_IO(int32_t id, PCB* pcb,int32_t tiempo){
 	response->texto=string_new();
 	response->retardo = tiempo;
 	string_append_with_format(&response->texto, "mProc %d en entrada-salida de tiempo %d ;", id,tiempo);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "CPU:%d - mProc %d en entrada-salida de tiempo %d " ANSI_COLOR_RESET, id,tiempo);
+	log_info(loggerInfo, ANSI_COLOR_BLUE "CPU:%d - mProc %d en entrada-salida de tiempo %d " ANSI_COLOR_RESET, id, pcb->PID, tiempo);
 	return response;
 }
 

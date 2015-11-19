@@ -668,7 +668,6 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		}
 
 		TPagina* mejorPagina=list_get(paginasConPresencia,indiceMejorPagina);
-		printf("la mejor pagina es: %d\n",mejorPagina->pagina );
 		int asd;
 		for (asd=0;asd<list_size(paginasConPresencia);asd++){
 			TPagina* pagina=list_get(paginasConPresencia, asd);
