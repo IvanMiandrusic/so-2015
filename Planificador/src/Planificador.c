@@ -618,11 +618,11 @@ void procesar_IO() {
 
 		sem_wait(&sem_io);
 		PCB* pcb_to_sleep = list_get(colaBlock, 0);
+
 		bool getRetardoByID(void* unPCB) {
 			retardo* retard = (retardo*) unPCB;
 			return (retard->ID == pcb_to_sleep->PID);
 		}
-
 
 		/** Saco ese PID de la lista de retardos **/
 		sem_wait(&sem_list_retardos);
