@@ -239,9 +239,9 @@ void TLB_clean_by_page(int32_t PID, TPagina* pagina) {
 void MP_create() {
 	int32_t tamanio=(arch->cantidad_marcos) * (arch->tamanio_marco);
 	mem_principal = malloc(tamanio);
-	//La limpio
+	//Arranco con la memoria limpia
 	char* texto=string_repeat('\0', tamanio);
-	memcpy(mem_principal,texto,arch->tamanio_marco);
+	memcpy(mem_principal,texto,tamanio);
 }
 
 void MP_destroy() {
@@ -480,6 +480,8 @@ t_resultado_busqueda pedido_pagina_swap(t_pagina* pagina, int32_t operacion_swap
 				}else{
 					pagina_Nueva->contenido=NULL;
 				}
+				pagina->tamanio_contenido=pagina_Nueva->tamanio_contenido;
+				memcpy(pagina->contenido,pagina_Nueva->contenido,pagina_Nueva->tamanio_contenido);
 
 				log_info(loggerInfo, ANSI_COLOR_BOLDCYAN "Exito al leer pagina en el swap: tamanio:%d, contenido:%s" ANSI_COLOR_RESET, pagina_Nueva->tamanio_contenido, pagina_Nueva->contenido);
 
@@ -666,7 +668,6 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		}
 
 		TPagina* mejorPagina=list_get(paginasConPresencia,indiceMejorPagina);
-		printf("la mejor pagina es: %d\n",mejorPagina->pagina );
 		int asd;
 		for (asd=0;asd<list_size(paginasConPresencia);asd++){
 			TPagina* pagina=list_get(paginasConPresencia, asd);

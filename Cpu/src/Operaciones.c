@@ -168,7 +168,7 @@ void ejecutar(int32_t id, PCB* pcb){
 		fseek(prog, pcb->siguienteInstruccion, SEEK_SET);
 		if(fgets(cadena, 100, prog) != NULL){
 			t_respuesta* respuesta=analizadorLinea(id,pcb,cadena);
-			sleep(arch->retardo);
+			usleep(arch->retardo);
 			if(respuesta==NULL){
 				log_error(loggerError, ANSI_COLOR_BOLDRED "Ocurrio un error al ejecutar el mProc %d, "
 						"se dara por finalizado.."ANSI_COLOR_RESET, pcb->PID);
@@ -410,7 +410,7 @@ t_respuesta* mAnsisOp_IO(int32_t id, PCB* pcb,int32_t tiempo){
 	response->texto=string_new();
 	response->retardo = tiempo;
 	string_append_with_format(&response->texto, "mProc %d en entrada-salida de tiempo %d ;", id,tiempo);
-	log_info(loggerInfo, ANSI_COLOR_BLUE "CPU:%d - mProc %d en entrada-salida de tiempo %d " ANSI_COLOR_RESET, id,tiempo);
+	log_info(loggerInfo, ANSI_COLOR_BLUE "CPU:%d - mProc %d en entrada-salida de tiempo %d " ANSI_COLOR_RESET, id, pcb->PID, tiempo);
 	return response;
 }
 
