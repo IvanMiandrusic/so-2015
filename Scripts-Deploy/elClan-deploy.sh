@@ -31,6 +31,18 @@ else
 	echo "so-commons-library IS ALREADY INSTALLED"
 fi
 
+#Check if LD_LIBRARY_PATH is not set or is empty
+echo "La variable de entorno LD_LIBRARY_PATH esta en: ${LD_LIBRARY_PATH:?La variable de entorno LD_LIBRARY_PATH no esta seteada}"
+
+#Check if LD_LIBRARY_PATH is set but has wrong value
+CORRECT_PATH=/home/utnso/tp-2015-2c-elclan/lib
+
+if [ "$LD_LIBRARY_PATH" != "$CORRECT_PATH" ]
+then 
+	echo "La variable de entorno LD_LIBRARY_PATH no esta seteada correctamente"
+	exit 1
+fi
+
 #Compile all and then clean output folders
 echo "¿QUE PROCESO DESEA LEVANTAR?"
 
