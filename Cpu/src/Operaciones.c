@@ -210,6 +210,7 @@ void ejecutar(int32_t id, PCB* pcb){
 			enviar_Header_ID_Retardo_PCB_Texto (RESULTADO_OK,id,pcb,log_acciones,0);
 			ultimoQuantum = quantum;
 			free(log_acciones);
+			//free(respuesta);
 			fclose(prog);
 			return ;
 		}
