@@ -292,9 +292,19 @@ int32_t tabla_paginas_clean(int32_t PID) {
 		return entrada->PID==PID;
 	}
 
+	void frames_clean(void* parametro) {
+		TPagina* entrada = (TPagina*) parametro;
+		frames[entrada->marco] = 0;
+	}
+
 	t_paginas_proceso* tablaPagina=list_find(tabla_Paginas, obtenerTabPagina);
 
 	if(tablaPagina!=NULL){
+
+		/** Libero frames ocupados por el mProc **/
+		t_list* paginas_presentes = obtengoPaginasConPresencia(tablaPagina->paginas);
+		list_iterate(paginas_presentes, frames_clean);
+
 		list_destroy_and_destroy_elements(tablaPagina->paginas, free);
 		list_remove_and_destroy_by_condition(tabla_Paginas, obtenerTabPagina, free);
 		return RESULTADO_OK	;
