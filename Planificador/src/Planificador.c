@@ -467,7 +467,7 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 int32_t adaptarHora(int32_t hora) {
 	double decimal = hora / 60;
 	int32_t partEntera = decimal;
-	int32_t deciEntero = (decimal - partEntera) * 100;
+	int32_t deciEntero = (decimal - partEntera) * 60;
 	return deciEntero;
 }
 
