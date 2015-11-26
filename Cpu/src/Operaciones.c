@@ -338,7 +338,7 @@ t_respuesta* mAnsisOp_leer(int32_t id,PCB* pcb,int32_t numDePagina){
 	recibido = _receive_bytes(socketMemoria, contenido_pagina, longPagina);
 	contenido_pagina[longPagina]='\0';
 	if(recibido == ERROR_OPERATION || (recibido == SOCKET_CLOSED && longPagina!=0)) return NULL;
-
+	log_debug(loggerDebug, "Recibi %d bytes, contenido: %s", longPagina, contenido_pagina);
 	t_respuesta* response= malloc(sizeof(t_respuesta));
 	if (contenido_pagina != NULL){
 	response->id=LEER;
