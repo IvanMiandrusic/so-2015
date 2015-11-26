@@ -459,7 +459,7 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 			header_t* headerCpu = _create_header(OK, sizeof(int32_t)+pagina_pedida->tamanio_contenido);
 			enviado = _send_header(socketCpu, headerCpu);
 			if(enviado == ERROR_OPERATION) return;
-			int32_t tamanio=pagina_pedida->tamanio_contenido;
+			int32_t tamanio=string_length(pagina_pedida->contenido);
 			enviado = _send_bytes(socketCpu, &tamanio, sizeof(int32_t));
 			if(enviado == ERROR_OPERATION) return;
 			enviado = _send_bytes(socketCpu, pagina_pedida->contenido, tamanio);
