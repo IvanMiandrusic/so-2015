@@ -464,7 +464,6 @@ void readOrWrite(int32_t cod_Operacion, sock_t* socketCpu, header_t* header){
 			if(enviado == ERROR_OPERATION) return;
 			enviado = _send_bytes(socketCpu, pagina_pedida->contenido, tamanio);
 			if(enviado == ERROR_OPERATION) return;
-			log_debug(loggerDebug, "envio tam pagina %d", tamanio);
 			log_debug(loggerDebug,"Se leyo la pagina correctamente: %s", pagina_pedida->contenido);
 			free(headerCpu);
 			free(pagina_pedida->contenido);
