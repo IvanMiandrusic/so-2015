@@ -146,7 +146,7 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 		TLB_hit++;
 		sumar_metrica(ACCESO, pagina->PID);
 
-		int32_t offset=entrada_pagina->marco*arch->tamanio_marco;
+		int32_t offset = (entrada_pagina->marco)*(arch->tamanio_marco);
 		if(cod_Operacion==LEER)	memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
 		if(cod_Operacion==ESCRIBIR){
 			entrada_pagina->modificada=1;
