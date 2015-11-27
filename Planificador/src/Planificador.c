@@ -325,7 +325,7 @@ void recibirOperacion(sock_t* socketCPU, int32_t cpu_id, int32_t cod_Operacion) 
 
 	/** Loggeo resultado operaciones **/
 	log_info(loggerInfo, ANSI_COLOR_BOLDMAGENTA "Recibido el proceso id: %d, ejecuto: %s" ANSI_COLOR_RESET, pcb->PID, resultado_operaciones);
-	calcularMetrica(pcb->PID, TIEMPO_EXEC);
+//	Todo calcularMetrica(pcb->PID, TIEMPO_EXEC);
 
 	/** Operar la respuesta **/
 	if (cod_Operacion == INSTRUCCION_IO) {
@@ -567,6 +567,7 @@ void finalizarPCB(int32_t pcbID, int32_t tipo) {
 				pcbID, pcb_found->ruta_archivo);
 	}
 	calcularMetrica(pcb_found->PID, TIEMPO_RSP);
+	calcularMetrica(pcb_found->PID, TIEMPO_EXEC);
 	agregarPcbAColaFinalizados(pcb_found);
 	mostrarMetricas(pcb_found->PID);
 	removerMetrica(pcb_found->PID);
@@ -693,18 +694,18 @@ void asignarPCBaCPU() {
 		} else {
 			pcbAEnviar->estado = EJECUCION;
 		}
-		actualizarMetricas(pcbAEnviar->PID, TIEMPO_EXEC);
+
 		char* paquete = serializarPCB(pcbAEnviar);
 		int32_t tamanio_pcb = obtener_tamanio_pcb(pcbAEnviar);
 		enviarPCB(paquete, tamanio_pcb, pcbAEnviar->PID, ENVIO_PCB);
 		log_info(loggerInfo,
 				ANSI_COLOR_BOLDYELLOW"El Proc con ruta: %s e ID: %d entro en ejecucion mediante un algoritmo %s"ANSI_COLOR_RESET,
 				pcbAEnviar->ruta_archivo, pcbAEnviar->PID, arch->algoritmo);
+
 		/** Pongo el PCB en ejecucion **/
-		if(pcbAEnviar->siguienteInstruccion==0)	{
-			calcularMetrica(pcbAEnviar->PID, TIEMPO_ESP);
-		}
-		if(pcbAEnviar->siguienteInstruccion>0)  calcularMetrica(pcbAEnviar->PID, TIEMPO_ESP);
+		calcularMetrica(pcbAEnviar->PID, TIEMPO_ESP);
+//		Todo actualizarMetricas(pcbAEnviar->PID, TIEMPO_EXEC);
+
 		agregarPcbAColaExec(pcbAEnviar);
 		mostrarContenidoListas();
 		free(paquete);

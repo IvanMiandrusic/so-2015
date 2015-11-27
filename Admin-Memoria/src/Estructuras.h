@@ -27,6 +27,7 @@ typedef struct estructura_tabla_paginas			//estructura que contiene los datos de
   int32_t presente;			//Presente en MP (1 si, 0 no)
   int32_t tiempo_referencia;   	//Para saber cual fue la primera en ingresar
   int32_t bitUso;
+  int32_t puntero;
 }TPagina;
 
 typedef struct metricas {
