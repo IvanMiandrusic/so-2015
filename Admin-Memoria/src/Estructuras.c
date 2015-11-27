@@ -282,6 +282,9 @@ void tabla_paginas_refresh(TLB* entrada_tlb) {
 	/** Si es LRU, me interesa el tiempo de referencia **/
 	if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
 		pagina_a_modificar->tiempo_referencia = get_actual_time_integer();
+	if(string_equals_ignore_case("CLOCK-M", arch->algoritmo_reemplazo))
+		pagina_a_modificar->tiempo_referencia = get_actual_time_integer();
+
 
 }
 
@@ -385,6 +388,9 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 		/** Si es LRU me interesa saber en que instante se referencia la pag en MP **/
 		if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
 			entradaFound->tiempo_referencia = get_actual_time_integer();
+		if(string_equals_ignore_case("CLOCK-M", arch->algoritmo_reemplazo))
+			entradaFound->tiempo_referencia = get_actual_time_integer();
+
 		entradaFound->bitUso=1;
 		/** Hago el retardo si encuentra la pagina en la tabla de paginas **/
 		sleep(arch->retardo);
