@@ -665,9 +665,9 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 					mejorModificada=0;
 					indiceMejorPagina=i;
 				}
-				paginaObtenida->bitUso=0;
+				if(mejorBitUso==1) paginaObtenida->bitUso=0;
 			}else if(esClase3(paginaObtenida->bitUso,paginaObtenida->modificada)){
-				paginaObtenida->bitUso=0;
+				if(mejorBitUso==1) paginaObtenida->bitUso=0;
 			}
 			i++;
 			if (list_size(paginasConPresencia)==(i)){
