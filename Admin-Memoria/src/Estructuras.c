@@ -284,8 +284,6 @@ void tabla_paginas_refresh(TLB* entrada_tlb) {
 	/** Si es LRU, me interesa el tiempo de referencia **/
 	if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
 		pagina_a_modificar->tiempo_referencia = get_actual_time_integer();
-	if(string_equals_ignore_case("CLOCK-M", arch->algoritmo_reemplazo))
-		pagina_a_modificar->tiempo_referencia = get_actual_time_integer();
 
 
 }
@@ -392,8 +390,6 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 
 		/** Si es LRU me interesa saber en que instante se referencia la pag en MP **/
 		if(string_equals_ignore_case("LRU", arch->algoritmo_reemplazo))
-			entradaFound->tiempo_referencia = get_actual_time_integer();
-		if(string_equals_ignore_case("CLOCK-M", arch->algoritmo_reemplazo))
 			entradaFound->tiempo_referencia = get_actual_time_integer();
 
 		entradaFound->bitUso=1;
@@ -535,12 +531,12 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 	}
 
 	int32_t presentes=list_count_satisfying(paginas_PID, isPresent);
-	//log_debug(loggerDebug, "Tengo con presencia:%d, en una lista con :%d paginas", presentes, list_size(paginas_PID));
+	log_debug(loggerDebug, "Tengo con presencia:%d, en una lista con :%d paginas", presentes, list_size(paginas_PID));
 
 	if(presentes < arch->maximo_marcos) {
 
 		/** Obtengo frame libre para asignar pagina **/
-		//log_debug(loggerDebug, "Debo obtener frame libre");
+		log_debug(loggerDebug, "Debo obtener frame libre");
 		marco_libre = obtener_frame_libre();
 
 		log_debug(loggerDebug, "Frame libre:%d", marco_libre);
