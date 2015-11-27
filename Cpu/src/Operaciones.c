@@ -225,6 +225,7 @@ void ejecutar(int32_t id, PCB* pcb){
 	free(log_acciones);
 }
 
+
 void enviar_Header_ID_Retardo_PCB_Texto (int32_t Cod_Operacion,int32_t id,PCB* pcb,char* texto, int32_t retardo){
 
 		sock_t* socketPlanificador=getSocketPlanificador(id);
