@@ -216,7 +216,7 @@ void ejecutar(int32_t id, PCB* pcb){
 		}
 		if (quantum > 0){
 					ultimoQuantum ++;
-					if (ultimoQuantum > quantum)finalizado = TRUE;
+					if (ultimoQuantum >= quantum)finalizado = TRUE;
 			}
 	}
 	log_info(loggerInfo, "Rafaga terminada del PID: %d", pcb->PID);
