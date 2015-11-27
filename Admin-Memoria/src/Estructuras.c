@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "Estructuras.h"
@@ -142,7 +141,6 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 		return buscar_pagina_tabla_paginas(cod_Operacion, pagina);
 	}
 	else{
-
 		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "TLB HIT! Pagina:%d->Marco:%d" ANSI_COLOR_RESET, pagina->nro_pagina, entrada_pagina->marco);
 		/** Hubo un TLB_HIT, se encontro la pagina **/
 		TLB_hit++;
@@ -557,6 +555,13 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 		return entrada->pagina == pagina_recibida_swap->nro_pagina;
 	}
 
+
+	void ponerEnCero(void* parametro) {
+		TPagina* entrada = (TPagina*) parametro;
+		entrada->puntero=0;
+	}
+	list_iterate(paginas_PID,ponerEnCero);
+
 	TPagina* pagina_a_poner_presente = list_find(paginas_PID, findByID);
 	//log_debug(loggerDebug, "Tengo pagina para cambiar:%d", pagina_a_poner_presente->pagina);
 	log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Resultado del algoritmo %s, se sustituye el marco %d"ANSI_COLOR_RESET, arch->algoritmo_reemplazo, marco_libre);
@@ -564,6 +569,7 @@ t_resultado_busqueda asignar_pagina(t_pagina* pagina_recibida_swap) {
 	pagina_a_poner_presente->marco = marco_libre;
 	pagina_a_poner_presente->tiempo_referencia = get_actual_time_integer();
 	pagina_a_poner_presente->modificada = 0;
+	pagina_a_poner_presente->puntero=1;
 
 	int32_t offset=marco_libre * arch->tamanio_marco;
 	if(pagina_recibida_swap->contenido==NULL){
@@ -647,7 +653,19 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 	}
 	else if(algoritmo_reemplazo == CLOCK_MODIFICADO) {
 
-		int i=0;
+		int puntero=0;
+		TPagina* paginaAIniciar=list_get(paginasConPresencia,puntero);
+		while(paginaAIniciar->puntero!=1){
+			puntero++;
+			paginaAIniciar=list_get(paginasConPresencia,puntero);
+		}
+		puntero++;
+		if(puntero>=list_size(paginasConPresencia)) puntero=0;
+		log_info(loggerInfo, ANSI_COLOR_BOLDWHITE" puntero%d"ANSI_COLOR_RESET,puntero);
+		//puntero apunta a la primer pagina a iterar
+
+
+		int i=puntero;
 		bool encontre_pagina_a_ausentar=false;
 		TPagina* paginaObtenida=list_get(paginasConPresencia,i);
 
@@ -676,12 +694,20 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 			}else if(esClase3(paginaObtenida->bitUso,paginaObtenida->modificada)){
 				if(mejorBitUso==1) paginaObtenida->bitUso=0;
 			}
+
+
 			i++;
-			if (list_size(paginasConPresencia)==(i)){
-				encontre_pagina_a_ausentar=true;
+
+			if(i>=list_size(paginasConPresencia)){
+				i=0;
 			}else{
 				paginaObtenida=list_get(paginasConPresencia,i);
 			}
+
+			if (puntero==i){
+				encontre_pagina_a_ausentar=true;
+			}
+
 		}
 
 		TPagina* mejorPagina=list_get(paginasConPresencia,indiceMejorPagina);
@@ -781,7 +807,19 @@ t_list* obtengoPaginasConPresencia(t_list* paginas_del_proceso){
 			return unaPag->tiempo_referencia < otraPag->tiempo_referencia;
 		}
 
-		list_sort(paginas_en_MP, page_use_comparator);
+		bool ordenarFrame(void* param1, void* param2) {
+			TPagina* unaPag = (TPagina*) param1;
+			TPagina* otraPag = (TPagina*) param2;
+			return unaPag->marco < otraPag->marco;
+		}
+
+		t_algoritmo_reemplazo algoritmo_reemplazo = obtener_codigo_algoritmo(arch->algoritmo_reemplazo);
+		if(algoritmo_reemplazo==LRU){
+			list_sort(paginas_en_MP, page_use_comparator);
+		}else{
+			list_sort(paginas_en_MP, ordenarFrame);
+		}
+
 		return paginas_en_MP;
 
 }
@@ -864,7 +902,8 @@ void mostrarEstadoActualEstructuras(int32_t PID, TPagina* pagina) {
 
 				TLB* entrada = (TLB*) arg;
 				if(entrada->pagina == pagina->pagina) {
-					log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "mProc %d - Pagina %d - Marco %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
+					/** Hago el retardo de acceso a la TLB **/
+					+	sleep(arch->retardo);	log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "mProc %d - Pagina %d - Marco %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
 							PID,
 							entrada->pagina,
 							entrada->marco,
