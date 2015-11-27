@@ -330,7 +330,7 @@ void finalizarPid(sock_t* socketCpu){
 	if (resultado_operacion == RESULTADO_ERROR) {
 
 		log_debug(loggerDebug, "El swap informa que no pudo eliminar el pid:%d", PID);
-
+		limpiar_Informacion_PID(PID);
 		header_t* headerMemoria = _create_header(ERROR, 0);
 		int32_t enviado = _send_header(socketCpu, headerMemoria);
 		if(enviado == ERROR_OPERATION) return;
