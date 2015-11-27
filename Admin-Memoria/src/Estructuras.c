@@ -133,14 +133,16 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 		sem_post(&sem_mutex_tlb);
 	}
 
+	/** Hago el retardo de acceso a la TLB **/
+	sleep(arch->retardo);
+
 	if(entrada_pagina == NULL) {
-		if(TLB_habilitada()) log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "TLB Miss" ANSI_COLOR_RESET);
+		if(TLB_habilitada()) log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "TLB MISS" ANSI_COLOR_RESET);
 		log_debug(loggerDebug, "No se encontro la pagina en la TLB, se busca en la tabla de paginas");
 		return buscar_pagina_tabla_paginas(cod_Operacion, pagina);
 	}
 	else{
-		/** Hago el retardo que encontro la pagina **/
-		sleep(arch->retardo);
+
 		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "TLB HIT! Pagina:%d->Marco:%d" ANSI_COLOR_RESET, pagina->nro_pagina, entrada_pagina->marco);
 		/** Hubo un TLB_HIT, se encontro la pagina **/
 		TLB_hit++;
@@ -378,6 +380,9 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 
 	TPagina* entradaFound = list_find(tabla_paginas_PID, obtenerMarco_Pagina);
 
+	/** Hago el retardo por acceso a la tabla de paginas **/
+	sleep(arch->retardo);
+
 	if(entradaFound != NULL){
 
 		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Acceso a Memoria Pid: %d - Pagina:%d->Marco:%d" ANSI_COLOR_RESET,pagina->PID, pagina->nro_pagina, entradaFound->marco);
@@ -392,8 +397,6 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 			entradaFound->tiempo_referencia = get_actual_time_integer();
 
 		entradaFound->bitUso=1;
-		/** Hago el retardo si encuentra la pagina en la tabla de paginas **/
-		sleep(arch->retardo);
 
 		int32_t offset=(entradaFound->marco)*(arch->tamanio_marco);
 		if(codOperacion==LEER) memcpy(pagina->contenido, mem_principal+offset, arch->tamanio_marco);
@@ -424,7 +427,9 @@ t_resultado_busqueda buscar_pagina_tabla_paginas(int32_t codOperacion, t_pagina*
 }
 
 t_resultado_busqueda escribir_pagina_modificada_en_swap(int32_t PID, TPagina* pagina) {
-	log_debug(loggerDebug, "Debo reemplzar la pagina del pid:%d", PID);
+
+	log_debug(loggerDebug, "Debo reemplazar la pagina del pid:%d", PID);
+
 	t_pagina* pagina_a_escribir = malloc(sizeof(t_pagina));
 	pagina_a_escribir->PID = PID;
 	pagina_a_escribir->nro_pagina = pagina->pagina;
