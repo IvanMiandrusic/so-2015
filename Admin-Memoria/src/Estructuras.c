@@ -814,7 +814,7 @@ t_list* obtengoPaginasConPresencia(t_list* paginas_del_proceso){
 		}
 
 		t_algoritmo_reemplazo algoritmo_reemplazo = obtener_codigo_algoritmo(arch->algoritmo_reemplazo);
-		if(algoritmo_reemplazo==LRU){
+		if(algoritmo_reemplazo==LRU || algoritmo_reemplazo==FIFO){
 			list_sort(paginas_en_MP, page_use_comparator);
 		}else{
 			list_sort(paginas_en_MP, ordenarFrame);
