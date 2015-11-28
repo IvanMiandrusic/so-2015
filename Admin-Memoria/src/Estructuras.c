@@ -130,10 +130,10 @@ t_resultado_busqueda TLB_buscar_pagina(int32_t cod_Operacion, t_pagina* pagina) 
 		sem_wait(&sem_mutex_tlb);
 		entrada_pagina = list_find(TLB_tabla, find_by_PID_page);
 		sem_post(&sem_mutex_tlb);
-	}
 
-	/** Hago el retardo de acceso a la TLB **/
-	sleep(arch->retardo);
+		/** Hago el retardo de acceso a la TLB **/
+		sleep(arch->retardo);
+	}
 
 	if(entrada_pagina == NULL) {
 		if(TLB_habilitada()) log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "TLB MISS" ANSI_COLOR_RESET);
