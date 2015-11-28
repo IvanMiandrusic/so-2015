@@ -187,7 +187,7 @@ Metricas* iniciarMetricas(int32_t PID) {
 	misMetricas->PID = PID;
 	misMetricas->finalizado = 0;
 	misMetricas->hora_de_Creacion = get_actual_time_integer();
-	misMetricas->hora_ejecucion = 0;
+	misMetricas->hora_ejecucion = get_actual_time_integer();
 	misMetricas->hora_listo = get_actual_time_integer();
 	misMetricas->horasEjec = 0;
 	misMetricas->minEjec = 0;
@@ -408,9 +408,13 @@ void calcularMetrica(int32_t ID, int32_t tipo) {
 	if (tipo == TIEMPO_EXEC) {
 		t_time* t_horaEjec = obtengoTiempo(metrica->hora_ejecucion);
 		t_time* resultado = calculoDefinitivo(t_horaActual, t_horaEjec);
-		metrica->horasEjec = metrica->horasEjec + resultado->horas;
+		metrica->horasEjec = resultado->horas;
+		metrica->minEjec = resultado->minutos;
+		metrica->segEjec = resultado->segundos;
+
+		/*metrica->horasEjec = metrica->horasEjec + resultado->horas;
 		metrica->minEjec = metrica->minEjec + resultado->minutos;
-		metrica->segEjec = metrica->segEjec + resultado->segundos;
+		metrica->segEjec = metrica->segEjec + resultado->segundos;*/
 		if (metrica->segEjec > 59) {
 			int32_t seg = adaptarHora(metrica->segEjec);
 			metrica->minEjec = metrica->segEjec / 60;
