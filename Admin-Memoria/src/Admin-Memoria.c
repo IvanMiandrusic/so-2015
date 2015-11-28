@@ -299,15 +299,6 @@ void finalizarPid(sock_t* socketCpu){
 		if(recibido == SOCKET_CLOSED) swap_shutdown();
 	}
 
-	t_list* paginasConPresencia=obtengoPaginasConPresencia(obtener_tabla_paginas_by_PID(PID));
-	int asd;
-	for (asd=0;asd<list_size(paginasConPresencia);asd++){
-		TPagina* pagina=list_get(paginasConPresencia, asd);
-		printf(ANSI_COLOR_BOLDBLUE"\n\nNro: %d, marco:%d, tiempo:%d, bitUso:%d, modificada:%d \n\n"ANSI_COLOR_RESET, pagina->pagina, pagina->marco, pagina->tiempo_referencia,pagina->bitUso,pagina->modificada);
-	}
-
-	dump();
-
 	header_t* headerSwap = _create_header(BORRAR_ESPACIO, 1 * sizeof(int32_t));
 	int32_t enviado = _send_header(socketSwap, headerSwap);
 	if (enviado == ERROR_OPERATION) return;

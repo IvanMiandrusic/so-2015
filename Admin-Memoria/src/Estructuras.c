@@ -711,17 +711,12 @@ int32_t reemplazar_pagina(int32_t PID, t_list* paginas_PID) {
 		}
 
 		TPagina* mejorPagina=list_get(paginasConPresencia,indiceMejorPagina);
-		int asd;
-		for (asd=0;asd<list_size(paginasConPresencia);asd++){
-			TPagina* pagina=list_get(paginasConPresencia, asd);
-			printf(ANSI_COLOR_BOLDBLUE"\nNro: %d, marco:%d, tiempo:%d, bitUso:%d, modificada:%d \n"ANSI_COLOR_RESET, pagina->pagina, pagina->marco, pagina->tiempo_referencia,pagina->bitUso,pagina->modificada);
-		}
 
 		log_info(loggerInfo, "Por algoritmo %s, deja de estar en memoria la pagina %d", arch->algoritmo_reemplazo, mejorPagina->pagina);
 
 		/** Puede que este en la TLB esa pagina que se ausente **/
-				if(TLB_exist(mejorPagina)) TLB_clean_by_page(PID,mejorPagina);
-				log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Se reemplaza por algoritmo %s, deja de estar en memoria la pagina %d del mProc %d" ANSI_COLOR_RESET, arch->algoritmo_reemplazo, mejorPagina->pagina, PID);
+		if(TLB_exist(mejorPagina)) TLB_clean_by_page(PID,mejorPagina);
+		log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "Se reemplaza por algoritmo %s, deja de estar en memoria la pagina %d del mProc %d" ANSI_COLOR_RESET, arch->algoritmo_reemplazo, mejorPagina->pagina, PID);
 
 		/** Escribo pagina en swap (si esta modificada) **/
 		if(mejorPagina->modificada == 1) {
@@ -902,9 +897,9 @@ void mostrarEstadoActualEstructuras(int32_t PID, TPagina* pagina) {
 
 				TLB* entrada = (TLB*) arg;
 				if(entrada->pagina == pagina->pagina) {
-					/** Hago el retardo de acceso a la TLB **/
-					+	sleep(arch->retardo);	log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "mProc %d - Pagina %d - Marco %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
-							PID,
+
+					log_info(loggerInfo, ANSI_COLOR_BOLDGREEN "mProc %d - Pagina %d - Marco %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
+							entrada->PID,
 							entrada->pagina,
 							entrada->marco,
 							entrada->modificada,
@@ -913,7 +908,7 @@ void mostrarEstadoActualEstructuras(int32_t PID, TPagina* pagina) {
 				}
 				else {
 					log_info(loggerInfo, ANSI_COLOR_BOLDYELLOW "mProc %d - Pagina %d - Marco %d - Modificada %d - Presente %d - Tiempo Ultima Referencia %d" ANSI_COLOR_RESET,
-							PID,
+							entrada->PID,
 							entrada->pagina,
 							entrada->marco,
 							entrada->modificada,
